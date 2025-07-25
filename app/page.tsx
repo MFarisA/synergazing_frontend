@@ -23,6 +23,8 @@ import {
 import Link from "next/link";
 // Import the new CometCard component
 import { CometCard } from "@/components/ui/comet-card";
+// Import AuroraBackground component
+import { AuroraBackground } from "@/components/ui/aurora-background";
 
 // Data for the features section, making the code cleaner to map over
 const features = [
@@ -105,15 +107,15 @@ export default function HomePage() {
       </header>
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-br from-blue-50 via-white to-purple-50">
-          <div className="container px-4 md:px-6 mx-auto">
+        {/* Hero Section with Aurora Background */}
+        <AuroraBackground className="w-full py-12 md:py-24 lg:py-32 h-auto min-h-[60vh]">
+          <div className="container px-4 md:px-6 mx-auto z-10 relative">
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Platform Kolaborasi Proyek Mahasiswa
                 </h1>
-                <p className="mx-auto max-w-[700px] text-gray-600 md:text-xl">
+                <p className="mx-auto max-w-[700px] text-gray-600 md:text-xl dark:text-gray-300">
                   Temukan rekan kolaborasi yang tepat, bergabung dengan proyek
                   menarik, atau rekrut talenta terbaik untuk proyek Anda.
                   Seperti LinkedIn bertemu Facebook Marketplace untuk mahasiswa.
@@ -147,7 +149,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </section>
+        </AuroraBackground>
 
         {/* --- MODIFIED FEATURES SECTION --- */}
         <section id="features" className="w-full py-12 md:py-24 lg:py-32">
@@ -166,7 +168,7 @@ export default function HomePage() {
               {features.map((feature, index) => (
                 <CometCard key={index}>
                   {/* PERUBAHAN DI SINI: ganti <button> menjadi <div> */}
-                  <div className="flex h-full w-full cursor-pointer flex-col items-stretch rounded-lg border-0 bg-[#1F2121] saturate-0 overflow-hidden">
+                  <div className="flex h-full w-full cursor-pointer flex-col items-stretch rounded-lg border-0 bg-[#1F2121] overflow-hidden">
                     <div className="relative w-full aspect-[4/3]">
                       <img
                         loading="lazy"
