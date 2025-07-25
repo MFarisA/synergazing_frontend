@@ -108,7 +108,7 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero Section with Aurora Background */}
-        <AuroraBackground className="w-full py-12 md:py-24 lg:py-32 h-auto min-h-[60vh]">
+        <AuroraBackground className="w-full py-12 md:py-24 lg:py-32 h-full min-h-[100vh]">
           <div className="container px-4 md:px-6 mx-auto z-10 relative">
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
@@ -151,6 +151,9 @@ export default function HomePage() {
           </div>
         </AuroraBackground>
 
+        {/* Gradient transition between hero and features */}
+        <div className="w-full h-24 bg-gradient-to-b from-transparent via-white/70 to-white"></div>
+
         {/* --- MODIFIED FEATURES SECTION --- */}
         <section id="features" className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6 mx-auto">
@@ -161,7 +164,7 @@ export default function HomePage() {
               <p className="mt-4 text-gray-600 md:text-xl max-w-[600px] mx-auto">
                 Semua yang Anda butuhkan untuk kolaborasi proyek yang efektif
                 dan bermakna
-              </p>
+              </p>`
             </div>
 
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
