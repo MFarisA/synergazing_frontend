@@ -15,10 +15,10 @@ export default function Navbar() {
       </Link>
       <nav className="ml-auto flex gap-4 sm:gap-6">
         <Link
-          href="#features"
+          href="/"
           className="text-sm font-medium hover:text-blue-600 transition-colors"
         >
-          Fitur
+          Dashboard
         </Link>
         <Link
           href="/projects"
