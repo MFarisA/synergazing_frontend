@@ -30,3 +30,5 @@ export type Project = {
     skills: string;
     contribution: string;
   };
+
+  export type ProjectDetail = typeof import('@/lib/project-detail-data').projectsData['1'];

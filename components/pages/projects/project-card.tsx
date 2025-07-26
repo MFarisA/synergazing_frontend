@@ -2,10 +2,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, MapPin, Clock, Eye, Star, Heart, Share2 } from "lucide-react";
+import { Calendar, Users, MapPin, Clock, Eye, Star, Heart, Share2, Info } from "lucide-react";
 import { ChatDialog } from "./chat-dialog";
 import { SynergizeDialog } from "./synergize-dialog";
 import type { Project } from "@/types";
+import Link from "next/link";
 
 interface ProjectCardProps {
   project: Project;
@@ -66,6 +67,12 @@ export function ProjectCard({ project }: ProjectCardProps) {
                 </div>
             </div>
             <div className="flex gap-2">
+            <Link href={`/projects/${project.id}`} className="flex-1">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Info className="h-4 w-4 mr-2" />
+                    Detail
+                  </Button>
+                </Link>
                 <ChatDialog project={project} />
                 <SynergizeDialog project={project} />
             </div>
