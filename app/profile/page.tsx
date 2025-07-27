@@ -46,17 +46,17 @@ import Link from "next/link";
 // Mock user data - in real app, this would come from API/auth
 const userData = {
   id: 1,
-  name: "Ahmad Maulana",
-  username: "ahmadmaulana",
+  name: "Adit Cukur",
+  username: "aditcukur",
   avatar:
     "https://mahasiswa.dinus.ac.id/images/foto/A/A11/2022/A11.2022.14148.jpg",
   title: "Full-Stack Developer & IoT Enthusiast",
-  university: "Institut Teknologi Bandung",
+  university: "Universitas Dian Nuswantoro",
   major: "Teknik Informatika",
   year: "Semester 7",
-  location: "Bandung, Indonesia",
+  location: "Pati, Indonesia",
   bio: "Passionate about creating innovative solutions through technology. Experienced in full-stack development with a focus on IoT systems and real-time applications. Always eager to collaborate on meaningful projects that make a difference.",
-  email: "ahmad.maulana@students.itb.ac.id",
+  email: "adittukangcukur@mail.com",
   phone: "+62 812-3456-7890",
 
   // Stats
