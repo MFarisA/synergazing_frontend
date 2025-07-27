@@ -10,8 +10,6 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-white">
       <main className="flex-1">
         <Hero />
-        {/* Ini adalah elemen transisi visual antar section */}
-        <div className="w-full h-24 bg-gradient-to-b from-transparent via-white/70 to-white"></div>
         <Features />
         <ProjectShowcase />
         <HowItWorks />

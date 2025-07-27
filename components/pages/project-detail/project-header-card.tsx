@@ -35,7 +35,6 @@ export function ProjectHeaderCard({ project }: ProjectHeaderCardProps) {
         <CardTitle className="text-2xl">{project.title}</CardTitle>
         <CardDescription className="text-base">{project.description}</CardDescription>
         <div className="flex flex-wrap items-center gap-6 mt-4 text-sm text-gray-600">
-          <div className="flex items-center gap-1"><Eye className="h-4 w-4" /><span>{project.views} views</span></div>
           <div className="flex items-center gap-1"><Users className="h-4 w-4" /><span>{project.applicants} pelamar</span></div>
           <div className="flex items-center gap-1"><Clock className="h-4 w-4" /><span>Deadline: {project.deadline}</span></div>
         </div>

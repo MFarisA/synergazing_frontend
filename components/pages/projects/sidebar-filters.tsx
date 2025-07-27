@@ -52,30 +52,6 @@ export function SidebarFilters({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Statistik Platform</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between"><span className="text-sm text-gray-600">Total Proyek</span><span className="font-semibold">500+</span></div>
-          <div className="flex items-center justify-between"><span className="text-sm text-gray-600">Proyek Aktif</span><span className="font-semibold">342</span></div>
-          <div className="flex items-center justify-between"><span className="text-sm text-gray-600">Mahasiswa Terdaftar</span><span className="font-semibold">1,200+</span></div>
-          <div className="flex items-center justify-between"><span className="text-sm text-gray-600">Proyek Selesai</span><span className="font-semibold">158</span></div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="h-5 w-5" />Skill Trending</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {["React", "Python", "UI/UX", "Machine Learning", "Mobile Dev"].map((skill) => (
-              <Badge key={skill} variant="secondary" className="cursor-pointer hover:bg-blue-100">{skill}</Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </aside>
   );
 }

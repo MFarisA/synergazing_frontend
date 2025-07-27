@@ -18,8 +18,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       <div className="relative">
         <img src={project.image} alt={project.title} className="w-full h-48 object-cover rounded-t-lg" />
         {project.urgent && <Badge className="absolute top-3 left-3 bg-red-500 text-white border-red-500">Urgent</Badge>}
-        <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button size="sm" variant="secondary" className="h-8 w-8 p-0"><Heart className="h-4 w-4" /></Button>
+        <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">\
           <Button size="sm" variant="secondary" className="h-8 w-8 p-0"><Share2 className="h-4 w-4" /></Button>
         </div>
       </div>
@@ -41,9 +40,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
               <p className="font-medium">{project.recruiter.name}</p>
               <p className="text-sm text-gray-600">{project.recruiter.major}</p>
               <div className="flex items-center gap-3 text-xs text-gray-500 mt-1 flex-wrap">
-                <div className="flex items-center gap-1"><Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /><span>{project.recruiter.rating}</span></div>
-                <span>•</span><span>{project.recruiter.projects} proyek</span>
-                <span>•</span><span>{project.recruiter.connections} koneksi</span>
+               <span>{project.recruiter.projects} proyek</span>
               </div>
             </div>
           </div>
@@ -62,7 +59,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <div className="space-y-2 pt-2 border-t mt-4">
             <div className="flex items-center justify-between text-sm text-gray-500">
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1"><Eye className="h-4 w-4" /><span>{project.views} views</span></div>
                     <div className="flex items-center gap-1"><Users className="h-4 w-4" /><span>{project.applicants} pelamar</span></div>
                 </div>
             </div>

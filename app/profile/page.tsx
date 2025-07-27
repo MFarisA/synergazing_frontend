@@ -55,18 +55,14 @@ const userData = {
   major: "Teknik Informatika",
   year: "Semester 7",
   location: "Bandung, Indonesia",
-  joinDate: "Januari 2022",
   bio: "Passionate about creating innovative solutions through technology. Experienced in full-stack development with a focus on IoT systems and real-time applications. Always eager to collaborate on meaningful projects that make a difference.",
   email: "ahmad.maulana@students.itb.ac.id",
   phone: "+62 812-3456-7890",
-  website: "https://ahmadmaulana.dev",
 
   // Stats
   stats: {
     projects: 12,
     completedProjects: 8,
-    profileViews: 1250,
-    searchAppearances: 89,
   },
 
   // Skills with proficiency levels
@@ -98,7 +94,6 @@ const userData = {
       duration: "3 months",
       completion: 75,
       likes: 23,
-      views: 156,
     },
     {
       id: 2,
@@ -113,7 +108,6 @@ const userData = {
       duration: "4 months",
       completion: 100,
       likes: 45,
-      views: 289,
     },
     {
       id: 3,
@@ -128,7 +122,6 @@ const userData = {
       duration: "2 months",
       completion: 100,
       likes: 31,
-      views: 198,
     },
   ],
 
@@ -168,21 +161,6 @@ const userData = {
     portfolio: "https://ahmadmaulana.dev",
   },
 
-  // Recent activity
-  activity: [
-    {
-      type: "project_update",
-      content: "Updated progress on Smart Campus IoT System",
-      time: "2 jam yang lalu",
-      icon: "project",
-    },
-    {
-      type: "skill_added",
-      content: "Added new skill: Docker",
-      time: "1 hari yang lalu",
-      icon: "skill",
-    },
-  ],
 };
 
 export default function ProfilePage() {
@@ -314,38 +292,6 @@ export default function ProfilePage() {
                   </CardContent>
                 </Card>
 
-                {/* Recent Activity */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Aktivitas Terbaru</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {userData.activity.map((activity, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            {activity.icon === "project" && (
-                              <Briefcase className="h-5 w-5 text-blue-600" />
-                            )}
-                            {activity.icon === "skill" && (
-                              <Award className="h-5 w-5 text-green-600" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium">{activity.content}</p>
-                            <p className="text-sm text-gray-500">
-                              {activity.time}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
                 {/* Experience */}
                 <Card>
                   <CardHeader>
@@ -420,16 +366,6 @@ export default function ProfilePage() {
                         >
                           {project.status}
                         </Badge>
-                        <div className="absolute top-3 right-3 flex gap-1">
-                          <div className="bg-white/90 rounded-full p-1 flex items-center gap-1 text-xs">
-                            <Eye className="h-3 w-3" />
-                            <span>{project.views}</span>
-                          </div>
-                          <div className="bg-white/90 rounded-full p-1 flex items-center gap-1 text-xs">
-                            <Heart className="h-3 w-3" />
-                            <span>{project.likes}</span>
-                          </div>
-                        </div>
                       </div>
 
                       <CardHeader className="pb-2">
@@ -582,18 +518,6 @@ export default function ProfilePage() {
                     <p className="text-sm text-gray-600">{userData.phone}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Globe className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium">Website</p>
-                    <a
-                      href={userData.website}
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      {userData.website}
-                    </a>
-                  </div>
-                </div>
               </CardContent>
             </Card>
 
@@ -638,37 +562,6 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            {/* Profile Analytics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Analitik Profil</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">Profile views</span>
-                  </div>
-                  <span className="font-semibold">
-                    {userData.stats.profileViews}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">Search appearances</span>
-                  </div>
-                  <span className="font-semibold">
-                    {userData.stats.searchAppearances}
-                  </span>
-                </div>
-                <Separator />
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-2">Member since</p>
-                  <p className="font-semibold">{userData.joinDate}</p>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Quick Actions */}
             <Card>
