@@ -5,27 +5,29 @@ import { Zap } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function Navbar({ className }: { className?: string }) {
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [visible, setVisible] = useState(true);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollPos = window.scrollY;
-
-      // Set the navbar to be visible if scrolling up or at the top of the page
-      setVisible((prevScrollPos > currentScrollPos) || currentScrollPos < 10);
-
+      setVisible(prevScrollPos > currentScrollPos || currentScrollPos < 10);
       setPrevScrollPos(currentScrollPos);
     };
 
-    window.addEventListener('scroll', handleScroll);
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [prevScrollPos]);
+
+  const navLinks = [
+    { href: "/", label: "Dashboard" },
+    { href: "/projects", label: "Proyek" },
+    { href: "/profile", label: "Profile" },
+  ];
 
   return (
     <header
@@ -43,31 +45,29 @@ export default function Navbar({ className }: { className?: string }) {
           <span className="font-bold text-xl">Synergazing</span>
         </div>
       </Link>
-      <nav className="ml-auto flex gap-4 sm:gap-6">
-        <Link
-          href="/"
-          className="text-sm font-medium hover:text-blue-600 transition-colors"
-        >
-          Dashboard
-        </Link>
-        <Link
-          href="/projects"
-          className="text-sm font-medium hover:text-blue-600 transition-colors"
-        >
-          Proyek
-        </Link>
-        <Link
-          href="#about"
-          className="text-sm font-medium hover:text-blue-600 transition-colors"
-        >
-          Tentang
-        </Link>
+
+      <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
+        {navLinks.map(({ href, label }) => (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              "text-sm font-medium transition-colors",
+              pathname === href
+                ? "text-blue-600 font-semibold"
+                : "hover:text-blue-600 text-gray-700"
+            )}
+          >
+            {label}
+          </Link>
+        ))}
+
         <Button variant="outline" size="sm">
           Masuk
         </Button>
         <Button
           size="sm"
-          className="bg-gradient-to-r from-blue-600 to-purple-600"
+          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
         >
           Daftar
         </Button>
