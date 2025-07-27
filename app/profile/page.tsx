@@ -569,24 +569,17 @@ export default function ProfilePage() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start bg-transparent"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Buat Proyek Baru
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start bg-transparent"
-                >
+                <Link href="/create-project">
+                  <Button variant="outline" className="w-full justify-start bg-transparent mb-2">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Buat Proyek Baru
+                  </Button>
+                </Link>
+                <Button variant="outline" className="w-full justify-start bg-transparent">
                   <Users className="h-4 w-4 mr-2" />
                   Cari Kolaborator
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start bg-transparent"
-                >
+                <Button variant="outline" className="w-full justify-start bg-transparent">
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Pesan Masuk
                 </Button>

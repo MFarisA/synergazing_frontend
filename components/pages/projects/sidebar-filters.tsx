@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 
 interface SidebarFiltersProps {
   skillOptions: string[];
@@ -17,6 +17,13 @@ export function SidebarFilters({
 }: SidebarFiltersProps) {
   return (
     <aside className="w-full lg:w-80 space-y-6 flex-shrink-0">
+       {/* Create Project Button */}
+       <Link href="/create-project">
+        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-base font-medium mb-3">
+          <Plus className="h-5 w-5 mr-2" />
+          Buat Proyek Baru
+        </Button>
+      </Link>
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Filter berdasarkan Skill</CardTitle>

@@ -74,14 +74,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Zap className="h-6 w-6 text-white" />
-            </div>
-            <span className="font-bold text-2xl">Synergizing.space</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Selamat Datang Kembali</h1>
-          <p className="text-gray-600">Masuk ke akun Anda untuk melanjutkan kolaborasi</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Selamat Datang di Synergazing</h1>
+          <p className="text-gray-600">Masuk ke akun Anda untuk memulai kolaborasi</p>
         </motion.div>
 
         {/* Login Form */}

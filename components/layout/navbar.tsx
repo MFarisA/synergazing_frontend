@@ -62,14 +62,12 @@ export default function Navbar({ className }: { className?: string }) {
           </Link>
         ))}
 
-        <Button variant="outline" size="sm">
-          Masuk
-        </Button>
         <Button
           size="sm"
           className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+          asChild
         >
-          Daftar
+          <Link href="/login">Masuk</Link>
         </Button>
       </nav>
     </header>
