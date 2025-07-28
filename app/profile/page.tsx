@@ -40,6 +40,10 @@ import {
   Camera,
   ExternalLink,
   TrendingUp,
+  FileText,
+  Upload,
+  Download,
+  File,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -58,6 +62,14 @@ const userData = {
   bio: "Passionate about creating innovative solutions through technology. Experienced in full-stack development with a focus on IoT systems and real-time applications. Always eager to collaborate on meaningful projects that make a difference.",
   email: "adittukangcukur@mail.com",
   phone: "+62 812-3456-7890",
+
+  // CV information
+  cv: {
+    fileName: "Adit_Cukur_CV_2025.pdf",
+    uploadDate: "2025-06-15",
+    fileSize: "1.2 MB",
+    url: "/sample-cv.pdf", // In a real app, this would be a URL to the stored PDF
+  },
 
   // Stats
   stats: {
@@ -160,17 +172,33 @@ const userData = {
     instagram: "https://instagram.com/ahmadmaulana",
     portfolio: "https://ahmadmaulana.dev",
   },
-
 };
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [editData, setEditData] = useState({
     bio: userData.bio,
     title: userData.title,
     location: userData.location,
   });
+
+  const handleCvUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // In a real app, this would upload the file to a server
+      setIsUploading(true);
+
+      // Simulate upload delay
+      setTimeout(() => {
+        setIsUploading(false);
+        // Update CV data (in a real app, this would come from the server response)
+        // This is just mocking the update
+      }, 1500);
+    }
+  };
 
   const skillCategories = [
     "All",
@@ -562,6 +590,85 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
+            {/* CV Upload */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>CV / Resume</span>
+                  <label
+                    htmlFor="cv-upload"
+                    className="cursor-pointer rounded-md bg-blue-50 p-1 hover:bg-blue-100 transition-colors"
+                  >
+                    <Upload className="h-4 w-4 text-blue-600" />
+                  </label>
+                  <input
+                    id="cv-upload"
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={handleCvUpload}
+                  />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isUploading ? (
+                  <div className="flex flex-col items-center justify-center py-4">
+                    <div className="w-8 h-8 border-2 border-t-blue-600 border-blue-200 rounded-full animate-spin mb-3"></div>
+                    <p className="text-sm text-gray-500">Mengupload CV...</p>
+                  </div>
+                ) : userData.cv ? (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center">
+                      <FileText className="h-8 w-8 text-blue-600 mr-3" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{userData.cv.fileName}</p>
+                        <p className="text-xs text-gray-500">
+                          Diupload pada {userData.cv.uploadDate} • {userData.cv.fileSize}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center justify-center bg-transparent"
+                        onClick={() => setIsPdfViewerOpen(true)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Lihat
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center justify-center bg-transparent"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Unduh
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-6 text-center">
+                    <File className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 mb-3">Upload CV Anda untuk meningkatkan peluang kolaborasi</p>
+                    <label
+                      htmlFor="cv-upload-alt"
+                      className="inline-flex items-center justify-center text-sm font-medium rounded-md px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
+                    >
+                      <Upload className="h-3.5 w-3.5 mr-1.5" />
+                      Upload CV
+                    </label>
+                    <input
+                      id="cv-upload-alt"
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={handleCvUpload}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Quick Actions */}
             <Card>
@@ -646,6 +753,52 @@ export default function ProfilePage() {
                   Batal
                 </Button>
               </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF Viewer Dialog */}
+      <Dialog open={isPdfViewerOpen} onOpenChange={setIsPdfViewerOpen} className="max-w-5xl">
+        <DialogContent className="max-w-5xl">
+          <div className="p-4">
+            <DialogTitle className="text-xl font-semibold mb-4 flex items-center justify-between">
+              <span>CV Preview: {userData.cv?.fileName}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-transparent"
+                onClick={() => setIsPdfViewerOpen(false)}
+              >
+                Close
+              </Button>
+            </DialogTitle>
+
+            <div className="bg-gray-100 rounded-lg p-2 border border-gray-200">
+              <div className="w-full h-[70vh] overflow-hidden">
+                <iframe
+                  src={userData.cv?.url + "#toolbar=1"}
+                  className="w-full h-full border-0"
+                  title="CV Preview"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end mt-4">
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="flex items-center justify-center bg-transparent mr-2"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Unduh CV
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => setIsPdfViewerOpen(false)}
+              >
+                Tutup
+              </Button>
             </div>
           </div>
         </DialogContent>

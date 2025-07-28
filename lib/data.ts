@@ -20,7 +20,6 @@ export const projects = [
       image: "https://assets-a1.kompasiana.com/items/album/2023/11/14/img-2721-6552c2dbedff761aa670e123.png",
       urgent: true,
       views: 45,
-      applicants: 8,
       deadline: "15 Feb 2024",
     },
     {
@@ -43,7 +42,6 @@ export const projects = [
       posted: "1 hari yang lalu",
       image: "https://relungindonesia.org/wp-content/uploads/2024/09/WhatsApp-Image-2024-03-05-at-16.24.27.jpg",
       views: 67,
-      applicants: 12,
       deadline: "20 Feb 2024",
     },
     {
@@ -66,7 +64,6 @@ export const projects = [
       posted: "3 hari yang lalu",
       image: "https://itbrief.asia/uploads/story/2024/12/11/techday_26169f03bf0a929134f3.webp",
       views: 89,
-      applicants: 15,
       deadline: "28 Feb 2024",
     },
     {
@@ -90,7 +87,6 @@ export const projects = [
       image: "https://bankjombang.co.id/wp-content/uploads/2023/05/tokopedia-platform-e-commerce-yang-paling-dipercaya-umkm-indonesia-jombang-kita.jpg",
       views: 123,
       urgent: true,
-      applicants: 20,
       deadline: "10 Mar 2024",
     },
     {
@@ -113,7 +109,6 @@ export const projects = [
       posted: "4 hari yang lalu",
       image: "https://cdnpro.eraspace.com/media/wysiwyg/artikel/Tahun_2024/April/Game_Matematika_1.jpg",
       views: 78,
-      applicants: 11,
       deadline: "25 Feb 2024",
     },
     {
@@ -136,7 +131,6 @@ export const projects = [
       posted: "5 hari yang lalu",
       image: "https://i.ytimg.com/vi/qrlD3zlK418/maxresdefault.jpg",
       views: 56,
-      applicants: 9,
       deadline: "18 Feb 2024",
     },
   ]

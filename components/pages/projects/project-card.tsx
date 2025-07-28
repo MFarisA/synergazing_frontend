@@ -58,9 +58,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         
         <div className="space-y-2 pt-2 border-t mt-4">
             <div className="flex items-center justify-between text-sm text-gray-500">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1"><Users className="h-4 w-4" /><span>{project.applicants} pelamar</span></div>
-                </div>
+               
             </div>
             <div className="flex gap-2">
             <Link href={`/projects/${project.id}`} className="flex-1">
