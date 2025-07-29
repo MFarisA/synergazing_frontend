@@ -18,12 +18,9 @@ export function ProjectHeaderCard({ project }: ProjectHeaderCardProps) {
   return (
     <Card>
       <div className="relative">
-        <img src={project.image} alt={project.title} className="w-full h-64 object-cover rounded-t-lg" />
+        <img src={project.image} alt={project.title} className="w-full h-64 object-cover " />
         {project.urgent && <Badge className="absolute top-4 left-4 bg-red-500 text-white border-red-500">Urgent</Badge>}
-        <div className="absolute top-4 right-4 flex gap-2">
-          <Button size="icon" variant="secondary" onClick={() => setIsBookmarked(!isBookmarked)} className="h-9 w-9">
-            <Heart className={`h-4 w-4 ${isBookmarked ? "fill-red-500 text-red-500" : ""}`} />
-          </Button>
+        <div className="absolute top-4 right-4 flex gap-2"> 
           <Button size="icon" variant="secondary" className="h-9 w-9"><Share2 className="h-4 w-4" /></Button>
         </div>
       </div>
