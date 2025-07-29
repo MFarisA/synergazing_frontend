@@ -285,7 +285,7 @@ export default function CreateProjectPage() {
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-gradient-to-r from-[#0088FF] to-[#CB30E0] h-2 rounded-full transition-all duration-300"
                           style={{ width: `${(currentStep / 5) * 100}%` }}
                         />
                       </div>
@@ -800,7 +800,7 @@ export default function CreateProjectPage() {
                       )}
 
                       {currentStep < 5 ? (
-                        <Button onClick={handleNext} className="bg-gradient-to-r from-blue-600 to-purple-600">
+                        <Button onClick={handleNext} className="bg-gradient-to-r from-[#0088FF] to-[#CB30E0]">
                           Lanjutkan
                           <ArrowRight className="h-4 w-4 ml-2" />
                         </Button>
@@ -808,7 +808,7 @@ export default function CreateProjectPage() {
                         <Button
                           onClick={handleSubmit}
                           disabled={isLoading}
-                          className="bg-gradient-to-r from-blue-600 to-purple-600"
+                          className="bg-gradient-to-r from-[#0088FF] to-[#CB30E0]"
                         >
                           {isLoading ? (
                             <div className="flex items-center gap-2">

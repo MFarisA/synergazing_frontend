@@ -26,6 +26,7 @@ export default function Navbar({ className }: { className?: string }) {
   const navLinks = [
     { href: "/", label: "Dashboard" },
     { href: "/projects", label: "Proyek" },
+    { href: "/collaborators", label: "Collaborator" },
     { href: "/profile", label: "Profile" },
   ]
 

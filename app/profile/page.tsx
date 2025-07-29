@@ -46,6 +46,7 @@ import {
   File,
 } from "lucide-react";
 import Link from "next/link";
+import { Switch } from "@/components/ui/switch";
 
 // Mock user data - in real app, this would come from API/auth
 const userData = {
@@ -221,7 +222,7 @@ export default function ProfilePage() {
         );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-20">
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -252,7 +253,7 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="flex-1 pt-16 md:pt-4">
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex flex-col md:flex-row items-start justify-between mb-4">
                       <div>
                         <h1 className="text-2xl font-bold">{userData.name}</h1>
                         <p className="text-lg text-gray-600">
@@ -269,7 +270,10 @@ export default function ProfilePage() {
                           </div>
                         </div>
                       </div>
-                      <Button onClick={() => setIsEditing(true)}>
+                      <Button
+                        onClick={() => setIsEditing(true)}
+                        className="mt-2 md:mt-4"
+                      >
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Profil
                       </Button>
@@ -738,6 +742,21 @@ export default function ProfilePage() {
                   }
                   placeholder="Ceritakan tentang diri Anda..."
                   className="min-h-[120px] resize-none"
+                />
+              </div>
+
+              {/* New: Ready for Collaboration Switch */}
+              <div className="flex items-center justify-between p-3 border rounded-md">
+                <label htmlFor="ready-for-collab" className="text-sm font-medium">
+                  Siap untuk Kolaborasi (#ReadyToSynergize)
+                  <p className="text-xs text-gray-500 mt-1">
+                    Tampilkan profil Anda apakah bersedia menjadi kolaborator.
+                  </p>
+                </label>
+                <Switch
+                  id="ready-for-collab"
+                  checked={editData.isReadyForCollaboration}
+                  onCheckedChange={(checked) => setEditData({ ...editData, isReadyForCollaboration: checked })}
                 />
               </div>
 
