@@ -62,7 +62,6 @@ export const projectsData = {
       budget: "Rp 2.000.000",
       deadline: "15 Feb 2024",
       status: "Recruiting",
-      progress: 25,
       timeline: [
           { phase: "Planning & Research", status: "completed", description: "Riset teknologi dan perencanaan arsitektur." },
           { phase: "Hardware Setup", status: "in-progress", description: "Setup sensor dan testing konektivitas." },
@@ -127,7 +126,6 @@ export const projectsData = {
       budget: "Hadiah Lomba",
       deadline: "20 Feb 2024",
       status: "Recruiting",
-      progress: 10,
       timeline: [
           { phase: "Ideation & Concept", status: "completed", description: "Brainstorming dan finalisasi konsep kampanye." },
           { phase: "Content Production", status: "in-progress", description: "Proses syuting video dan desain grafis." },
@@ -179,7 +177,6 @@ export const projectsData = {
       budget: "Hibah Riset",
       deadline: "28 Feb 2024",
       status: "Recruiting",
-      progress: 5,
       timeline: [
           { phase: "Literature Review", status: "in-progress", description: "Mengkaji penelitian-penelitian terkait." },
           { phase: "Data Collection", status: "pending", description: "Mengumpulkan dan menganotasi dataset citra medis." },
@@ -234,7 +231,6 @@ export const projectsData = {
       budget: "Equity/Saham",
       deadline: "10 Mar 2024",
       status: "Recruiting",
-      progress: 15,
       timeline: [
           { phase: "System Design & UX", status: "completed", description: "Merancang arsitektur dan wireframe aplikasi." },
           { phase: "Core Backend Dev", status: "in-progress", description: "Membangun fitur utama backend dengan Laravel." },
@@ -288,7 +284,6 @@ export const projectsData = {
       budget: "N/A (Proyek TA)",
       deadline: "25 Feb 2024",
       status: "Recruiting",
-      progress: 20,
       timeline: [
           { phase: "Game Design Document (GDD)", status: "completed", description: "Finalisasi konsep, gameplay, dan desain game." },
           { phase: "Asset Production", status: "in-progress", description: "Pembuatan aset visual dan audio." },
@@ -342,7 +337,6 @@ export const projectsData = {
       budget: "N/A (Proyek Kuliah)",
       deadline: "18 Feb 2024",
       status: "Recruiting",
-      progress: 10,
       timeline: [
           { phase: "Analisis Kebutuhan", status: "in-progress", description: "Mengumpulkan requirement dan membuat ERD." },
           { phase: "Database & Backend Setup", status: "pending", description: "Setup database dan struktur dasar backend." },

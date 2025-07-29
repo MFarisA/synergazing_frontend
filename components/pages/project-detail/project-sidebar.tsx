@@ -16,12 +16,6 @@ interface ProjectSidebarProps {
 export function ProjectSidebar({ project }: ProjectSidebarProps) {
   return (
     <aside className="space-y-6">
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          {/* <SynergizeDialog project={project} />
-          <ChatDialog project={project} /> */}
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader><CardTitle>Informasi Proyek</CardTitle></CardHeader>
@@ -43,7 +37,6 @@ export function ProjectSidebar({ project }: ProjectSidebarProps) {
               <p className="font-semibold">{project.recruiter.name}</p>
               <p className="text-sm text-gray-600">{project.recruiter.major}</p>
               <p className="text-sm text-gray-600">{project.recruiter.university}</p>
-              <div className="flex items-center gap-1 mt-1"><Star className="h-4 w-4 fill-yellow-400 text-yellow-400" /><span className="text-sm">{project.recruiter.rating}</span></div>
             </div>
           </div>
           <p className="text-sm text-gray-700 mb-4">{project.recruiter.bio}</p>

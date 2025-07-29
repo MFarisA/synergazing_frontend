@@ -38,13 +38,6 @@ export function ProjectHeaderCard({ project }: ProjectHeaderCardProps) {
           <div className="flex items-center gap-1"><Users className="h-4 w-4" /><span>{project.applicants} pelamar</span></div>
           <div className="flex items-center gap-1"><Clock className="h-4 w-4" /><span>Deadline: {project.deadline}</span></div>
         </div>
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Progress Proyek</span>
-            <span className="text-sm text-gray-600">{project.progress}%</span>
-          </div>
-          <Progress value={project.progress} />
-        </div>
       </CardHeader>
     </Card>
   );
