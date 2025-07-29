@@ -222,7 +222,7 @@ export default function ProfilePage() {
         );
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-gray-50 ">
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -305,10 +305,9 @@ export default function ProfilePage() {
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="projects">Proyek</TabsTrigger>
-                <TabsTrigger value="skills">Skills</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
@@ -360,6 +359,50 @@ export default function ProfilePage() {
                             </div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Skills */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Skills & Keahlian</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Skill Categories */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {skillCategories.map((category) => (
+                        <Button
+                          key={category}
+                          variant={
+                            selectedSkillCategory === category
+                              ? "default"
+                              : "outline"
+                          }
+                          size="sm"
+                          onClick={() => setSelectedSkillCategory(category)}
+                          className={
+                            selectedSkillCategory !== category
+                              ? "bg-transparent"
+                              : ""
+                          }
+                        >
+                          {category}
+                        </Button>
+                      ))}
+                    </div>
+
+                    {/* Skills as badges */}
+                    <div className="flex flex-wrap gap-2">
+                      {filteredSkills.map((skill) => (
+                        <Badge
+                          key={skill.name}
+                          variant="secondary"
+                          className="py-2 px-3"
+                        >
+                          {skill.name}
+                        </Badge>
                       ))}
                     </div>
                   </CardContent>
@@ -461,64 +504,6 @@ export default function ProfilePage() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="skills" className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">Skills & Keahlian</h2>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Tambah Skill
-                  </Button>
-                </div>
-
-                {/* Skill Categories */}
-                <div className="flex flex-wrap gap-2">
-                  {skillCategories.map((category) => (
-                    <Button
-                      key={category}
-                      variant={
-                        selectedSkillCategory === category
-                          ? "default"
-                          : "outline"
-                      }
-                      size="sm"
-                      onClick={() => setSelectedSkillCategory(category)}
-                      className={
-                        selectedSkillCategory !== category
-                          ? "bg-transparent"
-                          : ""
-                      }
-                    >
-                      {category}
-                    </Button>
-                  ))}
-                </div>
-
-                {/* Skills Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredSkills.map((skill) => (
-                    <Card key={skill.name}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium">{skill.name}</h4>
-                          <Badge variant="outline" className="text-xs">
-                            {skill.category}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Progress
-                            value={skill.level}
-                            className="flex-1 h-2"
-                          />
-                          <span className="text-sm font-medium text-gray-600">
-                            {skill.level}%
-                          </span>
                         </div>
                       </CardContent>
                     </Card>
@@ -734,7 +719,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Bio</label>
+                <label className="block text-sm font-medium mb-2">Tentang Saya</label>
                 <Textarea
                   value={editData.bio}
                   onChange={(e) =>

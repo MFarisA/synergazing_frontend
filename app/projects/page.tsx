@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Grid3X3, List } from "lucide-react";
 
-// Import komponen-komponen baru
-import { ProjectsHeader } from "@/components/pages/projects/projects-header";
+// Hapus import ProjectsHeader karena sudah tidak dipakai
+// import { ProjectsHeader } from "@/components/pages/projects/projects-header";
 import { SidebarFilters } from "@/components/pages/projects/sidebar-filters";
 import { ProjectList } from "@/components/pages/projects/project-list";
 
@@ -33,7 +33,6 @@ export default function ProjectsPage() {
   });
 
   const handleSkillToggle = (skill: string) => {
-    // Jika skill kosong, artinya clear all
     if (skill === '') {
       setSelectedSkills([]);
       return;
@@ -50,21 +49,23 @@ export default function ProjectsPage() {
     setSelectedSkills([]);
   };
 
+  const isFilterActive = searchQuery || selectedType !== "all" || selectedLocation !== "all" || selectedSkills.length > 0;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <ProjectsHeader
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        selectedType={selectedType}
-        setSelectedType={setSelectedType}
-        selectedLocation={selectedLocation}
-        setSelectedLocation={setSelectedLocation}
-        locationOptions={locationOptions}
-      />
-
+      {/* ProjectsHeader dihapus dari sini */}
+      
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
+          {/* Teruskan semua props filter ke SidebarFilters */}
           <SidebarFilters
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedType={selectedType}
+            setSelectedType={setSelectedType}
+            selectedLocation={selectedLocation}
+            setSelectedLocation={setSelectedLocation}
+            locationOptions={locationOptions}
             skillOptions={skillOptions}
             selectedSkills={selectedSkills}
             handleSkillToggle={handleSkillToggle}
@@ -74,8 +75,8 @@ export default function ProjectsPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
                 <div className="flex items-center gap-4">
                     <h2 className="text-xl font-semibold">{filteredProjects.length} Proyek Ditemukan</h2>
-                    {(searchQuery || selectedType !== "all" || selectedLocation !== "all" || selectedSkills.length > 0) && (
-                        <Button variant="outline" size="sm" onClick={clearAllFilters}>Clear Filters</Button>
+                    {isFilterActive && (
+                        <Button variant="outline" size="sm" onClick={clearAllFilters}>Clear All Filters</Button>
                     )}
                 </div>
                 <div className="flex items-center gap-3">
@@ -96,6 +97,7 @@ export default function ProjectsPage() {
             
             <ProjectList projects={filteredProjects} viewMode={viewMode} />
 
+            {/* Pagination */}
             <div className="flex items-center justify-center mt-12 gap-2">
                 <Button variant="outline" size="sm">Previous</Button>
                 <Button variant="outline" size="sm" className="bg-blue-600 text-white border-blue-600">1</Button>

@@ -115,7 +115,7 @@ export default function CollaboratorsPage() {
 		<div className="min-h-screen bg-gray-50">
 			{/* Header */}
 
-			<div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-8 pt-25">
+			<div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
 				{/* Sidebar Filters */}
 				<aside className="lg:col-span-1 space-y-6">
 					<Card>

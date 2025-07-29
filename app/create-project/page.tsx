@@ -133,7 +133,6 @@ export default function CreateProjectPage() {
 
     if (step === 3) {
       if (formData.requiredSkills.length === 0) newErrors.requiredSkills = "Minimal pilih 1 skill yang dibutuhkan"
-      if (!formData.experience) newErrors.experience = "Level pengalaman wajib dipilih"
       if (!formData.commitment) newErrors.commitment = "Komitmen waktu wajib diisi"
     }
 
