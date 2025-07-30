@@ -64,16 +64,20 @@ export function SynergizeDialog({ project }: SynergizeDialogProps) {
           </div>
           <div className="space-y-4">
             <div>
+              <label className="block text-sm font-medium mb-2">Role apa yang ingin anda isi?</label>
+              <Textarea name="role" placeholder="Jelaskan role yang ingin anda isi..." value={applicationData.role} onChange={handleInputChange} className="min-h-[80px] resize-none"/>
+            </div>
+            <div>
               <label className="block text-sm font-medium mb-2">Mengapa Anda tertarik dengan proyek ini?</label>
-              <Textarea name="motivation" placeholder="Jelaskan motivasi dan ketertarikan Anda..." value={applicationData.motivation} onChange={handleInputChange} className="min-h-[80px]"/>
+              <Textarea name="motivation" placeholder="Jelaskan motivasi dan ketertarikan Anda..." value={applicationData.motivation} onChange={handleInputChange} className="min-h-[80px] resize-none"/>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Skill dan pengalaman relevan</label>
-              <Textarea name="skills" placeholder="Ceritakan skill dan pengalaman yang mendukung..." value={applicationData.skills} onChange={handleInputChange} className="min-h-[80px]"/>
+              <Textarea name="skills" placeholder="Ceritakan skill dan pengalaman yang mendukung..." value={applicationData.skills} onChange={handleInputChange} className="min-h-[80px] resize-none"/>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Kontribusi yang bisa Anda berikan</label>
-              <Textarea name="contribution" placeholder="Apa yang bisa Anda kontribusikan untuk proyek ini..." value={applicationData.contribution} onChange={handleInputChange} className="min-h-[80px]"/>
+              <Textarea name="contribution" placeholder="Apa yang bisa Anda kontribusikan untuk proyek ini..." value={applicationData.contribution} onChange={handleInputChange} className="min-h-[80px] resize-none"/>
             </div>
             <Button onClick={handleSendApplication} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
               <Zap className="h-4 w-4 mr-2" />

@@ -28,7 +28,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <Button size="sm" variant="secondary" className="h-8 w-8 p-0"><Share2 className="h-4 w-4" /></Button>
         </div>
       </div>
-
       {/* BAGIAN 2: KONTEN (Struktur diubah) */}
       {/* Semua konten teks sekarang ada di dalam satu div dengan padding manual */}
       <div className="flex flex-grow flex-col p-4">
