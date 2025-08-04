@@ -216,7 +216,7 @@ export default function CollaboratorsPage() {
 											}}
 										>
 											<MessageCircle className="h-4 w-4 mr-2" />
-											Message
+											Pesan
 										</Button>
 									</div>
 								</CardContent>
@@ -258,11 +258,11 @@ export default function CollaboratorsPage() {
 						</div>
 						<div className="space-y-3">
 							<div>
-								<h4 className="font-semibold text-gray-800">Bio:</h4>
+								<h4 className="font-semibold text-gray-800">Tentang:</h4>
 								<p className="text-sm text-gray-700">{selectedCollaborator.bio}</p>
 							</div>
 							<div>
-								<h4 className="font-semibold text-gray-800">Skills:</h4>
+								<h4 className="font-semibold text-gray-800">Keahlian:</h4>
 								<div className="flex flex-wrap gap-1">
 									{selectedCollaborator.skills.map((skill) => (
 										<Badge key={skill} variant="secondary">
@@ -272,13 +272,13 @@ export default function CollaboratorsPage() {
 								</div>
 							</div>
 							<div>
-								<h4 className="font-semibold text-gray-800">Experience:</h4>
+								<h4 className="font-semibold text-gray-800">Pengalaman:</h4>
 								<p className="text-sm text-gray-700">{selectedCollaborator.experience}</p>
 							</div>
 							<div>
-								<h4 className="font-semibold text-gray-800">Contact:</h4>
+								<h4 className="font-semibold text-gray-800">Kontak:</h4>
 								<p className="text-sm text-gray-700">Email: {selectedCollaborator.email}</p>
-								<p className="text-sm text-gray-700">Phone: {selectedCollaborator.phone}</p>
+								<p className="text-sm text-gray-700">Nomor HP: {selectedCollaborator.phone}</p>
 								{selectedCollaborator.portfolio && (
 									<p className="text-sm text-gray-700">
 										Portfolio:{" "}
@@ -307,16 +307,16 @@ export default function CollaboratorsPage() {
 					className="max-w-lg"
 				>
 					<div className="p-6">
-						<h2 className="text-2xl font-bold mb-4">Chat with {selectedCollaborator.name}</h2>
+						<h2 className="text-2xl font-bold mb-4">Komunikasi Dengan {selectedCollaborator.name}</h2>
 						<div className="border rounded-lg p-4 h-64 overflow-y-auto bg-gray-50 flex flex-col-reverse">
 							{/* Chat messages will go here */}
 							<div className="text-center text-gray-500 text-sm">
-								Start a conversation with {selectedCollaborator.name}
+								Mulai Komunikasi Dengan {selectedCollaborator.name}
 							</div>
 						</div>
 						<div className="flex gap-2 mt-4">
-							<Input placeholder="Type your message..." className="flex-grow" />
-							<Button>Send</Button>
+							<Input placeholder="Ketik Pesanmu..." className="flex-grow" />
+							<Button>Kirim</Button>
 						</div>
 					</div>
 				</AnimatedModal>

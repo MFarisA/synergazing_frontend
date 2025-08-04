@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { ArrowRight, Users, Briefcase, GraduationCap } from "lucide-react";
+import Link from "next/link";
 
 export function Hero() {
   return (
@@ -25,9 +26,12 @@ export function Hero() {
               Mulai Berkolaborasi
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-            <Button variant="outline" size="lg">
-              Jelajahi Proyek
-            </Button>
+            <Link href="/projects">
+              <Button variant="outline" size="lg">
+                Jelajahi Proyek
+              </Button>
+            </Link>
+            
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-500 mt-8">
             <div className="flex items-center gap-1">

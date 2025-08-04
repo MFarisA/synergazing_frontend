@@ -439,7 +439,7 @@ export default function ProfilePage() {
             {/* Social Links */}
             <Card>
               <CardHeader>
-                <CardTitle>Social Media</CardTitle>
+                <CardTitle>Media Sosial</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <a
