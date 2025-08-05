@@ -90,7 +90,7 @@ export const projectsData = {
           name: "Sari Rahayu",
           avatar: "https://mahasiswa.dinus.ac.id/images/foto/A/A11/2022/A11.2022.14148.jpg",
           major: "Desain Komunikasi Visual",
-          university: "UNPAD",
+          university: "UDINUS",
           year: "Semester 5",
           rating: 4.9,
           projects: 8,

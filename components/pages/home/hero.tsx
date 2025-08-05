@@ -1,7 +1,10 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { ArrowRight, Users, Briefcase, GraduationCap } from "lucide-react";
 import Link from "next/link";
+import { TypeAnimation } from "react-type-animation";
 
 export function Hero() {
   return (
@@ -13,9 +16,7 @@ export function Hero() {
               Platform Kolaborasi Proyek Mahasiswa
             </h1>
             <p className="mx-auto max-w-[700px] text-gray-600 md:text-xl dark:text-gray-300">
-              Temukan rekan kolaborasi yang tepat, bergabung dengan proyek
-              menarik, atau rekrut talenta terbaik untuk proyek Anda.
-              Seperti LinkedIn bertemu Facebook Marketplace untuk mahasiswa.
+            Your Next Great Team is Here. Platform eksklusif bagi mahasiswa untuk berkolaborasi, berinovasi, dan membangun portofolio. Temukan proyek, rekrut talenta, wujudkan karyamu.
             </p>
           </div>
           <div className="space-x-4">
@@ -33,19 +34,29 @@ export function Hero() {
             </Link>
             
           </div>
-          <div className="flex items-center gap-4 text-sm text-gray-500 mt-8">
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span>1000+ Mahasiswa</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Briefcase className="h-4 w-4" />
-              <span>500+ Proyek Aktif</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <GraduationCap className="h-4 w-4" />
-              <span>50+ Kampus</span>
-            </div>
+          <div className="space-y-4">
+            
+            {/* Efek Typewriting untuk Slogan dan Deskripsi */}
+            <TypeAnimation
+              sequence={[
+                "Find Your Team.",
+                1000,
+                "Find Your Team, Synergize Your Idea.",
+                2000,
+                "Temukan rekan untuk Lomba.",
+                1000,
+                "Temukan rekan untuk Proyek Kolaborasi.",
+                1000,
+                "Temukan rekan untuk Proyek Kuliah.",
+                1000,
+                "Find Your Team, Synergize Your Idea.",
+                5000,
+              ]}
+              wrapper="p"
+              speed={50}
+              className="mx-auto max-w-[700px] text-gray-600 md:text-xl h-12 md:h-auto"
+              repeat={Infinity}
+            />
           </div>
         </div>
       </div>

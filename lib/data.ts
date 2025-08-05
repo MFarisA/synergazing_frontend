@@ -31,7 +31,7 @@ export const projects = [
         name: "Sari Rahayu",
         avatar: "https://mahasiswa.dinus.ac.id/images/foto/A/A11/2022/A11.2022.14148.jpg",
         major: "Desain Komunikasi Visual",
-        university: "UNPAD",
+        university: "UDINUS",
         projects: 8,
       },
       skills: ["Design", "Marketing", "Video Editing", "Social Media", "Adobe Creative"],
