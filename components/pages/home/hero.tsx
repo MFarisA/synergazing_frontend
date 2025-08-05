@@ -45,7 +45,7 @@ export function Hero() {
                 2000,
                 "Temukan rekan untuk Lomba.",
                 1000,
-                "Temukan rekan untuk Proyek Kolaborasi.",
+                "Temukan rekan untuk Riset Penelitian.",
                 1000,
                 "Temukan rekan untuk Proyek Kuliah.",
                 1000,
