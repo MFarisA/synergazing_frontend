@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/components/ui/toast"
 import {
   Plus,
   X,
@@ -23,6 +24,7 @@ import {
   ArrowRight,
   Zap,
   Home,
+  Minus,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
@@ -35,6 +37,7 @@ const projectTypes = [
   { value: "kuliah", label: "Tugas Kuliah", description: "Proyek mata kuliah" },
   { value: "open-source", label: "Open Source", description: "Proyek open source" },
   { value: "social", label: "Social Impact", description: "Proyek dampak sosial" },
+  { value: "lainnya", label: "Lainnya", description: "Proyek Lain" },
 ]
 
 const skillOptions = [
@@ -73,6 +76,7 @@ export default function CreateProjectPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const { addToast } = useToast()
 
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
@@ -87,13 +91,23 @@ export default function CreateProjectPage() {
     endDate: "",
     location: "",
     workType: "",
-    teamSize: "",
+    teamSize: 2, // Changed from "" to 2 (number)
+    budget: "", // Added budget field
+    deadline: "", // Added deadline field
+    existingMembers: [
+      {
+        name: "",
+        email: "",
+        role: "",
+        skills: [] as string[],
+      },
+    ], // Added existing team members
 
     // Step 3: Requirements
     requiredSkills: [] as string[],
     experience: "",
     commitment: "",
-    requirements: "",
+    requirements: [] as string[], // Changed from string to string[]
 
     // Step 4: Team & Roles
     roles: [
@@ -128,7 +142,7 @@ export default function CreateProjectPage() {
       if (!formData.duration) newErrors.duration = "Durasi proyek wajib diisi"
       if (!formData.startDate) newErrors.startDate = "Tanggal mulai wajib diisi"
       if (!formData.location) newErrors.location = "Lokasi wajib dipilih"
-      if (!formData.teamSize) newErrors.teamSize = "Ukuran tim wajib diisi"
+      if (formData.teamSize < 2) newErrors.teamSize = "Ukuran tim minimal 2 orang"
     }
 
     if (step === 3) {
@@ -164,8 +178,19 @@ export default function CreateProjectPage() {
     setTimeout(() => {
       setIsLoading(false)
       console.log("Project created:", formData)
-      // Redirect to project page or projects list
-      router.push("/projects")
+      
+      // Show success toast
+      addToast({
+        title: "Proyek Berhasil Dibuat!",
+        description: "Proyek Anda telah berhasil dibuat dan siap untuk menerima kolaborator.",
+        type: "success",
+        duration: 5000
+      })
+      
+      // Redirect to project page or projects list after a short delay
+      setTimeout(() => {
+        router.push("/projects")
+      }, 1500)
     }, 2000)
   }
 
@@ -206,6 +231,44 @@ export default function CreateProjectPage() {
     }))
   }
 
+  const addExistingMember = () => {
+    setFormData((prev) => ({
+      ...prev,
+      existingMembers: [...prev.existingMembers, { name: "", email: "", role: "", skills: [] }],
+    }))
+  }
+
+  const removeExistingMember = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      existingMembers: prev.existingMembers.filter((_, i) => i !== index),
+    }))
+  }
+
+  const updateExistingMember = (index: number, field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      existingMembers: prev.existingMembers.map((member, i) => 
+        i === index ? { ...member, [field]: value } : member
+      ),
+    }))
+  }
+
+  const toggleMemberSkill = (memberIndex: number, skill: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      existingMembers: prev.existingMembers.map((member, i) => {
+        if (i === memberIndex) {
+          const newSkills = member.skills.includes(skill)
+            ? member.skills.filter((s) => s !== skill)
+            : [...member.skills, skill]
+          return { ...member, skills: newSkills }
+        }
+        return member
+      }),
+    }))
+  }
+
   const getStepTitle = () => {
     switch (currentStep) {
       case 1:
@@ -220,6 +283,16 @@ export default function CreateProjectPage() {
         return "Finalisasi"
       default:
         return "Buat Proyek"
+    }
+  }
+
+  const incrementTeamSize = () => {
+    handleInputChange("teamSize", formData.teamSize + 1)
+  }
+
+  const decrementTeamSize = () => {
+    if (formData.teamSize > 2) {
+      handleInputChange("teamSize", formData.teamSize - 1)
     }
   }
 
@@ -426,21 +499,32 @@ export default function CreateProjectPage() {
 
                             <div>
                               <label className="block text-sm font-medium mb-2">Ukuran Tim *</label>
-                              <Select
-                                value={formData.teamSize}
-                                onValueChange={(value) => handleInputChange("teamSize", value)}
-                              >
-                                <SelectTrigger className={errors.teamSize ? "border-red-500" : ""}>
-                                  <SelectValue placeholder="Jumlah anggota" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="2-3">2-3 orang</SelectItem>
-                                  <SelectItem value="4-5">4-5 orang</SelectItem>
-                                  <SelectItem value="6-8">6-8 orang</SelectItem>
-                                  <SelectItem value="9-12">9-12 orang</SelectItem>
-                                  <SelectItem value="lebih-12">Lebih dari 12 orang</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={decrementTeamSize}
+                                  disabled={formData.teamSize <= 2}
+                                  className={`h-10 w-10 ${formData.teamSize <= 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <Input
+                                  readOnly
+                                  value={`${formData.teamSize} orang`}
+                                  className={`text-center font-medium ${errors.teamSize ? "border-red-500" : ""}`}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={incrementTeamSize}
+                                  className="h-10 w-10"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
                               {errors.teamSize && (
                                 <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                                   <AlertCircle className="h-4 w-4" />
@@ -518,6 +602,25 @@ export default function CreateProjectPage() {
                             )}
                           </div>
 
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Budget Proyek (Opsional)</label>
+                              <Input
+                                type="text"
+                                placeholder="e.g. Rp 2.000.000 atau Hadiah Lomba"
+                                value={formData.budget}
+                                onChange={(e) => handleInputChange("budget", e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Deadline Pendaftaran</label>
+                              <Input
+                                type="date"
+                                value={formData.deadline}
+                                onChange={(e) => handleInputChange("deadline", e.target.value)}
+                              />
+                            </div>
+                          </div>
                         </div>
                       )}
 
@@ -589,12 +692,42 @@ export default function CreateProjectPage() {
 
                           <div>
                             <label className="block text-sm font-medium mb-2">Persyaratan Tambahan</label>
-                            <Textarea
-                              placeholder="Jelaskan persyaratan khusus, kualifikasi, atau ekspektasi lainnya..."
-                              value={formData.requirements}
-                              onChange={(e) => handleInputChange("requirements", e.target.value)}
-                              className="min-h-[100px] resize-none"
-                            />
+                            <div className="space-y-2">
+                              {formData.requirements.map((req, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <Input
+                                    placeholder={`Persyaratan #${index + 1}`}
+                                    value={req}
+                                    onChange={(e) => {
+                                      const newRequirements = [...formData.requirements];
+                                      newRequirements[index] = e.target.value;
+                                      handleInputChange("requirements", newRequirements);
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      const newRequirements = formData.requirements.filter((_, i) => i !== index);
+                                      handleInputChange("requirements", newRequirements);
+                                    }}
+                                  >
+                                    <X className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleInputChange("requirements", [...formData.requirements, ""])}
+                              className="mt-2"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Tambah Persyaratan
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -704,6 +837,96 @@ export default function CreateProjectPage() {
                               {errors.roles}
                             </p>
                           )}
+
+                          {/* Existing Members Section */}
+                          <div className="mt-8">
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-lg font-medium">Anggota Tim yang Sudah Ada</h3>
+                              <Button onClick={addExistingMember} size="sm" variant="outline">
+                                <Plus className="h-4 w-4 mr-2" />
+                                Tambah Anggota
+                              </Button>
+                            </div>
+
+                            {formData.existingMembers.length === 0 && (
+                              <p className="text-center text-sm text-gray-500 py-4">
+                                Belum ada anggota tim yang ditambahkan. Tambahkan anggota tim yang sudah ada jika perlu.
+                              </p>
+                            )}
+
+                            {formData.existingMembers.map((member, index) => (
+                              <Card key={index} className="mb-4">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h4 className="font-medium">Anggota {index + 1}</h4>
+                                    {formData.existingMembers.length > 1 && (
+                                      <Button onClick={() => removeExistingMember(index)} size="sm" variant="ghost">
+                                        <X className="h-4 w-4 text-red-500" />
+                                      </Button>
+                                    )}
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                      <label className="block text-sm font-medium mb-2">Nama</label>
+                                      <Input
+                                        placeholder="e.g. John Doe"
+                                        value={member.name}
+                                        onChange={(e) => updateExistingMember(index, "name", e.target.value)}
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium mb-2">Email</label>
+                                      <Input
+                                        type="email"
+                                        placeholder="e.g. john.doe@example.com"
+                                        value={member.email}
+                                        onChange={(e) => updateExistingMember(index, "email", e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="mb-4">
+                                    <label className="block text-sm font-medium mb-2">Role</label>
+                                    <Input
+                                      placeholder="e.g. Backend Developer"
+                                      value={member.role}
+                                      onChange={(e) => updateExistingMember(index, "role", e.target.value)}
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-sm font-medium mb-2">Skills</label>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-32 overflow-y-auto border rounded-lg p-3">
+                                      {skillOptions.map((skill) => (
+                                        <div key={skill} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`member-${index}-${skill}`}
+                                            checked={member.skills.includes(skill)}
+                                            onCheckedChange={(checked) => {
+                                              toggleMemberSkill(index, skill)
+                                            }}
+                                          />
+                                          <label htmlFor={`member-${index}-${skill}`} className="text-xs">
+                                            {skill}
+                                          </label>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    {member.skills.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-2">
+                                        {member.skills.map((skill) => (
+                                          <Badge key={skill} variant="secondary" className="text-xs">
+                                            {skill}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
                         </div>
                       )}
 
