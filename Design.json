@@ -1,0 +1,211 @@
+{
+    "designSystem": {
+      "name": "Modern SaaS/Web App Design System",
+      "version": "1.0.0",
+      "description": "A comprehensive design system derived from visual analysis of provided web interfaces. It features a clean, spacious aesthetic with a modern color palette, sans-serif typography, and well-defined, reusable components.",
+      "colors": {
+        "palette": {
+          "primary": {
+            "main": "#5932EA",
+            "description": "A vibrant purple used for primary calls-to-action, links, and accents."
+          },
+          "secondary": {
+            "main": "#D4F8E9",
+            "description": "A light mint green, often used as a background for highlighted sections or secondary elements."
+          },
+          "accent": {
+            "main": "#4ADE80",
+            "description": "A bright green, used for success states or tertiary highlights."
+          },
+          "text": {
+            "primary": "#1A202C",
+            "secondary": "#4A5568",
+            "onPrimary": "#FFFFFF",
+            "onSecondary": "#1A202C"
+          },
+          "background": {
+            "default": "#FFFFFF",
+            "subtle": "#F7FAFC",
+            "dark": "#111111"
+          },
+          "border": {
+            "default": "#E2E8F0"
+          },
+          "gradient": {
+            "primary": "linear-gradient(120deg, #6D28D9, #4F46E5)"
+          }
+        }
+      },
+      "typography": {
+        "fontFamily": {
+          "sans": "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+          "description": "A clean, modern, and highly readable sans-serif font is used throughout."
+        },
+        "baseFontSize": "16px",
+        "styles": {
+          "h1": {
+            "fontSize": "clamp(2.5rem, 5vw, 4rem)",
+            "fontWeight": 700,
+            "lineHeight": 1.2
+          },
+          "h2": {
+            "fontSize": "clamp(2rem, 4vw, 3rem)",
+            "fontWeight": 700,
+            "lineHeight": 1.2
+          },
+          "h3": {
+            "fontSize": "1.5rem",
+            "fontWeight": 600,
+            "lineHeight": 1.4
+          },
+          "body": {
+            "fontSize": "1rem",
+            "fontWeight": 400,
+            "lineHeight": 1.6
+          },
+          "caption": {
+            "fontSize": "0.875rem",
+            "fontWeight": 400,
+            "color": "colors.text.secondary"
+          },
+          "link": {
+            "color": "colors.palette.primary.main",
+            "textDecoration": "none",
+            "hover": {
+              "textDecoration": "underline"
+            }
+          }
+        }
+      },
+      "spacing": {
+        "baseUnit": "4px",
+        "scale": {
+          "xs": "8px",
+          "sm": "16px",
+          "md": "24px",
+          "lg": "32px",
+          "xl": "48px",
+          "xxl": "64px",
+          "section": "clamp(48px, 10vw, 120px)"
+        }
+      },
+      "layout": {
+        "container": {
+          "maxWidth": "1280px",
+          "padding": "0 24px"
+        },
+        "gridGap": "24px"
+      },
+      "effects": {
+        "borderRadius": {
+          "sm": "4px",
+          "md": "8px",
+          "lg": "16px",
+          "full": "9999px"
+        },
+        "boxShadow": {
+          "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+          "md": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          "lg": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
+        }
+      },
+      "iconography": {
+        "style": "Minimalist Line Icons",
+        "size": "24px",
+        "strokeWidth": "1.5px"
+      },
+      "components": {
+        "button": {
+          "base": {
+            "padding": "12px 24px",
+            "borderRadius": "effects.borderRadius.md",
+            "fontWeight": 600,
+            "fontSize": "typography.styles.body.fontSize",
+            "transition": "all 0.2s ease-in-out"
+          },
+          "variants": {
+            "primary": {
+              "backgroundColor": "colors.palette.primary.main",
+              "color": "colors.text.onPrimary",
+              "hover": {
+                "opacity": 0.9
+              }
+            },
+            "secondary": {
+              "backgroundColor": "transparent",
+              "color": "colors.text.primary",
+              "border": "1px solid colors.border.default",
+              "hover": {
+                "backgroundColor": "colors.background.subtle"
+              }
+            },
+            "tertiary": {
+              "backgroundColor": "transparent",
+              "color": "colors.text.primary",
+              "border": "none",
+              "hover": {
+                "backgroundColor": "colors.background.subtle"
+              }
+            }
+          }
+        },
+        "card": {
+          "backgroundColor": "colors.background.default",
+          "borderRadius": "effects.borderRadius.lg",
+          "padding": "spacing.lg",
+          "boxShadow": "effects.boxShadow.md",
+          "border": "1px solid colors.border.default"
+        },
+        "accordion": {
+          "item": {
+            "borderBottom": "1px solid colors.border.default"
+          },
+          "trigger": {
+            "display": "flex",
+            "justifyContent": "space-between",
+            "alignItems": "center",
+            "width": "100%",
+            "padding": "spacing.md 0",
+            "fontWeight": 600,
+            "cursor": "pointer",
+            "icon": "Plus/Minus icon, rotates on open"
+          },
+          "content": {
+            "paddingBottom": "spacing.md",
+            "color": "colors.text.secondary"
+          }
+        },
+        "inputField": {
+          "backgroundColor": "colors.background.default",
+          "border": "1px solid colors.border.default",
+          "borderRadius": "effects.borderRadius.md",
+          "padding": "10px 14px",
+          "fontSize": "typography.styles.body.fontSize",
+          "focus": {
+            "borderColor": "colors.palette.primary.main",
+            "boxShadow": "0 0 0 2px rgba(89, 50, 234, 0.2)"
+          }
+        },
+        "navBar": {
+          "height": "80px",
+          "padding": "0 spacing.md",
+          "backgroundColor": "rgba(255, 255, 255, 0.8)",
+          "backdropFilter": "saturate(180%) blur(5px)",
+          "borderBottom": "1px solid colors.border.default",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between"
+        },
+        "footer": {
+          "padding": "spacing.xl spacing.md",
+          "backgroundColor": "colors.background.subtle",
+          "borderTop": "1px solid colors.border.default",
+          "color": "colors.text.secondary"
+        },
+        "illustrations": {
+          "style": "Modern flat/outline characters with textured, abstract shapes. Uses the core color palette.",
+          "description": "Used to visually represent features and concepts, adding personality to the interface."
+        }
+      }
+    }
+  }

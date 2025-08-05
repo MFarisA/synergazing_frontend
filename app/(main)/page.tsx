@@ -11,7 +11,7 @@ export default function HomePage() {
       <main className="flex-1">
         <Hero />
         <Features />
-        <ProjectShowcase />
+        {/* <ProjectShowcase /> */}
         <HowItWorks />
         <Cta />
       </main>

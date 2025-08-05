@@ -216,7 +216,7 @@ export default function CollaboratorsPage() {
 											}}
 										>
 											<MessageCircle className="h-4 w-4 mr-2" />
-											Pesan
+											Hubungi
 										</Button>
 									</div>
 								</CardContent>

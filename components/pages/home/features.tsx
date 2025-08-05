@@ -2,29 +2,33 @@ import { Users, Search, Target, MessageCircle } from "lucide-react";
 
 const featuresData = [
   {
-    title: "Profil Komprehensif",
-    description: "Buat profil detail dengan skills, pengalaman, dan portofolio proyek seperti LinkedIn.",
+    // Fitur baru yang menggantikan portofolio, menekankan fungsi sebagai pusat kolaborasi.
+    title: "Pusat Kolaborasi Mahasiswa",
+    description: "Wadah terpusat yang berfungsi sebagai titik temu bagi mahasiswa dari seluruh latar belakang keahlian untuk berkolaborasi, menemukan proyek, dan membangun tim impian.",
     icon: <Users className="h-8 w-8 text-blue-400" />,
     imgSrc:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
-    title: "Eksplorasi Proyek",
-    description: "Jelajahi proyek dengan mudah seperti marketplace, dengan filter canggih dan pencarian.",
+    // 'Marketplace Proyek' diubah menjadi 'Galeri Proyek'
+    title: "Galeri Proyek",
+    description: "Jelajahi berbagai proyek yang dipublikasikan oleh mahasiswa lain, temukan peluang yang sesuai dengan minat dan keahlian Anda melalui filter pencarian yang canggih.",
     icon: <Search className="h-8 w-8 text-purple-400" />,
     imgSrc:
       "https://images.unsplash.com/photo-1505506874110-6a7a69069a08?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
-    title: "Manajemen Proyek",
-    description: "Kelola tim dan progres dengan Kanban board, rekrut anggota, dan track milestone.",
+    // 'Marketplace Talenta' diubah menjadi 'Direktori Talenta'
+    title: "Kolaborator Talenta",
+    description: "Temukan rekan tim secara proaktif dari berbagai universitas berdasarkan keahlian, lokasi, dan kesiapan berkolaborasi untuk meruntuhkan batasan antar jurusan.",
     icon: <Target className="h-8 w-8 text-green-400" />,
     imgSrc:
       "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
-    title: "Komunikasi Langsung",
-    description: "Sistem pesan internal untuk diskusi proyek dan koordinasi tim yang efektif.",
+    // Deskripsi disesuaikan agar lebih fokus pada proses lamaran dan komunikasi.
+    title: "Mekanisme Kolaborasi Efektif",
+    description: "Ajukan diri ke proyek dengan mudah melalui fitur 'Synergize It!' dan berkoordinasi langsung dengan pemilik proyek melalui fitur pesan terintegrasi yang efektif.",
     icon: <MessageCircle className="h-8 w-8 text-orange-400" />,
     imgSrc:
       "https://images.unsplash.com/photo-1573495627361-d9b87960b12d?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
