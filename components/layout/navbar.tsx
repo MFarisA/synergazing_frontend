@@ -110,7 +110,7 @@ export default function Navbar({ className }: { className?: string }) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white" asChild>
+        <Button size="sm" className="bg-primary text-white" asChild>
           <Link href="/login">Masuk</Link>
         </Button>
       </nav>

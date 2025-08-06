@@ -79,9 +79,9 @@ export function SynergizeDialog({ project }: SynergizeDialogProps) {
               <label className="block text-sm font-medium mb-2">Kontribusi yang bisa Anda berikan</label>
               <Textarea name="contribution" placeholder="Apa yang bisa Anda kontribusikan untuk proyek ini..." value={applicationData.contribution} onChange={handleInputChange} className="min-h-[80px] resize-none"/>
             </div>
-            <Button onClick={handleSendApplication} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={handleSendApplication} className="w-full bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] hover:brightness-90 text-white">
               <Zap className="h-4 w-4 mr-2" />
-              Kirim Aplikasi
+              Synergize It!
             </Button>
           </div>
         </div>

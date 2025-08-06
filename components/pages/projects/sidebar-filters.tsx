@@ -47,7 +47,7 @@ export function SidebarFilters({
     <aside className="w-full lg:w-80 space-y-6 flex-shrink-0">
       <Link href="/create-project" className="block">
         {/* PERUBAHAN DILAKUKAN DI SINI */}
-        <Button className="w-full bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white h-12 text-base font-medium transition-all hover:brightness-90">
+        <Button className="w-full bg-primary text-white h-12 text-base font-medium transition-all hover:brightness-90">
           <Plus className="h-5 w-5 mr-2" />
           Buat Proyek Baru
         </Button>
