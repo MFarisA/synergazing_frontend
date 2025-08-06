@@ -13,7 +13,7 @@ export default function HomePage() {
         <Features />
         {/* <ProjectShowcase /> */}
         <HowItWorks />
-        <Cta />
+        {/* <Cta /> */}
       </main>
       <PageFooter />
     </div>
