@@ -101,7 +101,7 @@ export function ProjectShowcase() {
                     <span>{project.members}</span>
                   </div>
                 </div>
-                <Button className="w-full bg-gradient-to-r from-[#0088FF] to-[#CB30E0]">
+                <Button className="w-full bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]">
                   Synergize It!
                 </Button>
               </CardContent>

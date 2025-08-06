@@ -39,7 +39,7 @@ export function SynergizeDialog({ project }: SynergizeDialogProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="sm" className="flex-1 bg-gradient-to-r from-[#0088FF] to-[#CB30E0] hover:brightness-90">
+        <Button size="sm" className="flex-1 bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] hover:brightness-90">
           <Zap className="h-4 w-4 mr-2" />
           Synergize It!
         </Button>

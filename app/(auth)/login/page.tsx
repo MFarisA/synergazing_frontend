@@ -162,7 +162,7 @@ export default function LoginPage() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-[#0088FF] to-[#CB30E0] hover:from-blue-700 hover:to-purple-700"
+                  className="w-full bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] hover:from-blue-700 hover:to-purple-700"
                   disabled={isLoading}
                 >
                   {isLoading ? (

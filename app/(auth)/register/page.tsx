@@ -215,7 +215,7 @@ export default function RegisterPage() {
                 key={step}
                 className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
                   step <= currentStep
-                    ? "bg-gradient-to-r from-[#0088FF] to-[#CB30E0] text-white"
+                    ? "bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white"
                     : "bg-gray-200 text-gray-500"
                 }`}
               >
@@ -351,7 +351,7 @@ export default function RegisterPage() {
                     )}
                   </div>
 
-                  <Button onClick={handleNext} className="w-full bg-gradient-to-r from-[#0088FF] to-[#CB30E0]">
+                  <Button onClick={handleNext} className="w-full bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]">
                     Lanjutkan
                   </Button>
                 </div>
@@ -440,7 +440,7 @@ export default function RegisterPage() {
                     <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1 bg-transparent">
                       Kembali
                     </Button>
-                    <Button onClick={handleNext} className="flex-1 bg-gradient-to-r from-[#0088FF] to-[#CB30E0]">
+                    <Button onClick={handleNext} className="flex-1 bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]">
                       Lanjutkan
                     </Button>
                   </div>
@@ -519,7 +519,7 @@ export default function RegisterPage() {
                     </Button>
                     <Button
                       type="submit"
-                      className="flex-1 bg-gradient-to-r from-[#0088FF] to-[#CB30E0]"
+                      className="flex-1 bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]"
                       disabled={isLoading}
                     >
                       {isLoading ? (
