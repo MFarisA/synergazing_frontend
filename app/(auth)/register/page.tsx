@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Zap, Mail, Lock, Eye, EyeOff, Github, Chrome, ArrowLeft, AlertCircle, CheckCircle, User } from "lucide-react"
+import { Zap, Mail, Lock, Eye, EyeOff, Chrome, ArrowLeft, AlertCircle, CheckCircle, User } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 
@@ -547,14 +547,10 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3">
                     <Button variant="outline" onClick={() => handleSocialRegister("google")} className="bg-transparent">
                       <Chrome className="h-4 w-4 mr-2" />
                       Google
-                    </Button>
-                    <Button variant="outline" onClick={() => handleSocialRegister("github")} className="bg-transparent">
-                      <Github className="h-4 w-4 mr-2" />
-                      GitHub
                     </Button>
                   </div>
                 </>

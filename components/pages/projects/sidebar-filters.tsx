@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
-import { Separator } from "@/components/ui/separator"; // <-- Import Separator
+import { Separator } from "@/components/ui/separator";
 
-// Interface props tidak berubah
 interface SidebarFiltersProps {
   searchQuery: string;
   setSearchQuery: (value: string) => void;
@@ -35,11 +34,9 @@ export function SidebarFilters({
   selectedSkills,
   handleSkillToggle,
 }: SidebarFiltersProps) {
-  // Cek apakah filter utama sedang aktif
   const areMainFiltersActive =
     searchQuery !== "" || selectedType !== "all" || selectedLocation !== "all";
 
-  // Fungsi untuk membersihkan filter utama
   const clearMainFilters = () => {
     setSearchQuery("");
     setSelectedType("all");
@@ -48,15 +45,14 @@ export function SidebarFilters({
 
   return (
     <aside className="w-full lg:w-80 space-y-6 flex-shrink-0">
-      {/* Tombol Buat Proyek Baru */}
       <Link href="/create-project" className="block">
-        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-base font-medium">
+        {/* PERUBAHAN DILAKUKAN DI SINI */}
+        <Button className="w-full bg-gradient-to-r from-[#0088FF] to-[#CB30E0] text-white h-12 text-base font-medium transition-all hover:brightness-90">
           <Plus className="h-5 w-5 mr-2" />
           Buat Proyek Baru
         </Button>
       </Link>
 
-      {/* Card untuk Search dan Filter Utama */}
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="relative">
@@ -93,7 +89,6 @@ export function SidebarFilters({
             </SelectContent>
           </Select>
 
-          {/* === TOMBOL CLEAR BARU === */}
           {areMainFiltersActive && (
             <>
               <Separator className="my-2" />
@@ -107,12 +102,10 @@ export function SidebarFilters({
               </Button>
             </>
           )}
-          {/* ======================= */}
 
         </CardContent>
       </Card>
 
-      {/* Card untuk Filter Skill */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Filter berdasarkan Skill</CardTitle>
