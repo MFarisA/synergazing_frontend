@@ -145,7 +145,7 @@ export default function RecruiterDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-40 shadow-sm">
         <div className="container mx-auto px-4 py-4">
