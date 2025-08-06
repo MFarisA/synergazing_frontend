@@ -7,10 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { MapPin, MessageCircle, Search, Zap } from "lucide-react"
+import { MapPin, MessageCircle, Search } from "lucide-react"
 import Link from "next/link"
-import { AnimatedModal } from "@/components/ui/animated-modal" // Using the existing AnimatedModal
+import { AnimatedModal } from "@/components/ui/animated-modal"
 
 // Mock data for collaborators
 const collaboratorsData = [
@@ -89,7 +88,6 @@ const collaboratorsData = [
 export default function CollaboratorsPage() {
 	const [searchTerm, setSearchTerm] = useState("")
 	const [selectedSkills, setSelectedSkills] = useState<string[]>([])
-	const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 	const [isMessageModalOpen, setIsMessageModalOpen] = useState(false)
 	const [selectedCollaborator, setSelectedCollaborator] = useState<(typeof collaboratorsData)[0] | null>(null)
 
@@ -197,16 +195,18 @@ export default function CollaboratorsPage() {
 									</div>
 									<p className="text-sm text-gray-700 mb-4 line-clamp-3">{collaborator.bio}</p>
 									<div className="flex gap-2 w-full mt-auto">
-										<Button
-											variant="default"
-											className="flex-1"
-											onClick={() => {
-												setSelectedCollaborator(collaborator)
-												setIsDetailModalOpen(true)
-											}}
-										>
-											Detail User
-										</Button>
+										<Link href={`/profile/${collaborator.id}`} passHref>
+											<Button
+												variant="default"
+												className="flex-1"
+												onClick={() => {
+													setSelectedCollaborator(collaborator)
+													// Navigate to profile page instead of opening modal
+												}}
+											>
+												Detail User
+											</Button>
+										</Link>
 										<Button
 											variant="outline"
 											className="flex-1 bg-transparent"
@@ -230,73 +230,6 @@ export default function CollaboratorsPage() {
 					</div>
 				</main>
 			</div>
-
-			{/* Collaborator Detail Modal */}
-			{selectedCollaborator && (
-				<AnimatedModal
-					isOpen={isDetailModalOpen}
-					onClose={() => setIsDetailModalOpen(false)}
-					showCloseButton={true}
-					className="max-w-md"
-				>
-					<div className="p-6">
-						<h2 className="text-2xl font-bold mb-2">{selectedCollaborator.name}</h2>
-						<p className="text-md text-gray-600 mb-4">{selectedCollaborator.title}</p>
-						<div className="flex flex-col items-center text-center mb-4">
-							<Avatar className="h-24 w-24 mb-4">
-								<AvatarImage src={selectedCollaborator.avatar || "/placeholder.svg"} alt={selectedCollaborator.name} />
-								<AvatarFallback className="text-3xl">
-									{selectedCollaborator.name
-										.split(" ")
-										.map((n) => n[0])
-										.join("")}
-								</AvatarFallback>
-							</Avatar>
-							<p className="text-sm text-gray-500 flex items-center gap-1">
-								<MapPin className="h-4 w-4" /> {selectedCollaborator.location}
-							</p>
-						</div>
-						<div className="space-y-3">
-							<div>
-								<h4 className="font-semibold text-gray-800">Tentang:</h4>
-								<p className="text-sm text-gray-700">{selectedCollaborator.bio}</p>
-							</div>
-							<div>
-								<h4 className="font-semibold text-gray-800">Keahlian:</h4>
-								<div className="flex flex-wrap gap-1">
-									{selectedCollaborator.skills.map((skill) => (
-										<Badge key={skill} variant="secondary">
-											{skill}
-										</Badge>
-									))}
-								</div>
-							</div>
-							<div>
-								<h4 className="font-semibold text-gray-800">Pengalaman:</h4>
-								<p className="text-sm text-gray-700">{selectedCollaborator.experience}</p>
-							</div>
-							<div>
-								<h4 className="font-semibold text-gray-800">Kontak:</h4>
-								<p className="text-sm text-gray-700">Email: {selectedCollaborator.email}</p>
-								<p className="text-sm text-gray-700">Nomor HP: {selectedCollaborator.phone}</p>
-								{selectedCollaborator.portfolio && (
-									<p className="text-sm text-gray-700">
-										Portfolio:{" "}
-										<a
-											href={selectedCollaborator.portfolio}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="text-blue-600 hover:underline"
-										>
-											{selectedCollaborator.portfolio}
-										</a>
-									</p>
-								)}
-							</div>
-						</div>
-					</div>
-				</AnimatedModal>
-			)}
 
 			{/* Message Modal */}
 			{selectedCollaborator && (

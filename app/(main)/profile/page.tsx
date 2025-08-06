@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Mail, Phone, MapPin, Briefcase, GraduationCap, LinkIcon, Edit, Users, MessageCircle, Plus, Eye, Download, FileText, Upload, File, Camera, Github, Linkedin, Instagram } from 'lucide-react'
 import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 // Mock data for projects (copied from app/recruiter-dashboard/page.tsx for consistency)
 const allProjectsData = [
@@ -115,6 +115,9 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("overview")
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isSkillDialogOpen, setIsSkillDialogOpen] = useState(false)
+  const [skillToEdit, setSkillToEdit] = useState<{ name: string; level: number; category: string } | null>(null)
+  const [newSkill, setNewSkill] = useState({ name: "", level: 75, category: "" })
   const [editData, setEditData] = useState({
     bio: userData.bio,
     title: userData.title,
@@ -158,6 +161,36 @@ export default function ProfilePage() {
     // You would update the userData here with the new values
   }
 
+  const handleAddSkill = () => {
+    // In a real app, this would make an API call to add the skill
+    console.log("Adding skill:", newSkill);
+    // Reset form
+    setNewSkill({ name: "", level: 75, category: "" });
+    setIsSkillDialogOpen(false);
+    // In a real app, you would update the userData.skills array
+  }
+
+  const handleEditSkill = (skill: { name: string; level: number; category: string }) => {
+    setSkillToEdit(skill);
+    setNewSkill({ ...skill });
+    setIsSkillDialogOpen(true);
+  }
+
+  const handleUpdateSkill = () => {
+    // In a real app, this would make an API call to update the skill
+    console.log("Updating skill:", newSkill);
+    setSkillToEdit(null);
+    setNewSkill({ name: "", level: 75, category: "" });
+    setIsSkillDialogOpen(false);
+    // In a real app, you would update the userData.skills array
+  }
+
+  const handleDeleteSkill = (skillName: string) => {
+    // In a real app, this would make an API call to delete the skill
+    console.log("Deleting skill:", skillName);
+    // In a real app, you would update the userData.skills array
+  }
+  
   const skillCategories = [
     "All",
     "Programming",
@@ -213,7 +246,7 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-center sm:justify-start gap-4 mt-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <GraduationCap className="h-4 w-4" />
-                        <span>{editData.university}</span>
+                        <span>{editData.university} • {editData.major}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <MapPin className="h-4 w-4" />
@@ -224,10 +257,26 @@ export default function ProfilePage() {
 
                   {/* Edit Button Section */}
                   <div className="w-full sm:w-auto">
-                    <Button onClick={() => setIsEditing(true)} className="w-full sm:w-auto">
-                      <Edit className="h-4 w-4 mr-2" /> Edit Profil
-                    </Button>
+                    <Link href="/profile/edit">
+                      <Button className="w-full sm:w-auto">
+                        <Edit className="h-4 w-4 mr-2" /> Edit Profil
+                      </Button>
+                    </Link>
                   </div>
+                </div>
+
+                {/* Ready to Synergize Toggle */}
+                <div className="flex items-center justify-between p-3 mt-4 bg-blue-50 border border-blue-100 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-sm">Siap untuk Kolaborasi (#ReadyToSynergize)</h4>
+                    <p className="text-xs text-gray-500">
+                      Tampilkan profil Anda apakah bersedia menjadi kolaborator.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={editData.isReadyForCollaboration}
+                    onCheckedChange={(checked) => setEditData({ ...editData, isReadyForCollaboration: checked })}
+                  />
                 </div>
 
                 {/* Stats Section */}
@@ -312,8 +361,21 @@ export default function ProfilePage() {
 
                 {/* Skills */}
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Skills & Keahlian</CardTitle>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setSkillToEdit(null);
+                        setNewSkill({ name: "", level: 75, category: "" });
+                        setIsSkillDialogOpen(true);
+                      }}
+                      className="h-8 px-2 lg:px-3"
+                    >
+                      <Plus className="h-4 w-4 mr-0 lg:mr-2" />
+                      <span className="hidden lg:inline">Tambah Skill</span>
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     {/* Skill Categories */}
@@ -331,16 +393,96 @@ export default function ProfilePage() {
                       ))}
                     </div>
 
-                    {/* Skills as badges */}
+                    {/* Skills as badges with edit option */}
                     <div className="flex flex-wrap gap-2">
-                      {filteredSkills.map((skill) => (
-                        <Badge key={skill.name} variant="secondary" className="py-2 px-3">
-                          {skill.name}
-                        </Badge>
-                      ))}
+                      {filteredSkills.length === 0 ? (
+                        <p className="text-gray-500 text-sm py-2">
+                          Tidak ada skill yang ditampilkan untuk kategori ini.
+                        </p>
+                      ) : (
+                        filteredSkills.map((skill) => (
+                          <div key={skill.name} className="relative group">
+                            <Badge 
+                              variant="secondary" 
+                              className="p-2"
+                            >
+                              {skill.name}
+                              <button 
+                                onClick={() => handleEditSkill(skill)}
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Edit className="h-3 w-3 text-gray-500 hover:text-gray-700" />
+                              </button>
+                            </Badge>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </CardContent>
                 </Card>
+                
+                {/* Other cards in overview tab... */}
+                
+                {/* Skill Add/Edit Dialog */}
+                <Dialog open={isSkillDialogOpen} onOpenChange={setIsSkillDialogOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>{skillToEdit ? 'Edit Skill' : 'Tambah Skill Baru'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Nama Skill</label>
+                        <Input 
+                          value={newSkill.name} 
+                          onChange={(e) => setNewSkill({...newSkill, name: e.target.value})}
+                          placeholder="contoh: React, Python, UI/UX Design"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Kategori</label>
+                        <Input 
+                          value={newSkill.category} 
+                          onChange={(e) => setNewSkill({...newSkill, category: e.target.value})}
+                          placeholder="contoh: Programming, Frontend, Database"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Pilih kategori yang sesuai untuk mengelompokkan skill Anda
+                        </p>
+                      </div>
+                      
+                    </div>
+                    <DialogFooter className="flex gap-2 sm:justify-between">
+                      {skillToEdit && (
+                        <Button 
+                          variant="destructive" 
+                          type="button"
+                          onClick={() => {
+                            handleDeleteSkill(skillToEdit.name);
+                            setIsSkillDialogOpen(false);
+                          }}
+                        >
+                          Hapus
+                        </Button>
+                      )}
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setIsSkillDialogOpen(false)}
+                        >
+                          Batal
+                        </Button>
+                        <Button 
+                          type="button"
+                          onClick={skillToEdit ? handleUpdateSkill : handleAddSkill}
+                        >
+                          {skillToEdit ? 'Simpan Perubahan' : 'Tambah Skill'}
+                        </Button>
+                      </div>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </TabsContent>
 
               <TabsContent value="projects" className="space-y-6">
@@ -487,13 +629,6 @@ export default function ProfilePage() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>CV / Resume</span>
-                  <label
-                    htmlFor="cv-upload"
-                    className="cursor-pointer rounded-md bg-blue-50 p-1 hover:bg-blue-100 transition-colors"
-                  >
-                    <Upload className="h-4 w-4 text-blue-600" />
-                  </label>
-                  <input id="cv-upload" type="file" accept=".pdf" className="hidden" onChange={handleCvUpload} />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -581,24 +716,15 @@ export default function ProfilePage() {
                     placeholder="e.g. Universitas Dian Nuswantoro"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Jurusan</label>
-                    <Input
-                      value={editData.major}
-                      onChange={(e) => setEditData({ ...editData, major: e.target.value })}
-                      placeholder="e.g. Teknik Informatika"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Semester/Tahun</label>
-                    <Input
-                      value={editData.year}
-                      onChange={(e) => setEditData({ ...editData, year: e.target.value })}
-                      placeholder="e.g. Semester 7"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Jurusan</label>
+                  <Input
+                    value={editData.major}
+                    onChange={(e) => setEditData({ ...editData, major: e.target.value })}
+                    placeholder="e.g. Teknik Informatika"
+                  />
                 </div>
+                
                 <div>
                   <label className="block text-sm font-medium mb-2">Tentang Saya</label>
                   <Textarea
@@ -704,21 +830,6 @@ export default function ProfilePage() {
                     />
                   </div>
                 </div>
-              </div>
-
-              {/* Ready for Collaboration Switch */}
-              <div className="flex items-center justify-between p-3 border rounded-md">
-                <label htmlFor="ready-for-collab" className="text-sm font-medium">
-                  Siap untuk Kolaborasi (#ReadyToSynergize)
-                  <p className="text-xs text-gray-500 mt-1">
-                    Tampilkan profil Anda apakah bersedia menjadi kolaborator.
-                  </p>
-                </label>
-                <Switch
-                  id="ready-for-collab"
-                  checked={editData.isReadyForCollaboration}
-                  onCheckedChange={(checked) => setEditData({ ...editData, isReadyForCollaboration: checked })}
-                />
               </div>
 
               <div className="flex gap-3 pt-4">
