@@ -97,8 +97,8 @@ export default function CreateProjectPage() {
     existingMembers: [
       {
         name: "",
-        email: "",
         role: "",
+        description: "", // Add description field
         skills: [] as string[],
       },
     ], // Added existing team members
@@ -120,10 +120,11 @@ export default function CreateProjectPage() {
     ],
 
     // Step 5: Additional Info
-    benefits: "",
-    timeline: "",
-    allowRemote: false,
-    provideMentoring: false,
+    benefits: [] as string[], // Changed from string to string[]
+    timelineSteps: [] as { 
+      title: string;
+      status: "not-started" | "in-progress" | "done";
+    }[],
     tags: [] as string[],
   })
 
@@ -141,11 +142,12 @@ export default function CreateProjectPage() {
       if (!formData.duration) newErrors.duration = "Durasi proyek wajib diisi"
       if (!formData.startDate) newErrors.startDate = "Tanggal mulai wajib diisi"
       if (!formData.location) newErrors.location = "Lokasi wajib dipilih"
+      if (!formData.deadline) newErrors.deadline = "Deadline wajib diisi"
       if (formData.teamSize < 2) newErrors.teamSize = "Ukuran tim minimal 2 orang"
     }
 
     if (step === 3) {
-      if (formData.requiredSkills.length === 0) newErrors.requiredSkills = "Minimal pilih 1 skill yang dibutuhkan"
+      if (formData.requiredSkills.length === 0) newErrors.requiredSkills = "Minimal tambahkan 1 skill atau tag untuk proyek ini"
       if (!formData.commitment) newErrors.commitment = "Komitmen waktu wajib diisi"
     }
 
@@ -200,6 +202,23 @@ export default function CreateProjectPage() {
     }
   }
 
+  // Add these new functions for skills/tags
+  const addSkill = (skill: string) => {
+    if (skill.trim() && !formData.requiredSkills.includes(skill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        requiredSkills: [...prev.requiredSkills, skill.trim()]
+      }));
+    }
+  }
+
+  const removeSkill = (skill: string) => {
+    setFormData(prev => ({
+      ...prev,
+      requiredSkills: prev.requiredSkills.filter(s => s !== skill)
+    }));
+  }
+
   const addRole = () => {
     setFormData((prev) => ({
       ...prev,
@@ -221,6 +240,56 @@ export default function CreateProjectPage() {
     }))
   }
 
+  // Add these new functions for managing role skills
+  const addRoleSkill = (roleIndex: number, skill: string) => {
+    if (skill.trim() && !formData.roles[roleIndex].skills.includes(skill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        roles: prev.roles.map((role, i) => 
+          i === roleIndex 
+            ? { ...role, skills: [...role.skills, skill.trim()] }
+            : role
+        )
+      }));
+    }
+  }
+
+  const removeRoleSkill = (roleIndex: number, skill: string) => {
+    setFormData(prev => ({
+      ...prev,
+      roles: prev.roles.map((role, i) => 
+        i === roleIndex 
+          ? { ...role, skills: role.skills.filter(s => s !== skill) }
+          : role
+      )
+    }));
+  }
+
+  // Add these new functions for managing member skills
+  const addMemberSkill = (memberIndex: number, skill: string) => {
+    if (skill.trim() && !formData.existingMembers[memberIndex].skills.includes(skill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        existingMembers: prev.existingMembers.map((member, i) => 
+          i === memberIndex 
+            ? { ...member, skills: [...member.skills, skill.trim()] }
+            : member
+        )
+      }));
+    }
+  }
+
+  const removeMemberSkill = (memberIndex: number, skill: string) => {
+    setFormData(prev => ({
+      ...prev,
+      existingMembers: prev.existingMembers.map((member, i) => 
+        i === memberIndex 
+          ? { ...member, skills: member.skills.filter(s => s !== skill) }
+          : member
+      )
+    }));
+  }
+  
   const toggleSkill = (skill: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -233,7 +302,7 @@ export default function CreateProjectPage() {
   const addExistingMember = () => {
     setFormData((prev) => ({
       ...prev,
-      existingMembers: [...prev.existingMembers, { name: "", email: "", role: "", skills: [] }],
+      existingMembers: [...prev.existingMembers, { name: "", role: "", description: "", skills: [] }],
     }))
   }
 
@@ -250,6 +319,33 @@ export default function CreateProjectPage() {
       existingMembers: prev.existingMembers.map((member, i) => 
         i === index ? { ...member, [field]: value } : member
       ),
+    }))
+  }
+
+  // Add these functions for timeline steps management
+  const addTimelineStep = () => {
+    setFormData((prev) => ({
+      ...prev,
+      timelineSteps: [
+        ...prev.timelineSteps,
+        { title: "", description: "", status: "not-started" as const }
+      ],
+    }))
+  }
+
+  const removeTimelineStep = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      timelineSteps: prev.timelineSteps.filter((_, i) => i !== index),
+    }))
+  }
+
+  const updateTimelineStep = (index: number, field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      timelineSteps: prev.timelineSteps.map((step, i) => (
+        i === index ? { ...step, [field]: value } : step
+      )),
     }))
   }
 
@@ -561,38 +657,22 @@ export default function CreateProjectPage() {
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium mb-2">Lokasi & Tipe Kerja *</label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <Select
-                                value={formData.location}
-                                onValueChange={(value) => handleInputChange("location", value)}
-                              >
-                                <SelectTrigger className={errors.location ? "border-red-500" : ""}>
-                                  <SelectValue placeholder="Pilih lokasi" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {locationOptions.map((location) => (
-                                    <SelectItem key={location} value={location}>
-                                      {location}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-
-                              <Select
-                                value={formData.workType}
-                                onValueChange={(value) => handleInputChange("workType", value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Tipe kerja" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="remote">Full Remote</SelectItem>
-                                  <SelectItem value="onsite">On-site</SelectItem>
-                                  <SelectItem value="hybrid">Hybrid</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            <label className="block text-sm font-medium mb-2">Lokasi *</label>
+                            <Select
+                              value={formData.location}
+                              onValueChange={(value) => handleInputChange("location", value)}
+                            >
+                              <SelectTrigger className={errors.location ? "border-red-500" : ""}>
+                                <SelectValue placeholder="Pilih lokasi" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {locationOptions.map((location) => (
+                                  <SelectItem key={location} value={location}>
+                                    {location}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             {errors.location && (
                               <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                                 <AlertCircle className="h-4 w-4" />
@@ -601,7 +681,7 @@ export default function CreateProjectPage() {
                             )}
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                             <div>
                               <label className="block text-sm font-medium mb-2">Budget Proyek (Opsional)</label>
                               <Input
@@ -609,15 +689,24 @@ export default function CreateProjectPage() {
                                 placeholder="e.g. Rp 2.000.000 atau Hadiah Lomba"
                                 value={formData.budget}
                                 onChange={(e) => handleInputChange("budget", e.target.value)}
+                                className="bg-white"
                               />
+                              <p className="text-xs text-gray-500 mt-1">Bisa berupa nominal atau bentuk hadiah lainnya</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium mb-2">Deadline Pendaftaran</label>
+                              <label className="block text-sm font-medium mb-2">Deadline Pendaftaran *</label>
                               <Input
                                 type="date"
                                 value={formData.deadline}
                                 onChange={(e) => handleInputChange("deadline", e.target.value)}
+                                className={`bg-white ${errors.deadline ? "border-red-500" : ""}`}
                               />
+                              {errors.deadline && (
+                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                  <AlertCircle className="h-4 w-4" />
+                                  {errors.deadline}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -627,30 +716,58 @@ export default function CreateProjectPage() {
                       {currentStep === 3 && (
                         <div className="space-y-6">
                           <div>
-                            <label className="block text-sm font-medium mb-2">Skills yang Dibutuhkan *</label>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto border rounded-lg p-4">
-                              {skillOptions.map((skill) => (
-                                <div key={skill} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={skill}
-                                    checked={formData.requiredSkills.includes(skill)}
-                                    onCheckedChange={() => toggleSkill(skill)}
-                                  />
-                                  <label htmlFor={skill} className="text-sm">
-                                    {skill}
-                                  </label>
-                                </div>
-                              ))}
+                            <label className="block text-sm font-medium mb-2">Skills & Tags Proyek *</label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                placeholder="Tambahkan skill atau tag (e.g. React, UI/UX, IoT)"
+                                id="skill-input"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const input = e.currentTarget as HTMLInputElement;
+                                    addSkill(input.value);
+                                    input.value = '';
+                                  }
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  const input = document.getElementById('skill-input') as HTMLInputElement;
+                                  addSkill(input.value);
+                                  input.value = '';
+                                }}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
                             </div>
-                            {formData.requiredSkills.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {formData.requiredSkills.map((skill) => (
-                                  <Badge key={skill} variant="secondary" className="text-xs">
+                            
+                            <div className="flex flex-wrap gap-1 mt-3">
+                              {formData.requiredSkills.length > 0 ? (
+                                formData.requiredSkills.map((skill) => (
+                                  <Badge key={skill} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
                                     {skill}
+                                    <X 
+                                      className="h-3 w-3 cursor-pointer" 
+                                      onClick={(e) => {
+                                        // Stop propagation to prevent badge click
+                                        e.stopPropagation();
+                                        removeSkill(skill);
+                                      }}
+                                    />
                                   </Badge>
-                                ))}
-                              </div>
-                            )}
+                                ))
+                              ) : (
+                                <p className="text-sm text-gray-500">Belum ada skill atau tag yang ditambahkan</p>
+                              )}
+                            </div>
+                            
+                            <p className="text-xs text-gray-500 mt-1">
+                              Tambahkan skill teknis, teknologi, atau tag yang relevan dengan proyek ini
+                            </p>
+                            
                             {errors.requiredSkills && (
                               <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                                 <AlertCircle className="h-4 w-4" />
@@ -660,9 +777,6 @@ export default function CreateProjectPage() {
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        
-                          
-
                             <div>
                               <label className="block text-sm font-medium mb-2">Komitmen Waktu *</label>
                               <Select
@@ -796,34 +910,58 @@ export default function CreateProjectPage() {
 
                                   <div>
                                     <label className="block text-sm font-medium mb-2">Skills untuk Role Ini</label>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-32 overflow-y-auto border rounded-lg p-3">
-                                      {skillOptions.map((skill) => (
-                                        <div key={skill} className="flex items-center space-x-2">
-                                          <Checkbox
-                                            id={`${index}-${skill}`}
-                                            checked={role.skills.includes(skill)}
-                                            onCheckedChange={(checked) => {
-                                              const newSkills = checked
-                                                ? [...role.skills, skill]
-                                                : role.skills.filter((s) => s !== skill)
-                                              updateRole(index, "skills", newSkills)
-                                            }}
-                                          />
-                                          <label htmlFor={`${index}-${skill}`} className="text-xs">
-                                            {skill}
-                                          </label>
-                                        </div>
-                                      ))}
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Input
+                                        placeholder="Tambahkan skill (e.g. React, Node.js)"
+                                        id={`role-skill-input-${index}`}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const input = e.currentTarget as HTMLInputElement;
+                                            if (input.value.trim()) {
+                                              updateRole(index, "skills", [...role.skills, input.value.trim()]);
+                                              input.value = '';
+                                            }
+                                          }
+                                        }}
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => {
+                                          const input = document.getElementById(`role-skill-input-${index}`) as HTMLInputElement;
+                                          if (input.value.trim()) {
+                                            updateRole(index, "skills", [...role.skills, input.value.trim()]);
+                                            input.value = '';
+                                          }
+                                        }}
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
                                     </div>
-                                    {role.skills.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 mt-2">
-                                        {role.skills.map((skill) => (
-                                          <Badge key={skill} variant="secondary" className="text-xs">
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                      {role.skills.length > 0 ? (
+                                        role.skills.map((skill) => (
+                                          <Badge key={skill} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
                                             {skill}
+                                            <X 
+                                              className="h-3 w-3 cursor-pointer" 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                updateRole(
+                                                  index, 
+                                                  "skills", 
+                                                  role.skills.filter(s => s !== skill)
+                                                );
+                                              }}
+                                            />
                                           </Badge>
-                                        ))}
-                                      </div>
-                                    )}
+                                        ))
+                                      ) : (
+                                        <p className="text-sm text-gray-500">Belum ada skill yang ditambahkan</p>
+                                      )}
+                                    </div>
                                   </div>
                                 </CardContent>
                               </Card>
@@ -874,15 +1012,6 @@ export default function CreateProjectPage() {
                                         onChange={(e) => updateExistingMember(index, "name", e.target.value)}
                                       />
                                     </div>
-                                    <div>
-                                      <label className="block text-sm font-medium mb-2">Email</label>
-                                      <Input
-                                        type="email"
-                                        placeholder="e.g. john.doe@example.com"
-                                        value={member.email}
-                                        onChange={(e) => updateExistingMember(index, "email", e.target.value)}
-                                      />
-                                    </div>
                                   </div>
 
                                   <div className="mb-4">
@@ -894,33 +1023,76 @@ export default function CreateProjectPage() {
                                     />
                                   </div>
 
+                                  {/* Add description field */}
+                                  <div className="mb-4">
+                                    <label className="block text-sm font-medium mb-2">Deskripsi Role</label>
+                                    <Textarea
+                                      placeholder="Jelaskan tanggung jawab dan tugas untuk anggota tim ini..."
+                                      value={member.description}
+                                      onChange={(e) => updateExistingMember(index, "description", e.target.value)}
+                                      className="min-h-[80px] resize-none"
+                                    />
+                                  </div>
+
                                   <div>
                                     <label className="block text-sm font-medium mb-2">Skills</label>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-32 overflow-y-auto border rounded-lg p-3">
-                                      {skillOptions.map((skill) => (
-                                        <div key={skill} className="flex items-center space-x-2">
-                                          <Checkbox
-                                            id={`member-${index}-${skill}`}
-                                            checked={member.skills.includes(skill)}
-                                            onCheckedChange={(checked) => {
-                                              toggleMemberSkill(index, skill)
-                                            }}
-                                          />
-                                          <label htmlFor={`member-${index}-${skill}`} className="text-xs">
-                                            {skill}
-                                          </label>
-                                        </div>
-                                      ))}
+                                    <div className="flex items-center gap-2">
+                                      <Input
+                                        placeholder="Tambahkan skill (e.g. React, Node.js)"
+                                        id={`member-skill-input-${index}`}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const input = e.currentTarget as HTMLInputElement;
+                                            if (input.value.trim()) {
+                                              updateExistingMember(
+                                                index, 
+                                                "skills", 
+                                                [...member.skills, input.value.trim()]
+                                              );
+                                              input.value = '';
+                                            }
+                                          }
+                                        }}
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => {
+                                          const input = document.getElementById(`member-skill-input-${index}`) as HTMLInputElement;
+                                          if (input.value.trim()) {
+                                            updateExistingMember(
+                                              index, 
+                                              "skills", 
+                                              [...member.skills, input.value.trim()]
+                                            );
+                                            input.value = '';
+                                          }
+                                        }}
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
                                     </div>
-                                    {member.skills.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 mt-2">
-                                        {member.skills.map((skill) => (
-                                          <Badge key={skill} variant="secondary" className="text-xs">
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                      {member.skills.length > 0 ? (
+                                        member.skills.map((skill) => (
+                                          <Badge key={skill} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
                                             {skill}
+                                            <X 
+                                              className="h-3 w-3 cursor-pointer" 
+                                              onClick={() => updateExistingMember(
+                                                index, 
+                                                "skills", 
+                                                member.skills.filter(s => s !== skill)
+                                              )}
+                                            />
                                           </Badge>
-                                        ))}
-                                      </div>
-                                    )}
+                                        ))
+                                      ) : (
+                                        <p className="text-sm text-gray-500">Belum ada skill yang ditambahkan</p>
+                                      )}
+                                    </div>
                                   </div>
                                 </CardContent>
                               </Card>
@@ -934,62 +1106,194 @@ export default function CreateProjectPage() {
                         <div className="space-y-6">
                           <div>
                             <label className="block text-sm font-medium mb-2">Benefit untuk Kolaborator</label>
-                            <Textarea
-                              placeholder="Apa yang akan didapatkan kolaborator? (e.g. sertifikat, pengalaman, networking, dll.)"
-                              value={formData.benefits}
-                              onChange={(e) => handleInputChange("benefits", e.target.value)}
-                              className="min-h-[100px] resize-none"
-                            />
+                            <div className="space-y-2">
+                              {formData.benefits.map((benefit, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <Input
+                                    placeholder={`Benefit #${index + 1}`}
+                                    value={benefit}
+                                    onChange={(e) => {
+                                      const newBenefits = [...formData.benefits];
+                                      newBenefits[index] = e.target.value;
+                                      handleInputChange("benefits", newBenefits);
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      const newBenefits = formData.benefits.filter((_, i) => i !== index);
+                                      handleInputChange("benefits", newBenefits);
+                                    }}
+                                  >
+                                    <X className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleInputChange("benefits", [...formData.benefits, ""])}
+                              className="mt-2"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Tambah Benefit
+                            </Button>
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium mb-2">Timeline Detail (Opsional)</label>
-                            <Textarea
-                              placeholder="Jelaskan timeline proyek secara detail, milestone, dan deliverables..."
-                              value={formData.timeline}
-                              onChange={(e) => handleInputChange("timeline", e.target.value)}
-                              className="min-h-[100px] resize-none"
-                            />
+                            <label className="block text-sm font-medium mb-2">Timeline Proyek</label>
+                            <div className="flex items-center justify-between mb-4">
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                onClick={addTimelineStep}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Tambah Tahapan
+                              </Button>
+                            </div>
+                            
+                            {formData.timelineSteps.length === 0 ? (
+                              <div className="text-center py-8 border border-dashed border-gray-300 rounded-lg">
+                                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                <p className="text-gray-600 mb-2">Belum ada timeline yang ditambahkan</p>
+                                <p className="text-xs text-gray-500 mb-3">Tambahkan tahapan-tahapan pengembangan proyek</p>
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={addTimelineStep}
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Tambah Tahapan
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-4">
+                                {formData.timelineSteps.map((step, index) => (
+                                  <Card key={index} className="border border-gray-200">
+                                    <CardContent className="p-4">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <span className="text-sm font-semibold">Tahapan {index + 1}</span>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => removeTimelineStep(index)}
+                                        >
+                                          <X className="h-4 w-4 text-red-500" />
+                                        </Button>
+                                      </div>
+                                      
+                                      <div className="grid gap-3">
+                                        <div>
+                                          <label className="block text-xs font-medium mb-1">Judul Tahapan</label>
+                                          <Input
+                                            placeholder="e.g. Planning & Research"
+                                            value={step.title}
+                                            onChange={(e) => updateTimelineStep(index, "title", e.target.value)}
+                                          />
+                                        </div>
+                                        
+                                        <div>
+                                          <label className="block text-xs font-medium mb-1">Status</label>
+                                          <Select
+                                            value={step.status}
+                                            onValueChange={(value) => updateTimelineStep(index, "status", value)}
+                                          >
+                                            <SelectTrigger className="w-full">
+                                              <SelectValue placeholder="Pilih status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="not-started">
+                                                <div className="flex items-center">
+                                                  <span className="h-2 w-2 rounded-full bg-gray-400 mr-2"></span>
+                                                  <span>Belum Dimulai</span>
+                                                </div>
+                                              </SelectItem>
+                                              <SelectItem value="in-progress">
+                                                <div className="flex items-center">
+                                                  <span className="h-2 w-2 rounded-full bg-blue-500 mr-2"></span>
+                                                  <span>Sedang Berjalan</span>
+                                                </div>
+                                              </SelectItem>
+                                              <SelectItem value="done">
+                                                <div className="flex items-center">
+                                                  <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                                                  <span>Selesai</span>
+                                                </div>
+                                              </SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            )}
                           </div>
 
-                          <div className="space-y-4">
-
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
-                                id="allowRemote"
-                                checked={formData.allowRemote}
-                                onCheckedChange={(checked) => handleInputChange("allowRemote", checked)}
-                              />
-                              <label htmlFor="allowRemote" className="text-sm">
-                                Memungkinkan kerja remote untuk kolaborator
-                              </label>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
-                                id="provideMentoring"
-                                checked={formData.provideMentoring}
-                                onCheckedChange={(checked) => handleInputChange("provideMentoring", checked)}
-                              />
-                              <label htmlFor="provideMentoring" className="text-sm">
-                                Menyediakan mentoring dan guidance untuk tim
-                              </label>
-                            </div>
-                          </div>
 
                           <div>
                             <label className="block text-sm font-medium mb-2">Tags (Opsional)</label>
-                            <Input
-                              placeholder="Tambahkan tags yang relevan, pisahkan dengan koma"
-                              value={formData.tags.join(", ")}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "tags",
-                                  e.target.value.split(",").map((tag) => tag.trim()),
-                                )
-                              }
-                            />
-                            <p className="text-xs text-gray-500 mt-1">e.g. IoT, Smart Campus, Real-time, Dashboard</p>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                placeholder="Tambahkan tag (e.g. IoT, Smart Campus)"
+                                id="tag-input"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const input = e.currentTarget as HTMLInputElement;
+                                    if (input.value.trim() && !formData.tags.includes(input.value.trim())) {
+                                      handleInputChange("tags", [...formData.tags, input.value.trim()]);
+                                      input.value = '';
+                                    }
+                                  }
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  const input = document.getElementById('tag-input') as HTMLInputElement;
+                                  if (input.value.trim() && !formData.tags.includes(input.value.trim())) {
+                                    handleInputChange("tags", [...formData.tags, input.value.trim()]);
+                                    input.value = '';
+                                  }
+                                }}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {formData.tags.length > 0 ? (
+                                formData.tags.map((tag) => (
+                                  <Badge key={tag} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
+                                    {tag}
+                                    <X 
+                                      className="h-3 w-3 cursor-pointer" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleInputChange(
+                                          "tags", 
+                                          formData.tags.filter(t => t !== tag)
+                                        );
+                                      }}
+                                    />
+                                  </Badge>
+                                ))
+                              ) : (
+                                <p className="text-sm text-gray-500">Belum ada tag yang ditambahkan</p>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Tambahkan tag yang relevan dengan proyek ini</p>
                           </div>
                         </div>
                       )}

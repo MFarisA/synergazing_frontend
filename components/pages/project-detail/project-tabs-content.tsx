@@ -14,9 +14,9 @@ export function ProjectTabsContent({ project }: ProjectTabsContentProps) {
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="requirements">Requirements</TabsTrigger>
         <TabsTrigger value="timeline">Timeline</TabsTrigger>
         <TabsTrigger value="team">Tim</TabsTrigger>
-        <TabsTrigger value="requirements">Requirements</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview" className="space-y-6 mt-4">
