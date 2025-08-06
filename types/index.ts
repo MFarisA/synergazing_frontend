@@ -19,7 +19,6 @@ export type Project = {
     posted: string;
     image: string;
     views: number;
-    applicants: number;
     deadline: string;
   };
   
