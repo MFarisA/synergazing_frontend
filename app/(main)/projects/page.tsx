@@ -52,7 +52,7 @@ export default function ProjectsPage() {
   const isFilterActive = searchQuery || selectedType !== "all" || selectedLocation !== "all" || selectedSkills.length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       {/* ProjectsHeader dihapus dari sini */}
       
       <div className="container mx-auto px-4 py-6">

@@ -101,7 +101,6 @@ const userData = {
   cv: {
     fileName: "Adit_Cukur_CV_2025.pdf",
     uploadDate: "2025-06-15",
-    fileSize: "1.2 MB",
     url: "/sample-cv.pdf", // In a real app, this would be a URL to the stored PDF
   },
   // Stats
@@ -124,10 +123,10 @@ const userData = {
   ],
   // Social links
   socialLinks: {
-    github: "https://github.com/ahmadmaulana",
-    linkedin: "https://linkedin.com/in/ahmadmaulana",
-    instagram: "https://instagram.com/ahmadmaulana",
-    portfolio: "https://ahmadmaulana.dev",
+    github: "https://github.com/aditcukur",
+    linkedin: "https://linkedin.com/in/aditcukur",
+    instagram: "https://instagram.com/aditcukur",
+    portfolio: "https://aditcukur.dev",
   },
   isReadyForCollaboration: true,
 }
@@ -180,64 +179,65 @@ export default function ProfilePage() {
       : userData.skills.filter((skill) => skill.category === selectedSkillCategory)
 
   return (
-    <div className="min-h-screen bg-gray-50 ">
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Profile Header */}
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row gap-6 -mt-16 relative">
-                  <div className="relative">
-                    <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  {/* Avatar Section */}
+                  <div className="relative flex-shrink-0">
+                    <Avatar className="h-24 w-24 border-4 border-background shadow-md">
                       <AvatarImage src={userData.avatar || "/placeholder.svg"} />
                       <AvatarFallback className="text-2xl">
-                        {userData.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
+                        {userData.name.split(" ").map((n) => n[0]).join("")}
                       </AvatarFallback>
                     </Avatar>
                     <Button
-                      size="sm"
+                      size="icon"
                       variant="secondary"
-                      className="absolute bottom-0 right-0 h-8 w-8 p-0 rounded-full"
+                      className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
                     >
                       <Camera className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="flex-1 pt-16 md:pt-4">
-                    <div className="flex flex-col md:flex-row items-start justify-between mb-4">
-                      <div>
-                        <h1 className="text-2xl font-bold">{userData.name}</h1>
-                        <p className="text-lg text-gray-600">{userData.title}</p>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <GraduationCap className="h-4 w-4" />
-                            <span>{userData.university}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            <span>{userData.location}</span>
-                          </div>
-                        </div>
+
+                  {/* Info Section */}
+                  <div className="flex-1 text-center sm:text-left">
+                    <h1 className="text-2xl font-bold">{userData.name}</h1>
+                    <p className="text-muted-foreground">{userData.title}</p>
+                    <div className="flex items-center justify-center sm:justify-start gap-4 mt-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <GraduationCap className="h-4 w-4" />
+                        <span>{userData.university}</span>
                       </div>
-                      <Button onClick={() => setIsEditing(true)} className="mt-2 md:mt-4">
-                        <Edit className="h-4 w-4 mr-2" /> Edit Profil
-                      </Button>
-                    </div>
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-blue-600">{userProjects.length}</p>
-                        <p className="text-sm text-gray-600">Proyek Dibuat</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-green-600">{completedUserProjects}</p>
-                        <p className="text-sm text-gray-600">Proyek Selesai</p>
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-4 w-4" />
+                        <span>{userData.location}</span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Edit Button Section */}
+                  <div className="w-full sm:w-auto">
+                    <Button onClick={() => setIsEditing(true)} className="w-full sm:w-auto">
+                      <Edit className="h-4 w-4 mr-2" /> Edit Profil
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Stats Section */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-secondary/50 rounded-lg mt-6">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{userProjects.length}</p>
+                    <p className="text-sm text-muted-foreground">Proyek Dibuat</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">{completedUserProjects}</p>
+                    <p className="text-sm text-muted-foreground">Proyek Selesai</p>
                   </div>
                 </div>
               </CardContent>
