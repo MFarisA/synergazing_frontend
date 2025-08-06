@@ -122,7 +122,6 @@ export default function CreateProjectPage() {
     // Step 5: Additional Info
     benefits: "",
     timeline: "",
-    isUrgent: false,
     allowRemote: false,
     provideMentoring: false,
     tags: [] as string[],
@@ -954,16 +953,6 @@ export default function CreateProjectPage() {
                           </div>
 
                           <div className="space-y-4">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
-                                id="isUrgent"
-                                checked={formData.isUrgent}
-                                onCheckedChange={(checked) => handleInputChange("isUrgent", checked)}
-                              />
-                              <label htmlFor="isUrgent" className="text-sm">
-                                Proyek ini urgent dan butuh segera dimulai
-                              </label>
-                            </div>
 
                             <div className="flex items-center space-x-2">
                               <Checkbox

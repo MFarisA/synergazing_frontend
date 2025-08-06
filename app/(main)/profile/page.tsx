@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,27 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import {
-  Mail,
-  Phone,
-  MapPin,
-  Briefcase,
-  GraduationCap,
-  LinkIcon,
-  Edit,
-  Users,
-  MessageCircle,
-  Plus,
-  Eye,
-  Download,
-  FileText,
-  Upload,
-  File,
-  Camera,
-  Github,
-  Linkedin,
-  Instagram,
-} from "lucide-react"
+import { Mail, Phone, MapPin, Briefcase, GraduationCap, LinkIcon, Edit, Users, MessageCircle, Plus, Eye, Download, FileText, Upload, File, Camera, Github, Linkedin, Instagram } from 'lucide-react'
 import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
@@ -140,6 +119,17 @@ export default function ProfilePage() {
     bio: userData.bio,
     title: userData.title,
     location: userData.location,
+    university: userData.university,
+    major: userData.major,
+    year: userData.year,
+    email: userData.email,
+    phone: userData.phone,
+    socialLinks: {
+      github: userData.socialLinks.github,
+      linkedin: userData.socialLinks.linkedin,
+      instagram: userData.socialLinks.instagram,
+      portfolio: userData.socialLinks.portfolio,
+    },
     isReadyForCollaboration: userData.isReadyForCollaboration,
   })
 
@@ -161,6 +151,13 @@ export default function ProfilePage() {
     }
   }
 
+  const handleSaveChanges = () => {
+    // In a real app, this would make an API call to update the user data
+    console.log("Saving changes:", editData)
+    setIsEditing(false)
+    // You would update the userData here with the new values
+  }
+
   const skillCategories = [
     "All",
     "Programming",
@@ -172,6 +169,7 @@ export default function ProfilePage() {
     "AI/ML",
     "DevOps",
   ]
+
   const [selectedSkillCategory, setSelectedSkillCategory] = useState("All")
   const filteredSkills =
     selectedSkillCategory === "All"
@@ -193,7 +191,10 @@ export default function ProfilePage() {
                     <Avatar className="h-24 w-24 border-4 border-background shadow-md">
                       <AvatarImage src={userData.avatar || "/placeholder.svg"} />
                       <AvatarFallback className="text-2xl">
-                        {userData.name.split(" ").map((n) => n[0]).join("")}
+                        {userData.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
                       </AvatarFallback>
                     </Avatar>
                     <Button
@@ -208,15 +209,15 @@ export default function ProfilePage() {
                   {/* Info Section */}
                   <div className="flex-1 text-center sm:text-left">
                     <h1 className="text-2xl font-bold">{userData.name}</h1>
-                    <p className="text-muted-foreground">{userData.title}</p>
+                    <p className="text-muted-foreground">{editData.title}</p>
                     <div className="flex items-center justify-center sm:justify-start gap-4 mt-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <GraduationCap className="h-4 w-4" />
-                        <span>{userData.university}</span>
+                        <span>{editData.university}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <MapPin className="h-4 w-4" />
-                        <span>{userData.location}</span>
+                        <span>{editData.location}</span>
                       </div>
                     </div>
                   </div>
@@ -242,12 +243,14 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+
             {/* Tabs Content */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="projects">Proyek</TabsTrigger>
               </TabsList>
+
               <TabsContent value="overview" className="space-y-6">
                 {/* About */}
                 <Card>
@@ -255,9 +258,10 @@ export default function ProfilePage() {
                     <CardTitle>Tentang Saya</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700 leading-relaxed">{userData.bio}</p>
+                    <p className="text-gray-700 leading-relaxed">{editData.bio}</p>
                   </CardContent>
                 </Card>
+
                 {/* Experience */}
                 <Card>
                   <CardHeader>
@@ -305,6 +309,7 @@ export default function ProfilePage() {
                     </div>
                   </CardContent>
                 </Card>
+
                 {/* Skills */}
                 <Card>
                   <CardHeader>
@@ -325,6 +330,7 @@ export default function ProfilePage() {
                         </Button>
                       ))}
                     </div>
+
                     {/* Skills as badges */}
                     <div className="flex flex-wrap gap-2">
                       {filteredSkills.map((skill) => (
@@ -336,6 +342,7 @@ export default function ProfilePage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+
               <TabsContent value="projects" className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Proyek Saya ({userProjects.length})</h2>
@@ -345,6 +352,7 @@ export default function ProfilePage() {
                     </Button>
                   </Link>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {userProjects.length === 0 ? (
                     <div className="col-span-full text-center text-gray-500 py-10">
@@ -360,7 +368,9 @@ export default function ProfilePage() {
                             className="w-full h-48 object-cover rounded-t-lg"
                           />
                           <Badge
-                            className={`absolute top-3 left-3 ${project.status === "Completed" ? "bg-green-500" : "bg-blue-500"}`}
+                            className={`absolute top-3 left-3 ${
+                              project.status === "Completed" ? "bg-green-500" : "bg-blue-500"
+                            }`}
                           >
                             {project.status}
                           </Badge>
@@ -376,6 +386,7 @@ export default function ProfilePage() {
                             </span>
                             <span>{project.teamSize} anggota tim</span>
                           </div>
+
                           <div className="flex flex-wrap gap-1">
                             {project.skills.map((tech) => (
                               <Badge key={tech} variant="outline" className="text-xs">
@@ -383,15 +394,7 @@ export default function ProfilePage() {
                               </Badge>
                             ))}
                           </div>
-                          {/* {project.status === "In Progress" && (
-                            <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-medium">Progress</span>
-                                <span className="text-sm text-gray-600">{project.completion}%</span>
-                              </div>
-                              <Progress value={project.completion} className="h-2" />
-                            </div>
-                          )} */}
+
                           <div className="flex gap-2">
                             <Link href={`/projects/${project.id}`} className="flex-1">
                               <Button size="sm" variant="outline" className="w-full bg-transparent">
@@ -412,6 +415,7 @@ export default function ProfilePage() {
               </TabsContent>
             </Tabs>
           </div>
+
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Contact Info */}
@@ -424,18 +428,19 @@ export default function ProfilePage() {
                   <Mail className="h-5 w-5 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium">Email</p>
-                    <p className="text-sm text-gray-600">{userData.email}</p>
+                    <p className="text-sm text-gray-600">{editData.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="h-5 w-5 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium">Telepon</p>
-                    <p className="text-sm text-gray-600">{userData.phone}</p>
+                    <p className="text-sm text-gray-600">{editData.phone}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
             {/* Social Links */}
             <Card>
               <CardHeader>
@@ -443,7 +448,7 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <a
-                  href={userData.socialLinks.github}
+                  href={editData.socialLinks.github}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Github className="h-5 w-5" />
@@ -451,7 +456,7 @@ export default function ProfilePage() {
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
                 <a
-                  href={userData.socialLinks.linkedin}
+                  href={editData.socialLinks.linkedin}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Linkedin className="h-5 w-5 text-blue-600" />
@@ -459,7 +464,7 @@ export default function ProfilePage() {
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
                 <a
-                  href={userData.socialLinks.instagram}
+                  href={editData.socialLinks.instagram}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Instagram className="h-5 w-5 text-pink-600" />
@@ -467,7 +472,7 @@ export default function ProfilePage() {
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
                 <a
-                  href={userData.socialLinks.portfolio}
+                  href={editData.socialLinks.portfolio}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <LinkIcon className="h-5 w-5 text-green-600" />
@@ -476,6 +481,7 @@ export default function ProfilePage() {
                 </a>
               </CardContent>
             </Card>
+
             {/* CV Upload */}
             <Card>
               <CardHeader>
@@ -536,62 +542,171 @@ export default function ProfilePage() {
                 )}
               </CardContent>
             </Card>
-            {/* Quick Actions */}
-            {/* <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Link href="/create-project">
-                  <Button variant="outline" className="w-full justify-start bg-transparent mb-2">
-                    <Plus className="h-4 w-4 mr-2" /> Buat Proyek Baru
-                  </Button>
-                </Link>
-                <Link href="/collaborators">
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
-                    <Users className="h-4 w-4 mr-2" /> Cari Kolaborator
-                  </Button>
-                </Link>
-                <Button variant="outline" className="w-full justify-start bg-transparent">
-                  <MessageCircle className="h-4 w-4 mr-2" /> Pesan Masuk
-                </Button>
-              </CardContent>
-            </Card> */}
           </div>
         </div>
       </div>
+
       {/* Edit Profile Modal */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <div className="p-6">
             <DialogTitle className="text-xl font-semibold mb-6">Edit Profil</DialogTitle>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Judul Profil</label>
-                <Input
-                  value={editData.title}
-                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                  placeholder="e.g. Full-Stack Developer & IoT Enthusiast"
-                />
+            <div className="space-y-6">
+              {/* Basic Info Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Informasi Dasar</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Judul Profil</label>
+                    <Input
+                      value={editData.title}
+                      onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                      placeholder="e.g. Full-Stack Developer & IoT Enthusiast"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Lokasi</label>
+                    <Input
+                      value={editData.location}
+                      onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+                      placeholder="e.g. Bandung, Indonesia"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Universitas</label>
+                  <Input
+                    value={editData.university}
+                    onChange={(e) => setEditData({ ...editData, university: e.target.value })}
+                    placeholder="e.g. Universitas Dian Nuswantoro"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Jurusan</label>
+                    <Input
+                      value={editData.major}
+                      onChange={(e) => setEditData({ ...editData, major: e.target.value })}
+                      placeholder="e.g. Teknik Informatika"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Semester/Tahun</label>
+                    <Input
+                      value={editData.year}
+                      onChange={(e) => setEditData({ ...editData, year: e.target.value })}
+                      placeholder="e.g. Semester 7"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Tentang Saya</label>
+                  <Textarea
+                    value={editData.bio}
+                    onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
+                    placeholder="Ceritakan tentang diri Anda..."
+                    className="min-h-[120px] resize-none"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Lokasi</label>
-                <Input
-                  value={editData.location}
-                  onChange={(e) => setEditData({ ...editData, location: e.target.value })}
-                  placeholder="e.g. Bandung, Indonesia"
-                />
+
+              {/* Contact Info Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Informasi Kontak</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Email</label>
+                    <Input
+                      type="email"
+                      value={editData.email}
+                      onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                      placeholder="your.email@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Nomor Telepon</label>
+                    <Input
+                      type="tel"
+                      value={editData.phone}
+                      onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                      placeholder="+62 812-3456-7890"
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Tentang Saya</label>
-                <Textarea
-                  value={editData.bio}
-                  onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
-                  placeholder="Ceritakan tentang diri Anda..."
-                  className="min-h-[120px] resize-none"
-                />
+
+              {/* Social Media Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Media Sosial</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      <Github className="inline h-4 w-4 mr-1" />
+                      GitHub
+                    </label>
+                    <Input
+                      value={editData.socialLinks.github}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          socialLinks: { ...editData.socialLinks, github: e.target.value },
+                        })
+                      }
+                      placeholder="https://github.com/username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      <Linkedin className="inline h-4 w-4 mr-1 text-blue-600" />
+                      LinkedIn
+                    </label>
+                    <Input
+                      value={editData.socialLinks.linkedin}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          socialLinks: { ...editData.socialLinks, linkedin: e.target.value },
+                        })
+                      }
+                      placeholder="https://linkedin.com/in/username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      <Instagram className="inline h-4 w-4 mr-1 text-pink-600" />
+                      Instagram
+                    </label>
+                    <Input
+                      value={editData.socialLinks.instagram}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          socialLinks: { ...editData.socialLinks, instagram: e.target.value },
+                        })
+                      }
+                      placeholder="https://instagram.com/username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      <LinkIcon className="inline h-4 w-4 mr-1 text-green-600" />
+                      Portfolio
+                    </label>
+                    <Input
+                      value={editData.socialLinks.portfolio}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          socialLinks: { ...editData.socialLinks, portfolio: e.target.value },
+                        })
+                      }
+                      placeholder="https://yourportfolio.com"
+                    />
+                  </div>
+                </div>
               </div>
-              {/* New: Ready for Collaboration Switch */}
+
+              {/* Ready for Collaboration Switch */}
               <div className="flex items-center justify-between p-3 border rounded-md">
                 <label htmlFor="ready-for-collab" className="text-sm font-medium">
                   Siap untuk Kolaborasi (#ReadyToSynergize)
@@ -605,8 +720,9 @@ export default function ProfilePage() {
                   onCheckedChange={(checked) => setEditData({ ...editData, isReadyForCollaboration: checked })}
                 />
               </div>
+
               <div className="flex gap-3 pt-4">
-                <Button onClick={() => setIsEditing(false)} className="flex-1">
+                <Button onClick={handleSaveChanges} className="flex-1">
                   Simpan Perubahan
                 </Button>
                 <Button variant="outline" onClick={() => setIsEditing(false)} className="bg-transparent">
@@ -617,6 +733,7 @@ export default function ProfilePage() {
           </div>
         </DialogContent>
       </Dialog>
+
       {/* PDF Viewer Dialog */}
       <Dialog open={isPdfViewerOpen} onOpenChange={setIsPdfViewerOpen}>
         <DialogContent className="max-w-5xl">

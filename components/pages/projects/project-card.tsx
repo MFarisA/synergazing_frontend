@@ -23,7 +23,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
           alt={project.title}
           className="h-full w-full object-cover"
         />
-        {project.urgent && <Badge className="absolute top-3 left-3 bg-red-500 text-white border-red-500">Urgent</Badge>}
         <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button size="sm" variant="secondary" className="h-8 w-8 p-0"><Share2 className="h-4 w-4" /></Button>
         </div>

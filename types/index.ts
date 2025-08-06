@@ -18,7 +18,6 @@ export type Project = {
     location: string;
     posted: string;
     image: string;
-    urgent?: boolean;
     views: number;
     applicants: number;
     deadline: string;

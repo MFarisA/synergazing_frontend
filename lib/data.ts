@@ -18,7 +18,6 @@ export const projects = [
       location: "Bandung",
       posted: "2 hari yang lalu",
       image: "https://assets-a1.kompasiana.com/items/album/2023/11/14/img-2721-6552c2dbedff761aa670e123.png",
-      urgent: true,
       views: 45,
       deadline: "15 Feb 2024",
     },
@@ -86,7 +85,6 @@ export const projects = [
       posted: "1 minggu yang lalu",
       image: "https://bankjombang.co.id/wp-content/uploads/2023/05/tokopedia-platform-e-commerce-yang-paling-dipercaya-umkm-indonesia-jombang-kita.jpg",
       views: 123,
-      urgent: true,
       deadline: "10 Mar 2024",
     },
     {
