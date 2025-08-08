@@ -11,8 +11,11 @@ import { Separator } from "@/components/ui/separator"
 import { Zap, Mail, Lock, Eye, EyeOff, Chrome, ArrowLeft, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
+import { api } from "@/lib/api"
 
 export default function LoginPage() {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -21,6 +24,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [apiError, setApiError] = useState("")
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -47,13 +51,28 @@ export default function LoginPage() {
     if (!validateForm()) return
 
     setIsLoading(true)
+    setApiError("")
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await api.login({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      console.log("Login successful:", response.message)
+
+      // Store token and user data in localStorage
+      localStorage.setItem("token", response.data?.token || "")
+      localStorage.setItem("user", JSON.stringify(response.data?.user || {}))
+
+      // Redirect to profile page or dashboard
+      router.push("/profile")
+    } catch (error: any) {
+      console.error("Login failed:", error)
+      setApiError(error.response?.data?.message || "Invalid credentials. Please try again.")
+    } finally {
       setIsLoading(false)
-      console.log("Login attempt:", formData)
-      // Here you would typically handle the login logic
-    }, 2000)
+    }
   }
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -61,6 +80,10 @@ export default function LoginPage() {
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
+    }
+    // Clear API error on any input change
+    if (apiError) {
+      setApiError("")
     }
   }
 
@@ -87,6 +110,16 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* API Error Message */}
+                {apiError && (
+                  <div className="bg-red-50 p-3 rounded-md border border-red-200">
+                    <div className="flex items-center gap-2 text-red-600">
+                      <AlertCircle className="h-5 w-5" />
+                      <p className="text-sm font-medium">{apiError}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Email Field */}
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium text-gray-700">

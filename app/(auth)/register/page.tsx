@@ -8,52 +8,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Zap, Mail, Lock, Eye, EyeOff, Chrome, ArrowLeft, AlertCircle, CheckCircle, User } from "lucide-react"
+import { Zap, Mail, Lock, Eye, EyeOff, Chrome, ArrowLeft, AlertCircle, CheckCircle, User, Phone } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-
-const universities = [
-  "Institut Teknologi Bandung",
-  "Universitas Indonesia",
-  "Universitas Gadjah Mada",
-  "Institut Teknologi Sepuluh Nopember",
-  "Universitas Padjadjaran",
-  "Universitas Brawijaya",
-  "Universitas Diponegoro",
-  "Universitas Hasanuddin",
-  "Universitas Sumatera Utara",
-  "Lainnya",
-]
-
-const majors = [
-  "Teknik Informatika",
-  "Sistem Informasi",
-  "Teknik Komputer",
-  "Desain Komunikasi Visual",
-  "Teknik Elektro",
-  "Teknik Mesin",
-  "Manajemen",
-  "Ekonomi",
-  "Psikologi",
-  "Lainnya",
-]
+import { useRouter } from "next/navigation"
+import { api } from "@/lib/api"
 
 export default function RegisterPage() {
+  const router = useRouter()
+  // The process is now simplified to 2 steps
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
     fullName: "",
     email: "",
+    phone: "", // Added phone number
     password: "",
     confirmPassword: "",
 
-    // Step 2: Academic Info
-    university: "",
-    major: "",
-    year: "",
-
-    // Step 3: Agreement
+    // Step 2: Agreement
     agreeTerms: false,
     agreePrivacy: false,
     subscribeNewsletter: false,
@@ -62,7 +35,9 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [apiError, setApiError] = useState("")
 
+  // Validation for the first step (Basic Info)
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {}
 
@@ -76,6 +51,12 @@ export default function RegisterPage() {
       newErrors.email = "Email wajib diisi"
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Format email tidak valid"
+    }
+
+    if (!formData.phone) {
+        newErrors.phone = "Nomor telepon wajib diisi";
+    } else if (!/^(08)\d{8,11}$/.test(formData.phone)) {
+        newErrors.phone = "Format nomor telepon tidak valid (contoh: 081234567890)";
     }
 
     if (!formData.password) {
@@ -96,26 +77,8 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0
   }
 
+  // Validation for the second step (Agreement)
   const validateStep2 = () => {
-    const newErrors: Record<string, string> = {}
-
-    if (!formData.university) {
-      newErrors.university = "Universitas wajib dipilih"
-    }
-
-    if (!formData.major) {
-      newErrors.major = "Jurusan wajib dipilih"
-    }
-
-    if (!formData.year) {
-      newErrors.year = "Tahun/semester wajib dipilih"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const validateStep3 = () => {
     const newErrors: Record<string, string> = {}
 
     if (!formData.agreeTerms) {
@@ -130,38 +93,53 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0
   }
 
+  // Moves from Step 1 to Step 2
   const handleNext = () => {
-    let isValid = false
-
-    if (currentStep === 1) {
-      isValid = validateStep1()
-    } else if (currentStep === 2) {
-      isValid = validateStep2()
-    }
-
-    if (isValid) {
-      setCurrentStep(currentStep + 1)
+    if (validateStep1()) {
+      setCurrentStep(2)
     }
   }
 
+  // Handles the final form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateStep3()) return
+    if (!validateStep2()) return
 
     setIsLoading(true)
+    setApiError("")
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // This object structure matches the backend requirements
+      const userData = {
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone 
+      }
+
+      const response = await api.register(userData)
+      
+      console.log("Registration successful:", response.message)
+      
+      // Redirect to login page upon success
+      router.push("/login")
+    } catch (error: any) {
+      console.error("Registration failed:", error)
+      if (error.response?.data?.message) {
+        setApiError(error.response.data.message)
+      } else if (typeof error.message === 'string') {
+        setApiError(error.message)
+      } else {
+        setApiError("Registration failed. Please try again or contact support.")
+      }
+    } finally {
       setIsLoading(false)
-      console.log("Registration attempt:", formData)
-      // Here you would typically handle the registration logic
-    }, 2000)
+    }
   }
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
@@ -177,8 +155,6 @@ export default function RegisterPage() {
       case 1:
         return "Informasi Dasar"
       case 2:
-        return "Informasi Akademik"
-      case 3:
         return "Selesaikan Pendaftaran"
       default:
         return "Daftar"
@@ -188,18 +164,16 @@ export default function RegisterPage() {
   const getStepDescription = () => {
     switch (currentStep) {
       case 1:
-        return "Masukkan informasi dasar Anda"
+        return "Masukkan informasi dasar untuk akun Anda"
       case 2:
-        return "Ceritakan tentang latar belakang akademik Anda"
-      case 3:
-        return "Setujui syarat dan ketentuan untuk menyelesaikan pendaftaran"
+        return "Setujui syarat dan ketentuan untuk menyelesaikan"
       default:
         return ""
     }
   }
 
   return (
-    <div className="min-h-screen  from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
@@ -207,10 +181,10 @@ export default function RegisterPage() {
           <p className="text-gray-600">Mulai kolaborasi dengan mahasiswa se-Indonesia</p>
         </motion.div>
 
-        {/* Progress Indicator */}
+        {/* Progress Indicator (updated for 2 steps) */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            {[1, 2, 3].map((step) => (
+          <div className="flex items-center justify-between mb-2 px-16">
+            {[1, 2].map((step) => (
               <div
                 key={step}
                 className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
@@ -223,9 +197,8 @@ export default function RegisterPage() {
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-500">
+          <div className="flex justify-between text-xs text-gray-500 px-16">
             <span>Dasar</span>
-            <span>Akademik</span>
             <span>Selesai</span>
           </div>
         </motion.div>
@@ -285,6 +258,30 @@ export default function RegisterPage() {
                       <div className="flex items-center gap-1 text-red-500 text-sm">
                         <AlertCircle className="h-4 w-4" />
                         <span>{errors.email}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Phone Number */}
+                  <div className="space-y-2">
+                    <label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                      Nomor Telepon
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="Contoh: 081234567890"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange("phone", e.target.value)}
+                        className={`pl-10 ${errors.phone ? "border-red-500" : ""}`}
+                      />
+                    </div>
+                    {errors.phone && (
+                      <div className="flex items-center gap-1 text-red-500 text-sm">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{errors.phone}</span>
                       </div>
                     )}
                   </div>
@@ -357,99 +354,19 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              {/* Step 2: Academic Information */}
+              {/* Step 2: Terms and Completion */}
               {currentStep === 2 && (
-                <div className="space-y-4">
-                  {/* University */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Universitas</label>
-                    <Select
-                      value={formData.university}
-                      onValueChange={(value) => handleInputChange("university", value)}
-                    >
-                      <SelectTrigger className={errors.university ? "border-red-500" : ""}>
-                        <SelectValue placeholder="Pilih universitas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {universities.map((uni) => (
-                          <SelectItem key={uni} value={uni}>
-                            {uni}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.university && (
-                      <div className="flex items-center gap-1 text-red-500 text-sm">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{errors.university}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Major */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Jurusan</label>
-                    <Select value={formData.major} onValueChange={(value) => handleInputChange("major", value)}>
-                      <SelectTrigger className={errors.major ? "border-red-500" : ""}>
-                        <SelectValue placeholder="Pilih jurusan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {majors.map((major) => (
-                          <SelectItem key={major} value={major}>
-                            {major}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.major && (
-                      <div className="flex items-center gap-1 text-red-500 text-sm">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{errors.major}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Year/Semester */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Tahun/Semester</label>
-                    <Select value={formData.year} onValueChange={(value) => handleInputChange("year", value)}>
-                      <SelectTrigger className={errors.year ? "border-red-500" : ""}>
-                        <SelectValue placeholder="Pilih tahun/semester" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="semester-1">Semester 1</SelectItem>
-                        <SelectItem value="semester-2">Semester 2</SelectItem>
-                        <SelectItem value="semester-3">Semester 3</SelectItem>
-                        <SelectItem value="semester-4">Semester 4</SelectItem>
-                        <SelectItem value="semester-5">Semester 5</SelectItem>
-                        <SelectItem value="semester-6">Semester 6</SelectItem>
-                        <SelectItem value="semester-7">Semester 7</SelectItem>
-                        <SelectItem value="semester-8">Semester 8</SelectItem>
-                        <SelectItem value="alumni">Alumni</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.year && (
-                      <div className="flex items-center gap-1 text-red-500 text-sm">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{errors.year}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1 bg-transparent">
-                      Kembali
-                    </Button>
-                    <Button onClick={handleNext} className="flex-1 bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]">
-                      Lanjutkan
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Terms and Completion */}
-              {currentStep === 3 && (
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* API Error Message */}
+                  {apiError && (
+                    <div className="bg-red-50 p-3 rounded-md border border-red-200 mb-4">
+                      <div className="flex items-center gap-2 text-red-600">
+                        <AlertCircle className="h-5 w-5" />
+                        <p className="text-sm font-medium">{apiError}</p>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Terms Agreement */}
                   <div className="space-y-4">
                     <div className="flex items-start space-x-2">
@@ -512,7 +429,7 @@ export default function RegisterPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setCurrentStep(2)}
+                      onClick={() => setCurrentStep(1)}
                       className="flex-1 bg-transparent"
                     >
                       Kembali
