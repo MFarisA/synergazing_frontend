@@ -9,16 +9,37 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Zap, Bell } from "lucide-react"
+import { Zap, Bell, LogOut, User } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
-import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
+import { usePathname, useRouter } from "next/navigation"
 
 export default function Navbar({ className }: { className?: string }) {
   const [prevScrollPos, setPrevScrollPos] = useState(0)
   const [visible, setVisible] = useState(true)
   const pathname = usePathname()
+  const router = useRouter()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userData, setUserData] = useState<any>(null)
+
+  // Check if user is logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    const user = localStorage.getItem("user")
+
+    if (token && user) {
+      setIsLoggedIn(true)
+      try {
+        setUserData(JSON.parse(user))
+      } catch (error) {
+        console.error("Failed to parse user data:", error)
+      }
+    } else {
+      setIsLoggedIn(false)
+      setUserData(null)
+    }
+  }, [pathname]) // Re-check when pathname changes
 
   // useEffect(() => {
   //   const handleScroll = () => {
@@ -30,12 +51,24 @@ export default function Navbar({ className }: { className?: string }) {
   //   return () => window.removeEventListener("scroll", handleScroll);
   // }, [prevScrollPos]);
 
+  // Filter navLinks based on login status - removing profile from main navbar
   const navLinks = [
     { href: "/", label: "Dashboard" },
     { href: "/projects", label: "Proyek" },
     { href: "/collaborators", label: "Kolaborator" },
-    { href: "/profile", label: "Profil" },
+    // Profile link is removed from main navbar and only accessible from dropdown
   ]
+
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
+    setIsLoggedIn(false)
+    setUserData(null)
+
+    // Redirect to home page
+    router.push("/")
+  }
 
   // Sample notifications data
   const notifications = [
@@ -76,43 +109,73 @@ export default function Navbar({ className }: { className?: string }) {
             {label}
           </Link>
         ))}
-        <div className="relative">
+
+        {isLoggedIn && (
+          <div className="relative">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                      {unreadNotificationsCount}
+                    </span>
+                  )}
+                  <span className="sr-only">Notifikasi</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => (
+                    <DropdownMenuItem
+                      key={notification.id}
+                      className="flex flex-col items-start gap-1 py-2 cursor-pointer"
+                    >
+                      <span className={cn("text-sm", notification.read ? "text-gray-500" : "font-medium")}>
+                        {notification.message}
+                      </span>
+                      {!notification.read && <span className="text-xs text-blue-600">Baru</span>}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem className="text-gray-500">Tidak ada notifikasi baru.</DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+
+        {isLoggedIn ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {unreadNotificationsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                    {unreadNotificationsCount}
-                  </span>
-                )}
-                <span className="sr-only">Notifikasi</span>
+              <Button variant="ghost" size="sm" className="gap-2">
+                <User className="h-4 w-4" />
+                <span>{userData?.name || "Pengguna"}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {notifications.length > 0 ? (
-                notifications.map((notification) => (
-                  <DropdownMenuItem
-                    key={notification.id}
-                    className="flex flex-col items-start gap-1 py-2 cursor-pointer"
-                  >
-                    <span className={cn("text-sm", notification.read ? "text-gray-500" : "font-medium")}>
-                      {notification.message}
-                    </span>
-                    {!notification.read && <span className="text-xs text-blue-600">Baru</span>}
-                  </DropdownMenuItem>
-                ))
-              ) : (
-                <DropdownMenuItem className="text-gray-500">Tidak ada notifikasi baru.</DropdownMenuItem>
-              )}
+              <DropdownMenuItem asChild>
+                <Link href="/profile">Profil</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/profile/edit">Edit Profil</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                <LogOut className="h-4 w-4 mr-2" />
+                Keluar
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-        <Button size="sm" className="bg-primary text-white" asChild>
-          <Link href="/login">Masuk</Link>
-        </Button>
+        ) : (
+          <Button size="sm" className="bg-primary text-white" asChild>
+            <Link href="/login">Masuk</Link>
+          </Button>
+        )}
       </nav>
     </header>
   )
