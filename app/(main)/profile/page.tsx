@@ -84,13 +84,40 @@ export default function ProfilePage() {
           setApiError("Gagal memuat profil. Backend mungkin tidak tersedia.");
           return null;
         }),
-        api.getAllSkills().catch(err => {
+        api.getAllSkills(token).catch(err => {
           console.error("Failed to fetch skills:", err);
           return { data: { skills: [] } };
+        }),
+        api.getUserSkills(token).catch(err => {
+          console.error("Failed to fetch user skills:", err);
+          return { data: { skills: [] } };
         })
-      ]).then(([profileData, skillsData]) => {
+      ]).then(([profileData, skillsData, userSkillsData]) => {
         if (profileData) {
-          setUserData(profileData.data);
+          // The profile API returns profile details nested under 'profile' object
+          // and skills directly under 'skills' array
+          const profileInfo = profileData.data.profile || {};
+          const directSkills = profileData.data.skills || [];
+          
+          // Merge profile data with nested profile information
+          const updatedProfileData = {
+            ...profileData.data,
+            // Flatten profile information to the root level
+            about_me: profileInfo.about_me || "",
+            academic: profileInfo.academic || "",
+            location: profileInfo.location || "",
+            interests: profileInfo.interests || "",
+            website_url: profileInfo.website_url || "",
+            github_url: profileInfo.github_url || "",
+            linkedin_url: profileInfo.linkedin_url || "",
+            instagram_url: profileInfo.instagram_url || "",
+            portfolio_url: profileInfo.portfolio_url || "",
+            // Set default collaboration_status if not provided
+            collaboration_status: profileData.data.collaboration_status ?? false,
+            // Use skills from profile API if available, otherwise use getUserSkills data
+            user_skills: directSkills.length > 0 ? directSkills : (userSkillsData?.data?.skills || [])
+          };
+          setUserData(updatedProfileData);
         }
         setAllSkills(skillsData?.data?.skills || []);
         setIsLoading(false);
@@ -162,8 +189,34 @@ export default function ProfilePage() {
     
     try {
       await api.updateUserSkills(token, skillsToUpdate);
-      const updatedProfile = await api.getProfile(token);
-      setUserData(updatedProfile.data);
+      
+      // Refresh both profile and user skills
+      const [updatedProfile, updatedUserSkills] = await Promise.all([
+        api.getProfile(token),
+        api.getUserSkills(token)
+      ]);
+      
+      // Handle the nested profile structure
+      const profileInfo = updatedProfile.data.profile || {};
+      const directSkills = updatedProfile.data.skills || [];
+      
+      // Merge profile data with nested profile information
+      const updatedProfileData = {
+        ...updatedProfile.data,
+        about_me: profileInfo.about_me || "",
+        academic: profileInfo.academic || "",
+        location: profileInfo.location || "",
+        interests: profileInfo.interests || "",
+        website_url: profileInfo.website_url || "",
+        github_url: profileInfo.github_url || "",
+        linkedin_url: profileInfo.linkedin_url || "",
+        instagram_url: profileInfo.instagram_url || "",
+        portfolio_url: profileInfo.portfolio_url || "",
+        collaboration_status: updatedProfile.data.collaboration_status ?? false,
+        user_skills: directSkills.length > 0 ? directSkills : (updatedUserSkills?.data?.skills || [])
+      };
+      setUserData(updatedProfileData);
+      
       setIsSkillDialogOpen(false);
       setNewSkill({ name: "", proficiency: 75 });
       setSkillToEdit(null);
@@ -179,8 +232,34 @@ export default function ProfilePage() {
     if (!token) return;
     try {
       await api.deleteUserSkill(token, skillName);
-      const updatedProfile = await api.getProfile(token);
-      setUserData(updatedProfile.data);
+      
+      // Refresh both profile and user skills
+      const [updatedProfile, updatedUserSkills] = await Promise.all([
+        api.getProfile(token),
+        api.getUserSkills(token)
+      ]);
+      
+      // Handle the nested profile structure
+      const profileInfo = updatedProfile.data.profile || {};
+      const directSkills = updatedProfile.data.skills || [];
+      
+      // Merge profile data with nested profile information
+      const updatedProfileData = {
+        ...updatedProfile.data,
+        about_me: profileInfo.about_me || "",
+        academic: profileInfo.academic || "",
+        location: profileInfo.location || "",
+        interests: profileInfo.interests || "",
+        website_url: profileInfo.website_url || "",
+        github_url: profileInfo.github_url || "",
+        linkedin_url: profileInfo.linkedin_url || "",
+        instagram_url: profileInfo.instagram_url || "",
+        portfolio_url: profileInfo.portfolio_url || "",
+        collaboration_status: updatedProfile.data.collaboration_status ?? false,
+        user_skills: directSkills.length > 0 ? directSkills : (updatedUserSkills?.data?.skills || [])
+      };
+      setUserData(updatedProfileData);
+      
       setIsSkillDialogOpen(false);
       setApiError(null);
     } catch (error) {
@@ -318,7 +397,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <Switch
-                    checked={userData.collaboration_status}
+                    checked={userData.collaboration_status ?? false}
                     onCheckedChange={handleCollaborationStatusChange}
                   />
                 </div>

@@ -261,9 +261,14 @@ export const api = {
   },
 
   // Get all skills
-  getAllSkills: async () => {
+  getAllSkills: async (token: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/skills/all`);
+      const response = await fetch(`${API_BASE_URL}/api/skills/all`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
       if (!response.ok) {
         console.error('Failed to fetch skills:', response.status, response.statusText);
         const errorText = await response.text();

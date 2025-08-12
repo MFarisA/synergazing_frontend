@@ -33,6 +33,7 @@ export type ApplicationData = {
 export type ProjectDetail = typeof import('@/lib/project-detail-data').projectsData['1'];
 
 export interface User {
+  id: number;
   name: string;
   email: string;
   phone: string;
@@ -47,7 +48,7 @@ export interface User {
   portfolio_url: string;
   profile_picture: string;
   cv_file: string;
-  collaboration_status: boolean;
+  collaboration_status?: boolean;
   user_skills: UserSkill[];
 }
 

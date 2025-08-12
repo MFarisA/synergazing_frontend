@@ -110,17 +110,6 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* API Error Message */}
-                {apiError && (
-                  <div className="bg-red-50 p-3 rounded-md border border-red-200">
-                    <div className="flex items-center gap-2 text-red-600">
-                      <AlertCircle className="h-5 w-5" />
-                      <p className="text-sm font-medium">{apiError}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Email Field */}
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium text-gray-700">
                     Email

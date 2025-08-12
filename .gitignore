@@ -10,6 +10,10 @@
 !.yarn/releases
 !.yarn/versions
 
+*.DS_Store
+*.env
+*.env.local
+
 # testing
 /coverage
 
