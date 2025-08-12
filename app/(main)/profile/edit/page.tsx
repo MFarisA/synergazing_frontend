@@ -35,9 +35,27 @@ export default function EditProfilePage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      api.getProfile(token).then(data => {
-        setUserData(data);
-        setEditData(data);
+      api.getProfile(token).then(response => {
+        const userData = response.data;
+        const profileData = userData.profile || {};
+        
+        setUserData(userData);
+        
+        // Set edit data with proper fallbacks to avoid undefined values
+        setEditData({
+          name: userData.name || "",
+          email: userData.email || "",
+          phone: userData.phone || "",
+          about_me: profileData.about_me || "",
+          location: profileData.location || "",
+          interests: profileData.interests || "",
+          academic: profileData.academic || "",
+          website_url: profileData.website_url || "",
+          github_url: profileData.github_url || "",
+          linkedin_url: profileData.linkedin_url || "",
+          instagram_url: profileData.instagram_url || "",
+          portfolio_url: profileData.portfolio_url || "",
+        });
       }).catch(err => console.error(err));
     }
   }, []);
@@ -307,7 +325,7 @@ export default function EditProfilePage() {
                     <p className="text-sm text-gray-600 mb-2">
                       {cvFile ? cvFile.name : "Drag & drop CV Anda di sini, atau"}
                     </p>
-                    <Button size="sm" variant="primary" onClick={() => document.getElementById('cv-upload')?.click()}>
+                    <Button size="sm" onClick={() => document.getElementById('cv-upload')?.click()}>
                       <Upload className="h-3.5 w-3.5 mr-1.5" /> Pilih File
                     </Button>
                     <input type="file" id="cv-upload" className="hidden" onChange={(e) => setCvFile(e.target.files?.[0] || null)} />

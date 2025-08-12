@@ -661,7 +661,7 @@ export default function ProfilePage() {
                     <File className="h-10 w-10 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-600 mb-3">Upload CV Anda untuk meningkatkan peluang kolaborasi</p>
                     <Link href="/profile/edit">
-                      <Button size="sm" variant="primary">
+                      <Button size="sm">
                         <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CV
                       </Button>
                     </Link>
