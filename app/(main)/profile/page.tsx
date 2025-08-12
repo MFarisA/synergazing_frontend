@@ -187,6 +187,8 @@ export default function ProfilePage() {
       skillsToUpdate.push({ skill_name: newSkill.name, proficiency: newSkill.proficiency });
     }
     
+    console.log('Skills to update:', skillsToUpdate);
+    
     try {
       await api.updateUserSkills(token, skillsToUpdate);
       
@@ -452,7 +454,7 @@ export default function ProfilePage() {
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {userData.user_skills?.map((userSkill) => (
-                        <div key={userSkill.skill.id} className="relative group">
+                        <div key={userSkill.id} className="relative group">
                           <Badge 
                             variant="secondary" 
                             className="p-2 cursor-pointer"
