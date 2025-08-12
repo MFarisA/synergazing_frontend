@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 

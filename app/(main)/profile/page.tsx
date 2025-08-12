@@ -494,7 +494,7 @@ export default function ProfilePage() {
                       <Card key={project.id} className="hover:shadow-lg transition-shadow">
                         <div className="relative">
                           <img
-                            src={project.image || "/placeholder.svg?height=200&width=300&text=Project"}
+                            // src={project.image || "/placeholder.svg?height=200&width=300&text=Project"}
                             alt={project.title}
                             className="w-full h-48 object-cover rounded-t-lg"
                           />

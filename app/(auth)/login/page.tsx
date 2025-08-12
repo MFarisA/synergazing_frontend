@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
-import { Zap, Mail, Lock, Eye, EyeOff, Chrome, ArrowLeft, AlertCircle } from "lucide-react"
+import { Mail, Lock, Eye, EyeOff, Chrome, ArrowLeft, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
