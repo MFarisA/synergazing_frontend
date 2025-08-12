@@ -9,8 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Zap, Bell, LogOut, User } from "lucide-react"
+import { Bell, LogOut, User } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
@@ -90,8 +91,14 @@ export default function Navbar({ className }: { className?: string }) {
     >
       <Link href="/" className="flex items-center justify-center">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <Zap className="h-5 w-5 text-white" />
+          <div className="w-8 h-8 flex items-center justify-center">
+            <Image 
+              src="/synergazing.svg" 
+              alt="Synergazing Logo" 
+              width={20} 
+              height={20} 
+              className="text-white" 
+            />
           </div>
           <span className="font-bold text-xl">Synergazing</span>
         </div>

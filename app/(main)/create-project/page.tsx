@@ -29,6 +29,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 const projectTypes = [
   { value: "lomba", label: "Lomba", description: "Kompetisi atau hackathon" },
@@ -404,8 +405,16 @@ export default function CreateProjectPage() {
                 <Card className="bg-gradient-to-b from-blue-50 to-purple-50 border-blue-200">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-2 mb-8">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                        <Zap className="h-5 w-5 text-white" />
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                       
+                                    <Image 
+                                      src="/synergazing.svg" 
+                                      alt="Synergazing Logo" 
+                                      width={20} 
+                                      height={20} 
+                                      className="text-white" 
+                                    />
+                                  
                       </div>
                       <span className="font-bold">Buat Proyek</span>
                     </div>

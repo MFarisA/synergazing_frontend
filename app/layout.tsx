@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Synergazing",
-  description: "Collaborate and Synergize your projects.",
+  description: "Find Your Team, Synergize Your Idea!",
 };
 
 export default function RootLayout({

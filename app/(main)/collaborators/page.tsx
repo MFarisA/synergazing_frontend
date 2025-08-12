@@ -195,10 +195,10 @@ export default function CollaboratorsPage() {
 									</div>
 									<p className="text-sm text-gray-700 mb-4 line-clamp-3">{collaborator.bio}</p>
 									<div className="flex gap-2 w-full mt-auto">
-										<Link href={`/profile/${collaborator.id}`} passHref>
+										<Link href={`/profile/${collaborator.id}`} passHref className="flex-1">
 											<Button
 												variant="default"
-												className="flex-1"
+												className="w-full"
 												onClick={() => {
 													setSelectedCollaborator(collaborator)
 													// Navigate to profile page instead of opening modal
@@ -209,7 +209,7 @@ export default function CollaboratorsPage() {
 										</Link>
 										<Button
 											variant="outline"
-											className="flex-1 bg-transparent"
+											className="flex-1 w-full bg-transparent"
 											onClick={() => {
 												setSelectedCollaborator(collaborator)
 												setIsMessageModalOpen(true)

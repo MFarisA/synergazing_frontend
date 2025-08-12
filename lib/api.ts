@@ -231,6 +231,142 @@ export const api = {
       throw error;
     }
   },
+
+  // Fetch user profile
+  getProfile: async (token: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/profile`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch profile');
+    }
+    return response.json();
+  },
+
+  // Update user profile
+  updateProfile: async (token: string, profileData: FormData) => {
+    const response = await fetch(`${API_BASE_URL}/api/update-profile`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: profileData,
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update profile');
+    }
+    return response.json();
+  },
+
+  // Get all skills
+  getAllSkills: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/skills/all`);
+      if (!response.ok) {
+        console.error('Failed to fetch skills:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch skills: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error fetching skills:', error);
+      throw error;
+    }
+  },
+
+  // Get user skills
+  getUserSkills: async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/skills`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch user skills:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch user skills: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error fetching user skills:', error);
+      throw error;
+    }
+  },
+
+  // Add or update user skills
+  updateUserSkills: async (token: string, skills: { skill_name: string, proficiency: number }[]) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/skills`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ skills }),
+      });
+      if (!response.ok) {
+        console.error('Failed to update user skills:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to update user skills: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error updating user skills:', error);
+      throw error;
+    }
+  },
+
+  // Delete a user skill
+  deleteUserSkill: async (token: string, skillName: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/skills/user/${skillName}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to delete user skill:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to delete user skill: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error deleting user skill:', error);
+      throw error;
+    }
+  },
+
+  // Update collaboration status
+  updateCollaborationStatus: async (token: string, status: boolean) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/collaboration-status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: status ? "open" : "closed" }),
+      });
+      if (!response.ok) {
+        console.error('Failed to update collaboration status:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to update collaboration status: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error updating collaboration status:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;

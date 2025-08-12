@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -14,6 +13,8 @@ import { Mail, Phone, MapPin, Briefcase, GraduationCap, LinkIcon, Edit, Users, M
 import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { api } from "@/lib/api"
+import { User, Skill, UserSkill } from "@/types"
 
 // Mock data for projects (copied from app/recruiter-dashboard/page.tsx for consistency)
 const allProjectsData = [
@@ -62,155 +63,196 @@ const allProjectsData = [
   },
 ]
 
-// Mock user data - in real app, this would come from API/auth
-const userData = {
-  id: 1, // This user's ID
-  name: "Adit Cukur",
-  username: "aditcukur",
-  avatar: "https://mahasiswa.dinus.ac.id/images/foto/A/A11/2022/A11.2022.14148.jpg",
-  title: "Full-Stack Developer & IoT Enthusiast",
-  university: "Universitas Dian Nuswantoro",
-  major: "Teknik Informatika",
-  year: "Semester 7",
-  location: "Pati, Indonesia",
-  bio: "Passionate about creating innovative solutions through technology. Experienced in full-stack development with a focus on IoT systems and real-time applications. Always eager to collaborate on meaningful projects that make a difference.",
-  email: "adittukangcukur@mail.com",
-  phone: "+62 812-3456-7890",
-  // CV information
-  cv: {
-    fileName: "Adit_Cukur_CV_2025.pdf",
-    uploadDate: "2025-06-15",
-    url: "/sample-cv.pdf", // In a real app, this would be a URL to the stored PDF
-  },
-  // Stats
-  stats: {
-    projects: 12, // This will be dynamically calculated
-    completedProjects: 8, // This will be dynamically calculated
-  },
-  // Skills with proficiency levels
-  skills: [
-    { name: "JavaScript", level: 90, category: "Programming" },
-    { name: "React", level: 85, category: "Frontend" },
-    { name: "Node.js", level: 80, category: "Backend" },
-    { name: "Python", level: 75, category: "Programming" },
-    { name: "IoT Development", level: 85, category: "Hardware" },
-    { name: "Arduino", level: 80, category: "Hardware" },
-    { name: "MongoDB", level: 70, category: "Database" },
-    { name: "UI/UX Design", level: 65, category: "Design" },
-    { name: "Machine Learning", level: 60, category: "AI/ML" },
-    { name: "Docker", level: 70, category: "DevOps" },
-  ],
-  // Social links
-  socialLinks: {
-    github: "https://github.com/aditcukur",
-    linkedin: "https://linkedin.com/in/aditcukur",
-    instagram: "https://instagram.com/aditcukur",
-    portfolio: "https://aditcukur.dev",
-  },
-  isReadyForCollaboration: true,
-}
-
 export default function ProfilePage() {
-  const [isEditing, setIsEditing] = useState(false)
+  const [userData, setUserData] = useState<User | null>(null);
+  const [allSkills, setAllSkills] = useState<Skill[]>([]);
   const [activeTab, setActiveTab] = useState("overview")
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isSkillDialogOpen, setIsSkillDialogOpen] = useState(false)
-  const [skillToEdit, setSkillToEdit] = useState<{ name: string; level: number; category: string } | null>(null)
-  const [newSkill, setNewSkill] = useState({ name: "", level: 75, category: "" })
-  const [editData, setEditData] = useState({
-    bio: userData.bio,
-    title: userData.title,
-    location: userData.location,
-    university: userData.university,
-    major: userData.major,
-    year: userData.year,
-    email: userData.email,
-    phone: userData.phone,
-    socialLinks: {
-      github: userData.socialLinks.github,
-      linkedin: userData.socialLinks.linkedin,
-      instagram: userData.socialLinks.instagram,
-      portfolio: userData.socialLinks.portfolio,
-    },
-    isReadyForCollaboration: userData.isReadyForCollaboration,
-  })
+  const [skillToEdit, setSkillToEdit] = useState<UserSkill | null>(null);
+  const [newSkill, setNewSkill] = useState({ name: "", proficiency: 75 });
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      Promise.all([
+        api.getProfile(token).catch(err => {
+          console.error("Failed to fetch profile:", err);
+          setApiError("Gagal memuat profil. Backend mungkin tidak tersedia.");
+          return null;
+        }),
+        api.getAllSkills().catch(err => {
+          console.error("Failed to fetch skills:", err);
+          return { data: { skills: [] } };
+        })
+      ]).then(([profileData, skillsData]) => {
+        if (profileData) {
+          setUserData(profileData.data);
+        }
+        setAllSkills(skillsData?.data?.skills || []);
+        setIsLoading(false);
+      });
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
 
-  // Filter projects created by this user
-  const userProjects = allProjectsData.filter((project) => project.recruiterId === userData.id)
-  const completedUserProjects = userProjects.filter((project) => project.status === "Completed").length
+  const handleCollaborationStatusChange = async (status: boolean) => {
+    const token = localStorage.getItem("token");
+    if (token && userData) {
+      try {
+        await api.updateCollaborationStatus(token, status);
+        setUserData({ ...userData, collaboration_status: status });
+        setApiError(null);
+      } catch (error) {
+        console.error(error);
+        setApiError("Gagal mengubah status kolaborasi. Coba lagi nanti.");
+      }
+    }
+  };
 
-  const handleCvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      // In a real app, this would upload the file to a server
-      setIsUploading(true)
-      // Simulate upload delay
-      setTimeout(() => {
-        setIsUploading(false)
-        // Update CV data (in a real app, this would come from the server response)
-        // This is just mocking the update
-      }, 1500)
+  const handleDeletePicture = async () => {
+    const token = localStorage.getItem("token");
+    if (token && userData) {
+      try {
+        await api.deleteProfilePicture(token);
+        setUserData({ ...userData, profile_picture: "" });
+        setApiError(null);
+      } catch (error) {
+        console.error(error);
+        setApiError("Gagal menghapus foto profil. Coba lagi nanti.");
+      }
     }
   }
 
-  const handleSaveChanges = () => {
-    // In a real app, this would make an API call to update the user data
-    console.log("Saving changes:", editData)
-    setIsEditing(false)
-    // You would update the userData here with the new values
+  const handleDeleteCv = async () => {
+    const token = localStorage.getItem("token");
+    if (token && userData) {
+      try {
+        await api.deleteCv(token);
+        setUserData({ ...userData, cv_file: "" });
+        setApiError(null);
+      } catch (error) {
+        console.error(error);
+        setApiError("Gagal menghapus CV. Coba lagi nanti.");
+      }
+    }
   }
 
-  const handleAddSkill = () => {
-    // In a real app, this would make an API call to add the skill
-    console.log("Adding skill:", newSkill);
-    // Reset form
-    setNewSkill({ name: "", level: 75, category: "" });
-    setIsSkillDialogOpen(false);
-    // In a real app, you would update the userData.skills array
+  const handleAddOrUpdateSkill = async () => {
+    const token = localStorage.getItem("token");
+    if (!token || !userData) return;
+
+    const skillExists = allSkills.find(skill => skill.name.toLowerCase() === newSkill.name.toLowerCase());
+    
+    // Initialize with empty array if user_skills is undefined
+    let skillsToUpdate = [...(userData.user_skills || []).map(us => ({
+      skill_name: us.skill.name,
+      proficiency: us.proficiency,
+    }))];
+
+    if (skillToEdit) { // Editing existing skill
+      skillsToUpdate = skillsToUpdate.map(s => s.skill_name === skillToEdit.skill.name ? { skill_name: newSkill.name, proficiency: newSkill.proficiency } : s);
+    } else { // Adding new skill
+      skillsToUpdate.push({ skill_name: newSkill.name, proficiency: newSkill.proficiency });
+    }
+    
+    try {
+      await api.updateUserSkills(token, skillsToUpdate);
+      const updatedProfile = await api.getProfile(token);
+      setUserData(updatedProfile.data);
+      setIsSkillDialogOpen(false);
+      setNewSkill({ name: "", proficiency: 75 });
+      setSkillToEdit(null);
+      setApiError(null);
+    } catch (error) {
+      console.error(error);
+      setApiError("Gagal mengubah skill. Coba lagi nanti.");
+    }
+  };
+
+  const handleDeleteSkill = async (skillName: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      await api.deleteUserSkill(token, skillName);
+      const updatedProfile = await api.getProfile(token);
+      setUserData(updatedProfile.data);
+      setIsSkillDialogOpen(false);
+      setApiError(null);
+    } catch (error) {
+      console.error(error);
+      setApiError("Gagal menghapus skill. Coba lagi nanti.");
+    }
+  };
+
+  // Filter projects created by this user
+  const userProjects = userData ? allProjectsData.filter((project) => project.recruiterId === userData.id) : [];
+  const completedUserProjects = userProjects.filter((project) => project.status === "Completed").length;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-t-blue-600 border-blue-200 rounded-full animate-spin mb-3 mx-auto"></div>
+          <p className="text-sm text-gray-500">Memuat profil...</p>
+        </div>
+      </div>
+    );
   }
 
-  const handleEditSkill = (skill: { name: string; level: number; category: string }) => {
-    setSkillToEdit(skill);
-    setNewSkill({ ...skill });
-    setIsSkillDialogOpen(true);
+  if (!userData && apiError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Tidak Dapat Memuat Profil</h2>
+          <p className="text-gray-600 mb-4">{apiError}</p>
+          <Button onClick={() => window.location.reload()}>
+            Coba Lagi
+          </Button>
+        </div>
+      </div>
+    );
   }
 
-  const handleUpdateSkill = () => {
-    // In a real app, this would make an API call to update the skill
-    console.log("Updating skill:", newSkill);
-    setSkillToEdit(null);
-    setNewSkill({ name: "", level: 75, category: "" });
-    setIsSkillDialogOpen(false);
-    // In a real app, you would update the userData.skills array
+  if (!userData) {
+    return <div>Loading...</div>
   }
-
-  const handleDeleteSkill = (skillName: string) => {
-    // In a real app, this would make an API call to delete the skill
-    console.log("Deleting skill:", skillName);
-    // In a real app, you would update the userData.skills array
-  }
-  
-  const skillCategories = [
-    "All",
-    "Programming",
-    "Frontend",
-    "Backend",
-    "Hardware",
-    "Database",
-    "Design",
-    "AI/ML",
-    "DevOps",
-  ]
-
-  const [selectedSkillCategory, setSelectedSkillCategory] = useState("All")
-  const filteredSkills =
-    selectedSkillCategory === "All"
-      ? userData.skills
-      : userData.skills.filter((skill) => skill.category === selectedSkillCategory)
 
   return (
     <div className="min-h-screen">
+      {/* API Error Notification */}
+      {apiError && (
+        <div className="fixed top-4 right-4 z-50 max-w-md">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm">{apiError}</span>
+              </div>
+              <button
+                onClick={() => setApiError(null)}
+                className="ml-2 text-red-500 hover:text-red-700"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -222,7 +264,7 @@ export default function ProfilePage() {
                   {/* Avatar Section */}
                   <div className="relative flex-shrink-0">
                     <Avatar className="h-24 w-24 border-4 border-background shadow-md">
-                      <AvatarImage src={userData.avatar || "/placeholder.svg"} />
+                      <AvatarImage src={userData.profile_picture || "/placeholder.svg"} />
                       <AvatarFallback className="text-2xl">
                         {userData.name
                           .split(" ")
@@ -230,27 +272,29 @@ export default function ProfilePage() {
                           .join("")}
                       </AvatarFallback>
                     </Avatar>
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
-                    >
-                      <Camera className="h-4 w-4" />
-                    </Button>
+                    <Link href="/profile/edit">
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
+                      >
+                        <Camera className="h-4 w-4" />
+                      </Button>
+                    </Link>
                   </div>
 
                   {/* Info Section */}
                   <div className="flex-1 text-center sm:text-left">
                     <h1 className="text-2xl font-bold">{userData.name}</h1>
-                    <p className="text-muted-foreground">{editData.title}</p>
+                    <p className="text-muted-foreground">{userData.about_me}</p>
                     <div className="flex items-center justify-center sm:justify-start gap-4 mt-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <GraduationCap className="h-4 w-4" />
-                        <span>{editData.university} • {editData.major}</span>
+                        <span>{userData.academic}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <MapPin className="h-4 w-4" />
-                        <span>{editData.location}</span>
+                        <span>{userData.location}</span>
                       </div>
                     </div>
                   </div>
@@ -274,21 +318,9 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <Switch
-                    checked={editData.isReadyForCollaboration}
-                    onCheckedChange={(checked) => setEditData({ ...editData, isReadyForCollaboration: checked })}
+                    checked={userData.collaboration_status}
+                    onCheckedChange={handleCollaborationStatusChange}
                   />
-                </div>
-
-                {/* Stats Section */}
-                <div className="grid grid-cols-2 gap-4 p-4 bg-secondary/50 rounded-lg mt-6">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">{userProjects.length}</p>
-                    <p className="text-sm text-muted-foreground">Proyek Dibuat</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-green-600">{completedUserProjects}</p>
-                    <p className="text-sm text-muted-foreground">Proyek Selesai</p>
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -307,56 +339,17 @@ export default function ProfilePage() {
                     <CardTitle>Tentang Saya</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700 leading-relaxed">{editData.bio}</p>
+                    <p className="text-gray-700 leading-relaxed">{userData.about_me}</p>
                   </CardContent>
                 </Card>
-
-                {/* Experience */}
+                
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Pengalaman Kolaborasi</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {/* Using mock experience data from previous context */}
-                      {[
-                        {
-                          title: "Lead Developer",
-                          project: "Smart Campus IoT System",
-                          period: "Jan 2024 - Present",
-                          description:
-                            "Leading a team of 5 developers to create an IoT monitoring system for campus facilities.",
-                          skills: ["Leadership", "IoT", "React", "Node.js"],
-                        },
-                        {
-                          title: "Frontend Developer",
-                          project: "Student Portal Redesign",
-                          period: "Sep 2023 - Dec 2023",
-                          description: "Redesigned and developed the university student portal with modern UI/UX.",
-                          skills: ["React", "UI/UX", "TypeScript"],
-                        },
-                      ].map((exp, index) => (
-                        <div key={index} className="flex gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Briefcase className="h-6 w-6 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold">{exp.title}</h4>
-                            <p className="text-blue-600 font-medium">{exp.project}</p>
-                            <p className="text-sm text-gray-500 mb-2">{exp.period}</p>
-                            <p className="text-gray-700 mb-3">{exp.description}</p>
-                            <div className="flex flex-wrap gap-1">
-                              {exp.skills.map((skill) => (
-                                <Badge key={skill} variant="secondary" className="text-xs">
-                                  {skill}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
+                    <CardHeader>
+                        <CardTitle>Minat</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-gray-700 leading-relaxed">{userData.interests}</p>
+                    </CardContent>
                 </Card>
 
                 {/* Skills */}
@@ -368,7 +361,7 @@ export default function ProfilePage() {
                       size="sm" 
                       onClick={() => {
                         setSkillToEdit(null);
-                        setNewSkill({ name: "", level: 75, category: "" });
+                        setNewSkill({ name: "", proficiency: 75 });
                         setIsSkillDialogOpen(true);
                       }}
                       className="h-8 px-2 lg:px-3"
@@ -378,111 +371,26 @@ export default function ProfilePage() {
                     </Button>
                   </CardHeader>
                   <CardContent>
-                    {/* Skill Categories */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {skillCategories.map((category) => (
-                        <Button
-                          key={category}
-                          variant={selectedSkillCategory === category ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedSkillCategory(category)}
-                          className={selectedSkillCategory !== category ? "bg-transparent" : ""}
-                        >
-                          {category}
-                        </Button>
-                      ))}
-                    </div>
-
-                    {/* Skills as badges with edit option */}
                     <div className="flex flex-wrap gap-2">
-                      {filteredSkills.length === 0 ? (
-                        <p className="text-gray-500 text-sm py-2">
-                          Tidak ada skill yang ditampilkan untuk kategori ini.
-                        </p>
-                      ) : (
-                        filteredSkills.map((skill) => (
-                          <div key={skill.name} className="relative group">
-                            <Badge 
-                              variant="secondary" 
-                              className="p-2"
-                            >
-                              {skill.name}
-                              <button 
-                                onClick={() => handleEditSkill(skill)}
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <Edit className="h-3 w-3 text-gray-500 hover:text-gray-700" />
-                              </button>
-                            </Badge>
-                          </div>
-                        ))
-                      )}
+                      {userData.user_skills?.map((userSkill) => (
+                        <div key={userSkill.skill.id} className="relative group">
+                          <Badge 
+                            variant="secondary" 
+                            className="p-2 cursor-pointer"
+                            onClick={() => {
+                              setSkillToEdit(userSkill);
+                              setNewSkill({ name: userSkill.skill.name, proficiency: userSkill.proficiency });
+                              setIsSkillDialogOpen(true);
+                            }}
+                          >
+                            {userSkill.skill.name}
+                            <Edit className="h-3 w-3 text-gray-500 hover:text-gray-700 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </Badge>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
-                
-                {/* Other cards in overview tab... */}
-                
-                {/* Skill Add/Edit Dialog */}
-                <Dialog open={isSkillDialogOpen} onOpenChange={setIsSkillDialogOpen}>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>{skillToEdit ? 'Edit Skill' : 'Tambah Skill Baru'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Nama Skill</label>
-                        <Input 
-                          value={newSkill.name} 
-                          onChange={(e) => setNewSkill({...newSkill, name: e.target.value})}
-                          placeholder="contoh: React, Python, UI/UX Design"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Kategori</label>
-                        <Input 
-                          value={newSkill.category} 
-                          onChange={(e) => setNewSkill({...newSkill, category: e.target.value})}
-                          placeholder="contoh: Programming, Frontend, Database"
-                        />
-                        <p className="text-xs text-gray-500">
-                          Pilih kategori yang sesuai untuk mengelompokkan skill Anda
-                        </p>
-                      </div>
-                      
-                    </div>
-                    <DialogFooter className="flex gap-2 sm:justify-between">
-                      {skillToEdit && (
-                        <Button 
-                          variant="destructive" 
-                          type="button"
-                          onClick={() => {
-                            handleDeleteSkill(skillToEdit.name);
-                            setIsSkillDialogOpen(false);
-                          }}
-                        >
-                          Hapus
-                        </Button>
-                      )}
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setIsSkillDialogOpen(false)}
-                        >
-                          Batal
-                        </Button>
-                        <Button 
-                          type="button"
-                          onClick={skillToEdit ? handleUpdateSkill : handleAddSkill}
-                        >
-                          {skillToEdit ? 'Simpan Perubahan' : 'Tambah Skill'}
-                        </Button>
-                      </div>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
               </TabsContent>
 
               <TabsContent value="projects" className="space-y-6">
@@ -570,14 +478,14 @@ export default function ProfilePage() {
                   <Mail className="h-5 w-5 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium">Email</p>
-                    <p className="text-sm text-gray-600">{editData.email}</p>
+                    <p className="text-sm text-gray-600">{userData.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="h-5 w-5 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium">Telepon</p>
-                    <p className="text-sm text-gray-600">{editData.phone}</p>
+                    <p className="text-sm text-gray-600">{userData.phone}</p>
                   </div>
                 </div>
               </CardContent>
@@ -586,11 +494,19 @@ export default function ProfilePage() {
             {/* Social Links */}
             <Card>
               <CardHeader>
-                <CardTitle>Media Sosial</CardTitle>
+                <CardTitle>Media Sosial & Tautan</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+              <a
+                  href={userData.website_url}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <LinkIcon className="h-5 w-5" />
+                  <span className="text-sm">Website</span>
+                  <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
+                </a>
                 <a
-                  href={editData.socialLinks.github}
+                  href={userData.github_url}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Github className="h-5 w-5" />
@@ -598,7 +514,7 @@ export default function ProfilePage() {
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
                 <a
-                  href={editData.socialLinks.linkedin}
+                  href={userData.linkedin_url}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Linkedin className="h-5 w-5 text-blue-600" />
@@ -606,7 +522,7 @@ export default function ProfilePage() {
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
                 <a
-                  href={editData.socialLinks.instagram}
+                  href={userData.instagram_url}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Instagram className="h-5 w-5 text-pink-600" />
@@ -614,7 +530,7 @@ export default function ProfilePage() {
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
                 <a
-                  href={editData.socialLinks.portfolio}
+                  href={userData.portfolio_url}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <LinkIcon className="h-5 w-5 text-green-600" />
@@ -637,15 +553,12 @@ export default function ProfilePage() {
                     <div className="w-8 h-8 border-2 border-t-blue-600 border-blue-200 rounded-full animate-spin mb-3"></div>
                     <p className="text-sm text-gray-500">Mengupload CV...</p>
                   </div>
-                ) : userData.cv ? (
+                ) : userData.cv_file ? (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center">
                       <FileText className="h-8 w-8 text-blue-600 mr-3" />
                       <div className="flex-1">
-                        <p className="font-medium text-sm">{userData.cv.fileName}</p>
-                        <p className="text-xs text-gray-500">
-                          Diupload pada {userData.cv.uploadDate} • {userData.cv.fileSize}
-                        </p>
+                        <p className="font-medium text-sm">{userData.cv_file.split('/').pop()}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 mt-4">
@@ -657,8 +570,8 @@ export default function ProfilePage() {
                       >
                         <Eye className="h-4 w-4 mr-2" /> Lihat
                       </Button>
-                      <Button size="sm" variant="outline" className="flex items-center justify-center bg-transparent">
-                        <Download className="h-4 w-4 mr-2" /> Unduh
+                      <Button size="sm" variant="destructive" onClick={handleDeleteCv}>
+                         Hapus
                       </Button>
                     </div>
                   </div>
@@ -666,13 +579,11 @@ export default function ProfilePage() {
                   <div className="bg-gray-50 rounded-lg p-6 text-center">
                     <File className="h-10 w-10 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-600 mb-3">Upload CV Anda untuk meningkatkan peluang kolaborasi</p>
-                    <label
-                      htmlFor="cv-upload-alt"
-                      className="inline-flex items-center justify-center text-sm font-medium rounded-md px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
-                    >
-                      <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CV
-                    </label>
-                    <input id="cv-upload-alt" type="file" accept=".pdf" className="hidden" onChange={handleCvUpload} />
+                    <Link href="/profile/edit">
+                      <Button size="sm" variant="primary">
+                        <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CV
+                      </Button>
+                    </Link>
                   </div>
                 )}
               </CardContent>
@@ -680,168 +591,66 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-
-      {/* Edit Profile Modal */}
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <div className="p-6">
-            <DialogTitle className="text-xl font-semibold mb-6">Edit Profil</DialogTitle>
-            <div className="space-y-6">
-              {/* Basic Info Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Informasi Dasar</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Judul Profil</label>
-                    <Input
-                      value={editData.title}
-                      onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                      placeholder="e.g. Full-Stack Developer & IoT Enthusiast"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Lokasi</label>
-                    <Input
-                      value={editData.location}
-                      onChange={(e) => setEditData({ ...editData, location: e.target.value })}
-                      placeholder="e.g. Bandung, Indonesia"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Universitas</label>
-                  <Input
-                    value={editData.university}
-                    onChange={(e) => setEditData({ ...editData, university: e.target.value })}
-                    placeholder="e.g. Universitas Dian Nuswantoro"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Jurusan</label>
-                  <Input
-                    value={editData.major}
-                    onChange={(e) => setEditData({ ...editData, major: e.target.value })}
-                    placeholder="e.g. Teknik Informatika"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-2">Tentang Saya</label>
-                  <Textarea
-                    value={editData.bio}
-                    onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
-                    placeholder="Ceritakan tentang diri Anda..."
-                    className="min-h-[120px] resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* Contact Info Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Informasi Kontak</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Email</label>
-                    <Input
-                      type="email"
-                      value={editData.email}
-                      onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                      placeholder="your.email@example.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Nomor Telepon</label>
-                    <Input
-                      type="tel"
-                      value={editData.phone}
-                      onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
-                      placeholder="+62 812-3456-7890"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Social Media Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Media Sosial</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      <Github className="inline h-4 w-4 mr-1" />
-                      GitHub
-                    </label>
-                    <Input
-                      value={editData.socialLinks.github}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          socialLinks: { ...editData.socialLinks, github: e.target.value },
-                        })
-                      }
-                      placeholder="https://github.com/username"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      <Linkedin className="inline h-4 w-4 mr-1 text-blue-600" />
-                      LinkedIn
-                    </label>
-                    <Input
-                      value={editData.socialLinks.linkedin}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          socialLinks: { ...editData.socialLinks, linkedin: e.target.value },
-                        })
-                      }
-                      placeholder="https://linkedin.com/in/username"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      <Instagram className="inline h-4 w-4 mr-1 text-pink-600" />
-                      Instagram
-                    </label>
-                    <Input
-                      value={editData.socialLinks.instagram}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          socialLinks: { ...editData.socialLinks, instagram: e.target.value },
-                        })
-                      }
-                      placeholder="https://instagram.com/username"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      <LinkIcon className="inline h-4 w-4 mr-1 text-green-600" />
-                      Portfolio
-                    </label>
-                    <Input
-                      value={editData.socialLinks.portfolio}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          socialLinks: { ...editData.socialLinks, portfolio: e.target.value },
-                        })
-                      }
-                      placeholder="https://yourportfolio.com"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button onClick={handleSaveChanges} className="flex-1">
-                  Simpan Perubahan
-                </Button>
-                <Button variant="outline" onClick={() => setIsEditing(false)} className="bg-transparent">
-                  Batal
-                </Button>
-              </div>
+       {/* Skill Add/Edit Dialog */}
+       <Dialog open={isSkillDialogOpen} onOpenChange={setIsSkillDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{skillToEdit ? 'Edit Skill' : 'Tambah Skill Baru'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nama Skill</label>
+              <Input 
+                value={newSkill.name} 
+                onChange={(e) => setNewSkill({...newSkill, name: e.target.value})}
+                placeholder="contoh: React, Python, UI/UX Design"
+                list="skills-list"
+              />
+              <datalist id="skills-list">
+                {allSkills.map(skill => (
+                  <option key={skill.id} value={skill.name} />
+                ))}
+              </datalist>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Proficiency: {newSkill.proficiency}%</label>
+              <Input 
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={newSkill.proficiency} 
+                onChange={(e) => setNewSkill({...newSkill, proficiency: parseInt(e.target.value)})}
+              />
             </div>
           </div>
+          <DialogFooter className="flex gap-2 sm:justify-between">
+            {skillToEdit && (
+              <Button 
+                variant="destructive" 
+                type="button"
+                onClick={() => handleDeleteSkill(skillToEdit.skill.name)}
+              >
+                Hapus
+              </Button>
+            )}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsSkillDialogOpen(false)}
+              >
+                Batal
+              </Button>
+              <Button 
+                type="button"
+                onClick={handleAddOrUpdateSkill}
+              >
+                {skillToEdit ? 'Simpan Perubahan' : 'Tambah Skill'}
+              </Button>
+            </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -850,20 +659,17 @@ export default function ProfilePage() {
         <DialogContent className="max-w-5xl">
           <div className="p-4">
             <DialogTitle className="text-xl font-semibold mb-4 flex items-center justify-between">
-              <span>CV Preview: {userData.cv?.fileName}</span>
+              <span>CV Preview: {userData.cv_file?.split('/').pop()}</span>
               <Button variant="outline" size="sm" className="bg-transparent" onClick={() => setIsPdfViewerOpen(false)}>
                 Close
               </Button>
             </DialogTitle>
             <div className="bg-gray-100 rounded-lg p-2 border border-gray-200">
               <div className="w-full h-[70vh] overflow-hidden">
-                <iframe src={userData.cv?.url + "#toolbar=1"} className="w-full h-full border-0" title="CV Preview" />
+                <iframe src={userData.cv_file + "#toolbar=1"} className="w-full h-full border-0" title="CV Preview" />
               </div>
             </div>
             <div className="flex justify-end mt-4">
-              <Button size="sm" variant="outline" className="flex items-center justify-center bg-transparent mr-2">
-                <Download className="h-4 w-4 mr-2" /> Unduh CV
-              </Button>
               <Button size="sm" onClick={() => setIsPdfViewerOpen(false)}>
                 Tutup
               </Button>

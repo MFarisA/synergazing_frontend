@@ -1,66 +1,72 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { Github, Linkedin, Instagram, LinkIcon, ArrowLeft, Upload, Camera } from 'lucide-react'
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
-
-// Mock user data - in real app, this would come from API/auth
-const userData = {
-  id: 1, // This user's ID
-  name: "Adit Cukur",
-  username: "aditcukur",
-  avatar: "https://mahasiswa.dinus.ac.id/images/foto/A/A11/2022/A11.2022.14148.jpg",
-  title: "Full-Stack Developer & IoT Enthusiast",
-  university: "Universitas Dian Nuswantoro",
-  major: "Teknik Informatika",
-  year: "Semester 7",
-  location: "Pati, Indonesia",
-  bio: "Passionate about creating innovative solutions through technology. Experienced in full-stack development with a focus on IoT systems and real-time applications. Always eager to collaborate on meaningful projects that make a difference.",
-  email: "adittukangcukur@mail.com",
-  phone: "+62 812-3456-7890",
-  // Social links
-  socialLinks: {
-    github: "https://github.com/aditcukur",
-    linkedin: "https://linkedin.com/in/aditcukur",
-    instagram: "https://instagram.com/aditcukur",
-    portfolio: "https://aditcukur.dev",
-  },
-  isReadyForCollaboration: true,
-}
+import { api } from "@/lib/api"
+import { User } from "@/types"
 
 export default function EditProfilePage() {
   const router = useRouter()
+  const [userData, setUserData] = useState<User | null>(null);
   const [editData, setEditData] = useState({
-    bio: userData.bio,
-    title: userData.title,
-    location: userData.location,
-    university: userData.university,
-    major: userData.major,
-    year: userData.year,
-    email: userData.email,
-    phone: userData.phone,
-    socialLinks: {
-      github: userData.socialLinks.github,
-      linkedin: userData.socialLinks.linkedin,
-      instagram: userData.socialLinks.instagram,
-      portfolio: userData.socialLinks.portfolio,
-    },
-    isReadyForCollaboration: userData.isReadyForCollaboration,
-  })
+    name: "",
+    email: "",
+    phone: "",
+    about_me: "",
+    location: "",
+    interests: "",
+    academic: "",
+    website_url: "",
+    github_url: "",
+    linkedin_url: "",
+    instagram_url: "",
+    portfolio_url: "",
+  });
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [cvFile, setCvFile] = useState<File | null>(null);
 
-  const handleSaveChanges = () => {
-    // In a real app, this would make an API call to update the user data
-    console.log("Saving changes:", editData)
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      api.getProfile(token).then(data => {
+        setUserData(data);
+        setEditData(data);
+      }).catch(err => console.error(err));
+    }
+  }, []);
+
+  const handleSaveChanges = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const formData = new FormData();
+    Object.entries(editData).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+    if (profilePicture) {
+      formData.append('profile_picture', profilePicture);
+    }
+    if (cvFile) {
+      formData.append('cv_file', cvFile);
+    }
     
-    // Navigate back to profile page
-    router.push('/profile')
+    try {
+      await api.updateProfile(token, formData);
+      router.push('/profile');
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (!userData) {
+    return <div>Loading...</div>
   }
 
   return (
@@ -85,24 +91,28 @@ export default function EditProfilePage() {
                 <div className="flex flex-col items-center gap-4">
                   <div className="relative">
                     <Avatar className="h-24 w-24 border-4 border-background shadow-md">
-                      <AvatarImage src={userData.avatar || "/placeholder.svg"} />
+                      <AvatarImage src={profilePicture ? URL.createObjectURL(profilePicture) : userData.profile_picture || "/placeholder.svg"} />
                       <AvatarFallback className="text-2xl">
-                        {userData.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
+                        {editData.name
+                          ? editData.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                          : "U"}
                       </AvatarFallback>
                     </Avatar>
                     <Button
                       size="icon"
                       variant="secondary"
                       className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
+                      onClick={() => document.getElementById('profile-picture-upload')?.click()}
                     >
                       <Camera className="h-4 w-4" />
                     </Button>
+                    <input type="file" id="profile-picture-upload" className="hidden" onChange={(e) => setProfilePicture(e.target.files?.[0] || null)} />
                   </div>
                   
-                  <h2 className="text-xl font-bold">{userData.name}</h2>
+                  <h2 className="text-xl font-bold">{editData.name}</h2>
                 </div>
               </div>
             </Card>
@@ -114,49 +124,48 @@ export default function EditProfilePage() {
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Judul Profil</label>
+                    <label className="block text-sm font-medium mb-2">Nama Lengkap</label>
                     <Input
-                      value={editData.title}
-                      onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                      placeholder="contoh: Full-Stack Developer & IoT Enthusiast"
+                      value={editData.name}
+                      onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                      placeholder="e.g. Adit Cukur"
                     />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">Universitas</label>
+                      <label className="block text-sm font-medium mb-2">Akademik</label>
                       <Input
-                        value={editData.university}
-                        onChange={(e) => setEditData({ ...editData, university: e.target.value })}
-                        placeholder="contoh: Universitas Dian Nuswantoro"
+                        value={editData.academic}
+                        onChange={(e) => setEditData({ ...editData, academic: e.target.value })}
+                        placeholder="e.g. Teknik Informatika, Universitas Dian Nuswantoro"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Jurusan</label>
+                      <label className="block text-sm font-medium mb-2">Lokasi</label>
                       <Input
-                        value={editData.major}
-                        onChange={(e) => setEditData({ ...editData, major: e.target.value })}
-                        placeholder="contoh: Teknik Informatika"
+                        value={editData.location}
+                        onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+                        placeholder="e.g. Pati, Indonesia"
                       />
                     </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Lokasi</label>
-                    <Input
-                      value={editData.location}
-                      onChange={(e) => setEditData({ ...editData, location: e.target.value })}
-                      placeholder="contoh: Bandung, Indonesia"
-                    />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium mb-2">Tentang Saya</label>
                     <Textarea
-                      value={editData.bio}
-                      onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
+                      value={editData.about_me}
+                      onChange={(e) => setEditData({ ...editData, about_me: e.target.value })}
                       placeholder="Ceritakan tentang diri Anda..."
                       className="min-h-[150px] resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Minat</label>
+                    <Input
+                      value={editData.interests}
+                      onChange={(e) => setEditData({ ...editData, interests: e.target.value })}
+                      placeholder="e.g. IoT, Web Development, Gaming"
                     />
                   </div>
                 </div>
@@ -194,20 +203,36 @@ export default function EditProfilePage() {
             {/* Social Media Section */}
             <Card>
               <div className="p-6 space-y-6">
-                <h3 className="text-lg font-medium">Media Sosial</h3>
+                <h3 className="text-lg font-medium">Media Sosial & Tautan</h3>
                 
                 <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium mb-2">
+                      <LinkIcon className="inline h-4 w-4 mr-1 text-green-600" />
+                      Website
+                    </label>
+                    <Input
+                      value={editData.website_url}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          website_url: e.target.value,
+                        })
+                      }
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       <Github className="inline h-4 w-4 mr-1" />
                       GitHub
                     </label>
                     <Input
-                      value={editData.socialLinks.github}
+                      value={editData.github_url}
                       onChange={(e) =>
                         setEditData({
                           ...editData,
-                          socialLinks: { ...editData.socialLinks, github: e.target.value },
+                          github_url: e.target.value,
                         })
                       }
                       placeholder="https://github.com/username"
@@ -220,11 +245,11 @@ export default function EditProfilePage() {
                       LinkedIn
                     </label>
                     <Input
-                      value={editData.socialLinks.linkedin}
+                      value={editData.linkedin_url}
                       onChange={(e) =>
                         setEditData({
                           ...editData,
-                          socialLinks: { ...editData.socialLinks, linkedin: e.target.value },
+                          linkedin_url: e.target.value,
                         })
                       }
                       placeholder="https://linkedin.com/in/username"
@@ -237,11 +262,11 @@ export default function EditProfilePage() {
                       Instagram
                     </label>
                     <Input
-                      value={editData.socialLinks.instagram}
+                      value={editData.instagram_url}
                       onChange={(e) =>
                         setEditData({
                           ...editData,
-                          socialLinks: { ...editData.socialLinks, instagram: e.target.value },
+                          instagram_url: e.target.value,
                         })
                       }
                       placeholder="https://instagram.com/username"
@@ -254,11 +279,11 @@ export default function EditProfilePage() {
                       Portfolio
                     </label>
                     <Input
-                      value={editData.socialLinks.portfolio}
+                      value={editData.portfolio_url}
                       onChange={(e) =>
                         setEditData({
                           ...editData,
-                          socialLinks: { ...editData.socialLinks, portfolio: e.target.value },
+                          portfolio_url: e.target.value,
                         })
                       }
                       placeholder="https://yourportfolio.com"
@@ -280,11 +305,12 @@ export default function EditProfilePage() {
                   <div className="flex flex-col items-center justify-center p-6 text-center">
                     <Upload className="h-10 w-10 text-gray-400 mb-2" />
                     <p className="text-sm text-gray-600 mb-2">
-                      Drag & drop CV Anda di sini, atau
+                      {cvFile ? cvFile.name : "Drag & drop CV Anda di sini, atau"}
                     </p>
-                    <Button size="sm" variant="primary">
+                    <Button size="sm" variant="primary" onClick={() => document.getElementById('cv-upload')?.click()}>
                       <Upload className="h-3.5 w-3.5 mr-1.5" /> Pilih File
                     </Button>
+                    <input type="file" id="cv-upload" className="hidden" onChange={(e) => setCvFile(e.target.files?.[0] || null)} />
                     <p className="text-xs text-gray-500 mt-3">
                       Format yang diperbolehkan: PDF. Maksimum 5MB.
                     </p>
