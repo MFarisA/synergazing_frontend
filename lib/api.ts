@@ -372,6 +372,52 @@ export const api = {
       throw error;
     }
   },
+
+  // Delete CV file
+  deleteCv: async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/cv`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to delete CV:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to delete CV: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error deleting CV:', error);
+      throw error;
+    }
+  },
+
+  // Delete profile picture
+  deleteProfilePicture: async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/picture`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to delete profile picture:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to delete profile picture: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error deleting profile picture:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;
