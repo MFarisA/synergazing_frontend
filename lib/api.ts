@@ -1,7 +1,7 @@
 // API client for interacting with the backend
 
 // Use environment variable for API URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3002';
+const API_BASE_URL = 'https://synergazing.bahasakita.store' ;
 
 // Type definitions for authentication
 export interface RegisterRequest {
