@@ -99,6 +99,9 @@ export default function ProfilePage() {
           const profileInfo = profileData.data.profile || {};
           const directSkills = profileData.data.skills || [];
           
+          // Convert status_collaboration string to boolean for the toggle
+          const collaborationStatus = profileData.data.status_collaboration === "ready";
+          
           // Merge profile data with nested profile information
           const updatedProfileData = {
             ...profileData.data,
@@ -112,8 +115,8 @@ export default function ProfilePage() {
             linkedin_url: profileInfo.linkedin_url || "",
             instagram_url: profileInfo.instagram_url || "",
             portfolio_url: profileInfo.portfolio_url || "",
-            // Set default collaboration_status if not provided
-            collaboration_status: profileData.data.collaboration_status ?? false,
+            // Set collaboration_status based on the API response
+            collaboration_status: collaborationStatus,
             // Use skills from profile API if available, otherwise use getUserSkills data
             user_skills: directSkills.length > 0 ? directSkills : (userSkillsData?.data?.skills || [])
           };
@@ -131,7 +134,9 @@ export default function ProfilePage() {
     const token = localStorage.getItem("token");
     if (token && userData) {
       try {
-        await api.updateCollaborationStatus(token, status);
+        // Convert boolean to the specific string values expected by the API
+        const statusString = status ? "ready" : "not_ready";
+        await api.updateCollaborationStatus(token, statusString);
         setUserData({ ...userData, collaboration_status: status });
         setApiError(null);
       } catch (error) {
@@ -202,6 +207,9 @@ export default function ProfilePage() {
       const profileInfo = updatedProfile.data.profile || {};
       const directSkills = updatedProfile.data.skills || [];
       
+      // Convert status_collaboration string to boolean for the toggle
+      const collaborationStatus = updatedProfile.data.status_collaboration === "ready";
+      
       // Merge profile data with nested profile information
       const updatedProfileData = {
         ...updatedProfile.data,
@@ -214,7 +222,7 @@ export default function ProfilePage() {
         linkedin_url: profileInfo.linkedin_url || "",
         instagram_url: profileInfo.instagram_url || "",
         portfolio_url: profileInfo.portfolio_url || "",
-        collaboration_status: updatedProfile.data.collaboration_status ?? false,
+        collaboration_status: collaborationStatus,
         user_skills: directSkills.length > 0 ? directSkills : (updatedUserSkills?.data?.skills || [])
       };
       setUserData(updatedProfileData);
@@ -245,6 +253,9 @@ export default function ProfilePage() {
       const profileInfo = updatedProfile.data.profile || {};
       const directSkills = updatedProfile.data.skills || [];
       
+      // Convert status_collaboration string to boolean for the toggle
+      const collaborationStatus = updatedProfile.data.status_collaboration === "ready";
+      
       // Merge profile data with nested profile information
       const updatedProfileData = {
         ...updatedProfile.data,
@@ -257,7 +268,7 @@ export default function ProfilePage() {
         linkedin_url: profileInfo.linkedin_url || "",
         instagram_url: profileInfo.instagram_url || "",
         portfolio_url: profileInfo.portfolio_url || "",
-        collaboration_status: updatedProfile.data.collaboration_status ?? false,
+        collaboration_status: collaborationStatus,
         user_skills: directSkills.length > 0 ? directSkills : (updatedUserSkills?.data?.skills || [])
       };
       setUserData(updatedProfileData);
@@ -367,7 +378,7 @@ export default function ProfilePage() {
                   {/* Info Section */}
                   <div className="flex-1 text-center sm:text-left">
                     <h1 className="text-2xl font-bold">{userData.name}</h1>
-                    <p className="text-muted-foreground">{userData.about_me}</p>
+                    <p className="text-muted-foreground">{userData.interests}</p>
                     <div className="flex items-center justify-center sm:justify-start gap-4 mt-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <GraduationCap className="h-4 w-4" />
@@ -424,14 +435,6 @@ export default function ProfilePage() {
                   </CardContent>
                 </Card>
                 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Minat</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-gray-700 leading-relaxed">{userData.interests}</p>
-                    </CardContent>
-                </Card>
 
                 {/* Skills */}
                 <Card>

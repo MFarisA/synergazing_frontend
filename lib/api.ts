@@ -365,21 +365,28 @@ export const api = {
   },
 
   // Update collaboration status
-  updateCollaborationStatus: async (token: string, status: boolean) => {
+  updateCollaborationStatus: async (token: string, status: string) => {
     try {
+      // Create FormData object as the backend expects form values, not JSON
+      const formData = new FormData();
+      formData.append('status', status);
+      
+      console.log('Sending collaboration status request with FormData status:', status);
+      
       const response = await fetch(`${API_BASE_URL}/api/profile/collaboration-status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          // Don't set Content-Type for FormData - let the browser set it
         },
-        body: JSON.stringify({ status: status ? "open" : "closed" }),
+        body: formData,
       });
+      
       if (!response.ok) {
         console.error('Failed to update collaboration status:', response.status, response.statusText);
         const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Failed to update collaboration status: ${response.status} ${response.statusText}`);
+        console.error('Error response details:', errorText);
+        throw new Error(`Failed to update collaboration status: ${response.status} ${errorText}`);
       }
       return response.json();
     } catch (error) {
