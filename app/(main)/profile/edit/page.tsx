@@ -149,6 +149,15 @@ export default function EditProfilePage() {
                       placeholder="e.g. Adit Cukur"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Main Skills</label>
+                    <Input
+                      value={editData.interests}
+                      onChange={(e) => setEditData({ ...editData, interests: e.target.value })}
+                      placeholder="e.g. IoT, Web Development, Gaming"
+                    />
+                  </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -178,14 +187,7 @@ export default function EditProfilePage() {
                       className="min-h-[150px] resize-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Minat</label>
-                    <Input
-                      value={editData.interests}
-                      onChange={(e) => setEditData({ ...editData, interests: e.target.value })}
-                      placeholder="e.g. IoT, Web Development, Gaming"
-                    />
-                  </div>
+                  
                 </div>
               </div>
             </Card>

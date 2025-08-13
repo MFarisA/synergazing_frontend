@@ -81,7 +81,7 @@ export default function ProfilePage() {
       Promise.all([
         api.getProfile(token).catch(err => {
           console.error("Failed to fetch profile:", err);
-          setApiError("Gagal memuat profil. Backend mungkin tidak tersedia.");
+          setApiError("Gagal memuat profil. Server mungkin tidak tersedia.");
           return null;
         }),
         api.getAllSkills(token).catch(err => {
@@ -93,14 +93,21 @@ export default function ProfilePage() {
           return { data: { skills: [] } };
         })
       ]).then(([profileData, skillsData, userSkillsData]) => {
+        console.log('Full API response:', profileData);
+        console.log('Profile data keys:', profileData?.data ? Object.keys(profileData.data) : 'No data');
+        
         if (profileData) {
           // The profile API returns profile details nested under 'profile' object
           // and skills directly under 'skills' array
           const profileInfo = profileData.data.profile || {};
           const directSkills = profileData.data.skills || [];
           
-          // Convert status_collaboration string to boolean for the toggle
-          const collaborationStatus = profileData.data.status_collaboration === "ready";
+          // Convert colaboration_status string to boolean for the toggle
+          // Note: API returns "colaboration_status" (typo in backend - missing one 'l')
+          const collaborationStatus = profileData.data.colaboration_status === "ready";
+          
+          console.log('API colaboration_status:', profileData.data.colaboration_status);
+          console.log('Converted to boolean:', collaborationStatus);
           
           // Merge profile data with nested profile information
           const updatedProfileData = {
@@ -135,7 +142,8 @@ export default function ProfilePage() {
     if (token && userData) {
       try {
         // Convert boolean to the specific string values expected by the API
-        const statusString = status ? "ready" : "not_ready";
+        // Backend expects "ready" and "not ready" (with space, not underscore)
+        const statusString = status ? "ready" : "not ready";
         await api.updateCollaborationStatus(token, statusString);
         setUserData({ ...userData, collaboration_status: status });
         setApiError(null);
@@ -207,8 +215,8 @@ export default function ProfilePage() {
       const profileInfo = updatedProfile.data.profile || {};
       const directSkills = updatedProfile.data.skills || [];
       
-      // Convert status_collaboration string to boolean for the toggle
-      const collaborationStatus = updatedProfile.data.status_collaboration === "ready";
+      // Convert colaboration_status string to boolean for the toggle
+      const collaborationStatus = updatedProfile.data.colaboration_status === "ready";
       
       // Merge profile data with nested profile information
       const updatedProfileData = {
@@ -253,8 +261,8 @@ export default function ProfilePage() {
       const profileInfo = updatedProfile.data.profile || {};
       const directSkills = updatedProfile.data.skills || [];
       
-      // Convert status_collaboration string to boolean for the toggle
-      const collaborationStatus = updatedProfile.data.status_collaboration === "ready";
+      // Convert colaboration_status string to boolean for the toggle
+      const collaborationStatus = updatedProfile.data.colaboration_status === "ready";
       
       // Merge profile data with nested profile information
       const updatedProfileData = {
