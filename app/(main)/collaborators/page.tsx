@@ -16,21 +16,14 @@ import { api } from "@/lib/api"
 interface Collaborator {
 	id: number;
 	name: string;
-	email: string;
-	phone: string;
+	email?: string;
+	phone?: string;
 	profile_picture: string;
-	profile: {
-		about_me: string;
-		location: string;
-		interests: string;
-		academic: string;
-		website_url: string;
-		github_url: string;
-		linkedin_url: string;
-		instagram_url: string;
-		portfolio_url: string;
-	};
-	user_skills: Array<{
+	about_me: string;
+	location: string;
+	interests: string;
+	academic: string;
+	skills: Array<{
 		id: number;
 		skill: {
 			id: number;
@@ -63,9 +56,40 @@ export default function CollaboratorsPage() {
 				const response = await api.getCollaborators(token);
 				console.log('Collaborators API response:', response);
 				
-				// Handle the API response structure
-				const collaboratorsData = response.data || response;
-				setCollaborators(Array.isArray(collaboratorsData) ? collaboratorsData : []);
+				 // The API returns: { data: {...}, message: "Ready users retrieved successfully", success: true }
+				// But the actual users array is inside response.data.users
+				let collaboratorsData;
+				
+				if (response.data && response.data.users) {
+					// Handle paginated response structure
+					collaboratorsData = response.data.users;
+				} else if (response.data && Array.isArray(response.data)) {
+					// Handle direct array response
+					collaboratorsData = response.data;
+				} else if (Array.isArray(response)) {
+					// Handle direct array response
+					collaboratorsData = response;
+				} else {
+					// Fallback
+					collaboratorsData = [];
+				}
+				
+				console.log('Extracted collaborators data:', collaboratorsData);
+				console.log('Number of collaborators:', collaboratorsData.length);
+				
+				// Debug each collaborator's profile data
+				collaboratorsData.forEach((collaborator, index) => {
+					console.log(`Collaborator ${index + 1}:`, {
+						name: collaborator.name,
+						profile: collaborator.profile,
+						user_skills: collaborator.user_skills,
+						interests: collaborator.profile?.interests,
+						location: collaborator.profile?.location,
+						about_me: collaborator.profile?.about_me
+					});
+				});
+				
+				setCollaborators(collaboratorsData);
 				setError(null);
 			} catch (err) {
 				console.error('Error fetching collaborators:', err);
@@ -82,7 +106,7 @@ export default function CollaboratorsPage() {
 	const allSkills = Array.from(
 		new Set(
 			collaborators.flatMap(collaborator => 
-				(collaborator.user_skills || []).map(userSkill => userSkill.skill.name)
+				(collaborator.skills || []).map(userSkill => userSkill.skill.name)
 			)
 		)
 	).sort();
@@ -90,14 +114,14 @@ export default function CollaboratorsPage() {
 	const filteredCollaborators = collaborators.filter((collaborator) => {
 		const searchableText = [
 			collaborator.name,
-			collaborator.profile?.interests || '',
-			collaborator.profile?.about_me || '',
-			collaborator.profile?.academic || ''
+			collaborator.interests || '',
+			collaborator.about_me || '',
+			collaborator.academic || ''
 		].join(' ').toLowerCase();
 
 		const matchesSearch = searchTerm === '' || searchableText.includes(searchTerm.toLowerCase());
 
-		const collaboratorSkills = (collaborator.user_skills || []).map(userSkill => userSkill.skill.name);
+		const collaboratorSkills = (collaborator.skills || []).map(userSkill => userSkill.skill.name);
 		const matchesSkills = selectedSkills.length === 0 || 
 			selectedSkills.every((skill) => collaboratorSkills.includes(skill));
 
@@ -210,25 +234,25 @@ export default function CollaboratorsPage() {
 										</AvatarFallback>
 									</Avatar>
 									<h3 className="text-xl font-bold">{collaborator.name}</h3>
-									<p className="text-md text-gray-600 mb-2">{collaborator.profile?.interests || 'No title specified'}</p>
+									<p className="text-md text-gray-600 mb-2">{collaborator.interests || 'No title specified'}</p>
 									<div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
 										<MapPin className="h-4 w-4" />
-										<span>{collaborator.profile?.location || 'Location not specified'}</span>
+										<span>{collaborator.location || 'Location not specified'}</span>
 									</div>
 									<div className="flex flex-wrap justify-center gap-1 mb-4">
-										{(collaborator.user_skills || []).slice(0, 4).map((userSkill) => (
+										{(collaborator.skills || []).slice(0, 4).map((userSkill) => (
 											<Badge key={userSkill.id} variant="secondary" className="text-xs">
 												{userSkill.skill.name}
 											</Badge>
 										))}
-										{(collaborator.user_skills || []).length > 4 && (
+										{(collaborator.skills || []).length > 4 && (
 											<Badge variant="outline" className="text-xs">
-												+{(collaborator.user_skills || []).length - 4} more
+												+{(collaborator.skills || []).length - 4} more
 											</Badge>
 										)}
 									</div>
 									<p className="text-sm text-gray-700 mb-4 line-clamp-3">
-										{collaborator.profile?.about_me || 'No description available'}
+										{collaborator.about_me || 'No description available'}
 									</p>
 									<div className="flex gap-2 w-full mt-auto">
 										<Link href={`/profile/${collaborator.id}`} passHref className="flex-1">

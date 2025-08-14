@@ -135,7 +135,7 @@ export default function DebugApi() {
             <li>The 401 error indicates the API requires authentication</li>
             <li>Check if your backend requires API keys or authentication tokens for new registrations</li>
             <li>Verify if your Go backend has middleware that requires authentication for all routes</li>
-            <li>Check if the endpoint URL is correct: {process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3002'}/api/auth/register</li>
+            <li>Check if the endpoint URL is correct: {process.env.NEXT_PUBLIC_API_URL }/api/auth/register</li>
           </ul>
         </div>
         
