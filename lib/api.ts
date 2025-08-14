@@ -395,6 +395,28 @@ export const api = {
     }
   },
 
+  // Get collaborators with ready status
+  getCollaborators: async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/ready`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch collaborators:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch collaborators: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error fetching collaborators:', error);
+      throw error;
+    }
+  },
+
   // Delete CV file
   deleteCv: async (token: string) => {
     try {

@@ -1,7 +1,7 @@
 "use client"
 
 import { Checkbox } from "@/components/ui/checkbox"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,103 +10,132 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MapPin, MessageCircle, Search } from "lucide-react"
 import Link from "next/link"
 import { AnimatedModal } from "@/components/ui/animated-modal"
+import { api } from "@/lib/api"
 
-// Mock data for collaborators
-const collaboratorsData = [
-	{
-		id: 1,
-		name: "Budi Santoso",
-		avatar: "https://mahasiswa.dinus.ac.id/images/foto/A/A11/2022/A11.2022.14647.jpg",
-		title: "Frontend Developer",
-		location: "Jakarta, Indonesia",
-		skills: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
-		isReadyForCollaboration: true,
-		bio: "Passionate about building beautiful and performant user interfaces. Always looking for exciting new projects.",
-		email: "budi.s@example.com",
-		phone: "+62 812 3456 7890",
-		experience: "5 years in web development, specializing in scalable single-page applications.",
-		portfolio: "https://budi.dev",
-	},
-	{
-		id: 2,
-		name: "Citra Dewi",
-		avatar: "https://mahasiswa.dinus.ac.id/images/foto/A/A11/2022/A11.2022.14100.jpg", // Updated avatar URL
-		title: "UI/UX Designer",
-		location: "Surabaya, Indonesia",
-		skills: ["Figma", "Sketch", "User Research", "Prototyping"],
-		isReadyForCollaboration: true,
-		bio: "Creating intuitive and delightful user experiences is my passion. Let's build something amazing together!",
-		email: "citra.d@example.com",
-		phone: "+62 813 4567 8901",
-		experience: "4 years in UI/UX design, with a strong focus on user-centered design principles.",
-		portfolio: "https://citra.design",
-	},
-	{
-		id: 3,
-		name: "Dian Permata",
-		avatar: "https://mahasiswa.dinus.ac.id/images/foto/A/A11/2022/A11.2022.14100.jpg", // Updated avatar URL
-		title: "Backend Engineer",
-		location: "Bandung, Indonesia",
-		skills: ["Node.js", "Python", "MongoDB", "AWS"],
-		isReadyForCollaboration: true,
-		bio: "Experienced in scalable backend systems and API development. Open to collaborating on challenging projects.",
-		email: "dian.p@example.com",
-		phone: "+62 814 5678 9012",
-		experience: "6 years building robust and efficient backend services for various industries.",
-		portfolio: "https://dian.tech",
-	},
-	{
-		id: 4,
-		name: "Eko Prasetyo",
-		avatar: "https://mahasiswa.dinus.ac.id/images/foto/A/A11/2022/A11.2022.14100.jpg", // Updated avatar URL
-		title: "Mobile Developer",
-		location: "Yogyakarta, Indonesia",
-		skills: ["React Native", "Firebase", "Flutter", "Dart"],
-		isReadyForCollaboration: true,
-		bio: "Building cross-platform mobile applications is my expertise. Ready to join a dynamic team.",
-		email: "eko.p@example.com",
-		phone: "+62 815 6789 0123",
-		experience: "3 years developing high-performance mobile apps for both Android and iOS.",
-		portfolio: "https://eko.app",
-	},
-	{
-		id: 5,
-		name: "Fajar Nugroho",
-		avatar: "https://mahasiswa.dinus.ac.id/images/foto/A/A11/2022/A11.2022.14100.jpg", // Updated avatar URL
-		title: "Data Scientist",
-		location: "Bandung, Indonesia",
-		skills: ["Python", "Machine Learning", "Data Analysis", "TensorFlow"],
-		isReadyForCollaboration: true,
-		bio: "Turning data into actionable insights. Seeking projects in AI/ML and data-driven solutions.",
-		email: "fajar.n@example.com",
-		phone: "+62 816 7890 1234",
-		experience: "7 years in data science, with a focus on predictive modeling and statistical analysis.",
-		portfolio: "https://fajar.ai",
-	},
-]
+// Type definition for collaborator from API
+interface Collaborator {
+	id: number;
+	name: string;
+	email: string;
+	phone: string;
+	profile_picture: string;
+	profile: {
+		about_me: string;
+		location: string;
+		interests: string;
+		academic: string;
+		website_url: string;
+		github_url: string;
+		linkedin_url: string;
+		instagram_url: string;
+		portfolio_url: string;
+	};
+	user_skills: Array<{
+		id: number;
+		skill: {
+			id: number;
+			name: string;
+		};
+		proficiency: number;
+	}>;
+}
 
 export default function CollaboratorsPage() {
 	const [searchTerm, setSearchTerm] = useState("")
 	const [selectedSkills, setSelectedSkills] = useState<string[]>([])
 	const [isMessageModalOpen, setIsMessageModalOpen] = useState(false)
-	const [selectedCollaborator, setSelectedCollaborator] = useState<(typeof collaboratorsData)[0] | null>(null)
+	const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null)
+	const [collaborators, setCollaborators] = useState<Collaborator[]>([])
+	const [isLoading, setIsLoading] = useState(true)
+	const [error, setError] = useState<string | null>(null)
 
-	const allSkills = Array.from(new Set(collaboratorsData.flatMap((c) => c.skills))).sort()
+	// Fetch collaborators on component mount
+	useEffect(() => {
+		const fetchCollaborators = async () => {
+			try {
+				const token = localStorage.getItem("token");
+				if (!token) {
+					setError("Authentication required");
+					setIsLoading(false);
+					return;
+				}
 
-	const filteredCollaborators = collaboratorsData.filter((collaborator) => {
-		const matchesSearch =
-			collaborator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			collaborator.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			collaborator.bio.toLowerCase().includes(searchTerm.toLowerCase())
+				const response = await api.getCollaborators(token);
+				console.log('Collaborators API response:', response);
+				
+				// Handle the API response structure
+				const collaboratorsData = response.data || response;
+				setCollaborators(Array.isArray(collaboratorsData) ? collaboratorsData : []);
+				setError(null);
+			} catch (err) {
+				console.error('Error fetching collaborators:', err);
+				setError('Failed to load collaborators');
+			} finally {
+				setIsLoading(false);
+			}
+		};
 
-		const matchesSkills =
-			selectedSkills.length === 0 || selectedSkills.every((skill) => collaborator.skills.includes(skill))
+		fetchCollaborators();
+	}, []);
 
-		return matchesSearch && matchesSkills && collaborator.isReadyForCollaboration
-	})
+	// Extract all skills from collaborators for filtering
+	const allSkills = Array.from(
+		new Set(
+			collaborators.flatMap(collaborator => 
+				(collaborator.user_skills || []).map(userSkill => userSkill.skill.name)
+			)
+		)
+	).sort();
+
+	const filteredCollaborators = collaborators.filter((collaborator) => {
+		const searchableText = [
+			collaborator.name,
+			collaborator.profile?.interests || '',
+			collaborator.profile?.about_me || '',
+			collaborator.profile?.academic || ''
+		].join(' ').toLowerCase();
+
+		const matchesSearch = searchTerm === '' || searchableText.includes(searchTerm.toLowerCase());
+
+		const collaboratorSkills = (collaborator.user_skills || []).map(userSkill => userSkill.skill.name);
+		const matchesSkills = selectedSkills.length === 0 || 
+			selectedSkills.every((skill) => collaboratorSkills.includes(skill));
+
+		return matchesSearch && matchesSkills;
+	});
 
 	const handleSkillToggle = (skill: string) => {
 		setSelectedSkills((prev) => (prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]))
+	}
+
+	if (isLoading) {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="text-center">
+					<div className="w-8 h-8 border-2 border-t-blue-600 border-blue-200 rounded-full animate-spin mb-3 mx-auto"></div>
+					<p className="text-sm text-gray-500">Memuat kolaborator...</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="text-center max-w-md mx-auto p-6">
+					<div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+						<svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+					</div>
+					<h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Collaborators</h2>
+					<p className="text-gray-600 mb-4">{error}</p>
+					<Button onClick={() => window.location.reload()}>
+						Try Again
+					</Button>
+				</div>
+			</div>
+		);
 	}
 
 	return (
@@ -172,7 +201,7 @@ export default function CollaboratorsPage() {
 							<Card key={collaborator.id} className="hover:shadow-lg transition-shadow h-full">
 								<CardContent className="p-6 flex flex-col items-center text-center h-full">
 									<Avatar className="h-24 w-24 mb-4">
-										<AvatarImage src={collaborator.avatar || "/placeholder.svg"} alt={collaborator.name} />
+										<AvatarImage src={collaborator.profile_picture || "/placeholder.svg"} alt={collaborator.name} />
 										<AvatarFallback className="text-3xl">
 											{collaborator.name
 												.split(" ")
@@ -181,19 +210,26 @@ export default function CollaboratorsPage() {
 										</AvatarFallback>
 									</Avatar>
 									<h3 className="text-xl font-bold">{collaborator.name}</h3>
-									<p className="text-md text-gray-600 mb-2">{collaborator.title}</p>
+									<p className="text-md text-gray-600 mb-2">{collaborator.profile?.interests || 'No title specified'}</p>
 									<div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
 										<MapPin className="h-4 w-4" />
-										<span>{collaborator.location}</span>
+										<span>{collaborator.profile?.location || 'Location not specified'}</span>
 									</div>
 									<div className="flex flex-wrap justify-center gap-1 mb-4">
-										{collaborator.skills.map((skill) => (
-											<Badge key={skill} variant="secondary" className="text-xs">
-												{skill}
+										{(collaborator.user_skills || []).slice(0, 4).map((userSkill) => (
+											<Badge key={userSkill.id} variant="secondary" className="text-xs">
+												{userSkill.skill.name}
 											</Badge>
 										))}
+										{(collaborator.user_skills || []).length > 4 && (
+											<Badge variant="outline" className="text-xs">
+												+{(collaborator.user_skills || []).length - 4} more
+											</Badge>
+										)}
 									</div>
-									<p className="text-sm text-gray-700 mb-4 line-clamp-3">{collaborator.bio}</p>
+									<p className="text-sm text-gray-700 mb-4 line-clamp-3">
+										{collaborator.profile?.about_me || 'No description available'}
+									</p>
 									<div className="flex gap-2 w-full mt-auto">
 										<Link href={`/profile/${collaborator.id}`} passHref className="flex-1">
 											<Button
@@ -224,7 +260,10 @@ export default function CollaboratorsPage() {
 						))}
 						{filteredCollaborators.length === 0 && (
 							<div className="col-span-full text-center text-gray-500 py-10">
-								Tidak ada kolaborator yang ditemukan dengan kriteria ini.
+								{searchTerm || selectedSkills.length > 0 
+									? "Tidak ada kolaborator yang ditemukan dengan kriteria ini."
+									: "Belum ada kolaborator yang siap berkolaborasi."
+								}
 							</div>
 						)}
 					</div>

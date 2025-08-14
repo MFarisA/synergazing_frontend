@@ -151,7 +151,7 @@ export default function EditProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Main Skills</label>
+                    <label className="block text-sm font-medium mb-2">Main Role</label>
                     <Input
                       value={editData.interests}
                       onChange={(e) => setEditData({ ...editData, interests: e.target.value })}
