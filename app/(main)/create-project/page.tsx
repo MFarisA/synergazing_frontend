@@ -30,6 +30,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import { api } from "@/lib/api"
 
 const projectTypes = [
   { value: "lomba", label: "Lomba", description: "Kompetisi atau hackathon" },
@@ -77,6 +78,7 @@ export default function CreateProjectPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [projectId, setProjectId] = useState<string | null>(null) // Add projectID state
   const { addToast } = useToast()
 
   const [formData, setFormData] = useState({
@@ -161,27 +163,181 @@ export default function CreateProjectPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(currentStep + 1)
-    }
-  }
+  const handleNext = async () => {
+    if (!validateStep(currentStep)) return
 
-  const handlePrevious = () => {
-    setCurrentStep(currentStep - 1)
+    setIsLoading(true)
+    
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        addToast({
+          title: "Error",
+          description: "Please login to create a project",
+          type: "error",
+        })
+        setIsLoading(false)
+        return
+      }
+
+      // Stage 1: Create Project
+      if (currentStep === 1) {
+        const stage1FormData = new FormData()
+        stage1FormData.append("title", formData.title)
+        stage1FormData.append("project_type", formData.type)
+        stage1FormData.append("description", formData.description)
+        if (formData.image) {
+          stage1FormData.append("picture", formData.image)
+        }
+
+        const response = await api.createProject(token, stage1FormData)
+        console.log("Project created:", response)
+        
+        // Extract project ID from response
+        if (response.data && response.data.id) {
+          setProjectId(response.data.id.toString())
+        } else if (response.id) {
+          setProjectId(response.id.toString())
+        } else {
+          throw new Error("Project ID not received from server")
+        }
+
+        addToast({
+          title: "Project Created!",
+          description: "Basic project information has been saved.",
+          type: "success",
+        })
+      }
+
+      // Stage 2: Update Project Details
+      else if (currentStep === 2 && projectId) {
+        const stage2Data = {
+          duration: formData.duration,
+          total_team: formData.teamSize,
+          start_date: formData.startDate,
+          end_date: formData.endDate || undefined,
+          location: formData.location,
+          budget: formData.budget ? parseFloat(formData.budget.replace(/[^\d.]/g, "")) : undefined,
+          registration_deadline: formData.deadline,
+        }
+
+        await api.updateProjectStage2(token, projectId, stage2Data)
+        console.log("Stage 2 updated:", stage2Data)
+
+        addToast({
+          title: "Project Details Updated!",
+          description: "Project timeline and details have been saved.",
+          type: "success",
+        })
+      }
+
+      // Stage 3: Update Project Requirements
+      else if (currentStep === 3 && projectId) {
+        const stage3Data = {
+          time_commitment: formData.commitment,
+          required_skills: formData.requiredSkills.map(skill => ({ name: skill })),
+          conditions: formData.requirements.filter(req => req.trim()).map(req => ({ description: req })),
+        }
+
+        await api.updateProjectStage3(token, projectId, stage3Data)
+        console.log("Stage 3 updated:", stage3Data)
+
+        addToast({
+          title: "Requirements Updated!",
+          description: "Project requirements and skills have been saved.",
+          type: "success",
+        })
+      }
+
+      // Stage 4: Update Team & Roles
+      else if (currentStep === 4 && projectId) {
+        const stage4Data = {
+          roles: formData.roles.filter(role => role.title.trim()).map(role => ({
+            name: role.title,
+            slots_available: role.count,
+            description: role.description,
+            skill_names: role.skills,
+          })),
+          // Only include members that have both name and role filled out
+          // and where the name is not empty/placeholder
+          members: formData.existingMembers
+            .filter(member => 
+              member.name.trim() && 
+              member.role.trim() && 
+              member.name.trim() !== "" &&
+              member.name.trim().length > 2 // Ensure it's a real name, not just initials
+            )
+            .map(member => ({
+              name: member.name,
+              role_name: member.role,
+              role_description: member.description,
+              skill_names: member.skills,
+            })),
+        }
+
+        console.log('Stage 4 data being sent:', stage4Data);
+
+        await api.updateProjectStage4(token, projectId, stage4Data)
+        console.log("Stage 4 updated:", stage4Data)
+
+        addToast({
+          title: "Team & Roles Updated!",
+          description: "Team structure and roles have been saved.",
+          type: "success",
+        })
+      }
+
+      setCurrentStep(currentStep + 1)
+    } catch (error) {
+      console.error("Error in stage submission:", error)
+      addToast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save project data",
+        type: "error",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleSubmit = async () => {
     if (!validateStep(5)) return
+    if (!projectId) {
+      addToast({
+        title: "Error",
+        description: "Project ID not found. Please start over.",
+        type: "error",
+      })
+      return
+    }
 
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      console.log("Project created:", formData)
-      
-      // Show success toast
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        addToast({
+          title: "Error",
+          description: "Please login to create a project",
+          type: "error",
+        })
+        setIsLoading(false)
+        return
+      }
+
+      // Stage 5: Finalize Project
+      const stage5Data = {
+        benefits: formData.benefits.filter(benefit => benefit.trim()).map(benefit => ({ description: benefit })),
+        timeline: formData.timelineSteps.filter(step => step.title.trim()).map(step => ({
+          title: step.title,
+          status: step.status,
+        })),
+        tags: formData.tags.map(tag => ({ name: tag })),
+      }
+
+      await api.updateProjectStage5(token, projectId, stage5Data)
+      console.log("Stage 5 updated:", stage5Data)
+
       addToast({
         title: "Proyek Berhasil Dibuat!",
         description: "Proyek Anda telah berhasil dibuat dan siap untuk menerima kolaborator.",
@@ -189,11 +345,25 @@ export default function CreateProjectPage() {
         duration: 5000
       })
       
-      // Redirect to project page or projects list after a short delay
+      // Redirect to projects page after success
       setTimeout(() => {
         router.push("/projects")
       }, 1500)
-    }, 2000)
+      
+    } catch (error) {
+      console.error("Error in final submission:", error)
+      addToast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to finalize project",
+        type: "error",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handlePrevious = () => {
+    setCurrentStep(currentStep - 1)
   }
 
   const handleInputChange = (field: string, value: any) => {
@@ -364,6 +534,54 @@ export default function CreateProjectPage() {
       }),
     }))
   }
+
+  // Add image handling functions
+  const handleImageUpload = (file: File) => {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      addToast({
+        title: "Error",
+        description: "Please upload a valid image file (JPG, PNG, or WebP)",
+        type: "error",
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+    if (file.size > maxSize) {
+      addToast({
+        title: "Error", 
+        description: "File size must be less than 2MB",
+        type: "error",
+      });
+      return;
+    }
+
+    handleInputChange("image", file);
+    addToast({
+      title: "Success",
+      description: "Image uploaded successfully",
+      type: "success",
+    });
+  };
+
+  const handleImageRemove = () => {
+    handleInputChange("image", null);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleImageUpload(files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
 
   const getStepTitle = () => {
     switch (currentStep) {
@@ -559,13 +777,71 @@ export default function CreateProjectPage() {
 
                           <div>
                             <label className="block text-sm font-medium mb-2">Gambar Proyek (Opsional)</label>
-                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
-                              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                              <p className="text-gray-600 mb-4">Upload gambar untuk proyek Anda</p>
-                              <Button variant="outline" size="sm">
-                                Pilih File
-                              </Button>
-                            </div>
+                            {formData.image ? (
+                              // Image Preview
+                              <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4">
+                                <div className="flex items-center gap-4">
+                                  <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100">
+                                    <Image
+                                      src={URL.createObjectURL(formData.image)}
+                                      alt="Project preview"
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">{formData.image.name}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {(formData.image.size / 1024 / 1024).toFixed(2)} MB
+                                    </p>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleImageRemove}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <X className="h-4 w-4 mr-1" />
+                                    Hapus
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              // Upload Area
+                              <div 
+                                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                                onDrop={handleDrop}
+                                onDragOver={handleDragOver}
+                                onClick={() => document.getElementById('image-upload')?.click()}
+                              >
+                                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-600 mb-2">Upload gambar untuk proyek Anda</p>
+                                <p className="text-xs text-gray-500 mb-4">
+                                  Drag & drop atau klik untuk memilih file
+                                </p>
+                                <Button type="button" variant="outline" size="sm">
+                                  Pilih File
+                                </Button>
+                                <p className="text-xs text-gray-400 mt-2">
+                                  JPG, PNG, atau WebP (Max 2MB)
+                                </p>
+                              </div>
+                            )}
+                            
+                            {/* Hidden file input */}
+                            <input
+                              id="image-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleImageUpload(file);
+                                }
+                              }}
+                            />
                           </div>
                         </div>
                       )}
@@ -1005,11 +1281,9 @@ export default function CreateProjectPage() {
                                 <CardContent className="p-4">
                                   <div className="flex items-center justify-between mb-3">
                                     <h4 className="font-medium">Anggota {index + 1}</h4>
-                                    {formData.existingMembers.length > 1 && (
-                                      <Button onClick={() => removeExistingMember(index)} size="sm" variant="ghost">
-                                        <X className="h-4 w-4 text-red-500" />
-                                      </Button>
-                                    )}
+                                    <Button onClick={() => removeExistingMember(index)} size="sm" variant="ghost">
+                                      <X className="h-4 w-4 text-red-500" />
+                                    </Button>
                                   </div>
 
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -1020,16 +1294,38 @@ export default function CreateProjectPage() {
                                         value={member.name}
                                         onChange={(e) => updateExistingMember(index, "name", e.target.value)}
                                       />
+                                      <p className="text-xs text-yellow-600 mt-1">
+                                        ⚠️ Harus sesuai dengan nama user yang sudah terdaftar di sistem
+                                      </p>
                                     </div>
-                                  </div>
-
-                                  <div className="mb-4">
-                                    <label className="block text-sm font-medium mb-2">Role</label>
-                                    <Input
-                                      placeholder="e.g. Backend Developer"
-                                      value={member.role}
-                                      onChange={(e) => updateExistingMember(index, "role", e.target.value)}
-                                    />
+                                    <div>
+                                      <label className="block text-sm font-medium mb-2">Role</label>
+                                      {formData.roles.filter(role => role.title.trim()).length > 0 ? (
+                                        <Select
+                                          value={member.role}
+                                          onValueChange={(value) => updateExistingMember(index, "role", value)}
+                                        >
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Pilih role dari yang sudah didefinisikan" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {formData.roles
+                                              .filter(role => role.title.trim())
+                                              .map((role) => (
+                                                <SelectItem key={role.title} value={role.title}>
+                                                  {role.title}
+                                                </SelectItem>
+                                              ))}
+                                          </SelectContent>
+                                        </Select>
+                                      ) : (
+                                        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                          <p className="text-sm text-yellow-700">
+                                            Silakan definisikan role terlebih dahulu di bagian "Role yang Dibutuhkan" di atas
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
 
                                   {/* Add description field */}
@@ -1237,16 +1533,16 @@ export default function CreateProjectPage() {
                                                   <span>Selesai</span>
                                                 </div>
                                               </SelectItem>
-                                            </SelectContent>
-                                          </Select>
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
                                         </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                                      </CardContent>
+                                    </Card>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
 
 
                           <div>
