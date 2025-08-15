@@ -211,15 +211,24 @@ export default function CreateProjectPage() {
 
       // Stage 2: Update Project Details
       else if (currentStep === 2 && projectId) {
+        // Helper function to format date to RFC3339 format
+        const formatDateToRFC3339 = (dateString: string) => {
+          if (!dateString) return "";
+          const date = new Date(dateString);
+          return date.toISOString(); // This gives RFC3339 format
+        };
+
         const stage2Data = {
           duration: formData.duration,
           total_team: formData.teamSize,
-          start_date: formData.startDate,
-          end_date: formData.endDate || undefined,
+          start_date: formatDateToRFC3339(formData.startDate),
+          end_date: formData.endDate ? formatDateToRFC3339(formData.endDate) : undefined,
           location: formData.location,
-          budget: formData.budget ? parseFloat(formData.budget.replace(/[^\d.]/g, "")) : undefined,
-          registration_deadline: formData.deadline,
+          budget: formData.budget || undefined, // Send as string, no parsing needed
+          registration_deadline: formatDateToRFC3339(formData.deadline),
         }
+
+        console.log("Stage 2 data being sent:", stage2Data);
 
         await api.updateProjectStage2(token, projectId, stage2Data)
         console.log("Stage 2 updated:", stage2Data)

@@ -451,7 +451,7 @@ export const api = {
     start_date: string;
     end_date?: string;
     location: string;
-    budget?: number;
+    budget?: string; // Changed from number to string
     registration_deadline: string;
   }) => {
     try {
@@ -465,7 +465,7 @@ export const api = {
       }
       formData.append('location', data.location);
       if (data.budget) {
-        formData.append('budget', data.budget.toString());
+        formData.append('budget', data.budget); // No longer converting to number
       }
       formData.append('registration_deadline', data.registration_deadline);
 
