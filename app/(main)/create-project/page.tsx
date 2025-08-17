@@ -592,6 +592,20 @@ export default function CreateProjectPage() {
     e.preventDefault();
   };
 
+  // Menghitung jumlah anggota yang sudah ditambahkan + pembuat proyek
+  const filledSlots = 1 + formData.existingMembers.filter(member => member.name.trim() && member.role.trim()).length;
+
+  // Menghitung sisa slot total di dalam tim
+  const remainingSlots = formData.teamSize - filledSlots;
+
+  // Menghitung total slot yang sudah didefinisikan dari semua role
+  const totalDefinedSlots = formData.roles.reduce((acc, role) => acc + role.count, 0);
+
+  // Menghitung berapa anggota yang sudah ditugaskan ke sebuah role spesifik
+  const getAssignedCountForRole = (roleTitle: string) => {
+    return formData.existingMembers.filter(member => member.role === roleTitle).length;
+  };
+
   const getStepTitle = () => {
     switch (currentStep) {
       case 1:
@@ -1142,8 +1156,27 @@ export default function CreateProjectPage() {
                       {/* Step 4: Team & Roles */}
                       {currentStep === 4 && (
                         <div className="space-y-6">
+                          {/* ===== PERUBAHAN 1: Judul dan Info Kapasitas Tim ===== */}
+                          <Card className="bg-blue-50 border-blue-200">
+                            <CardContent className="p-4 text-center">
+                              <p className="font-medium text-blue-800">
+                                Kapasitas Tim: {formData.teamSize} orang
+                              </p>
+                              <p className="text-sm text-blue-700 mt-1">
+                                Slot Terisi: {filledSlots} dari {formData.teamSize} (Termasuk Anda sebagai Project Lead)
+                              </p>
+                              {totalDefinedSlots > formData.teamSize - 1 && (
+                                  <p className="text-red-600 text-xs mt-2 flex items-center justify-center gap-1">
+                                      <AlertCircle className="h-4 w-4" />
+                                      Total slot yang didefinisikan ({totalDefinedSlots}) melebihi sisa kapasitas tim ({formData.teamSize - 1}).
+                                  </p>
+                              )}
+                            </CardContent>
+                          </Card>
+
                           <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-medium">Role yang Dibutuhkan</h3>
+                            {/* ===== PERUBAHAN 2: Ganti Judul Seksi ===== */}
+                            <h3 className="text-lg font-medium">Role pada Project Ini</h3>
                             <Button onClick={addRole} size="sm" variant="outline">
                               <Plus className="h-4 w-4 mr-2" />
                               Tambah Role
@@ -1163,8 +1196,8 @@ export default function CreateProjectPage() {
                                     )}
                                   </div>
 
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <div className="md:col-span-2">
                                       <label className="block text-sm font-medium mb-2">Nama Role</label>
                                       <Input
                                         placeholder="e.g. Frontend Developer"
@@ -1173,7 +1206,8 @@ export default function CreateProjectPage() {
                                       />
                                     </div>
                                     <div>
-                                      <label className="block text-sm font-medium mb-2">Jumlah Orang</label>
+                                      {/* ===== PERUBAHAN 3: Ganti "Jumlah Orang" menjadi "Total Slot" ===== */}
+                                      <label className="block text-sm font-medium mb-2">Total Slot</label>
                                       <Select
                                         value={role.count.toString()}
                                         onValueChange={(value) => updateRole(index, "count", Number.parseInt(value))}
@@ -1182,7 +1216,8 @@ export default function CreateProjectPage() {
                                           <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          {[1, 2, 3, 4, 5].map((num) => (
+                                          {/* Membuat opsi dinamis agar tidak melebihi total tim */}
+                                          {Array.from({ length: formData.teamSize - 1 }, (_, i) => i + 1).map((num) => (
                                             <SelectItem key={num} value={num.toString()}>
                                               {num} orang
                                             </SelectItem>
@@ -1200,6 +1235,17 @@ export default function CreateProjectPage() {
                                       onChange={(e) => updateRole(index, "description", e.target.value)}
                                       className="min-h-[80px] resize-none"
                                     />
+                                  </div>
+                                  
+                                  {/* ===== PERUBAHAN 4: Tambah Tampilan "Slot Tersedia" (Otomatis) ===== */}
+                                  <div className="mb-4">
+                                      <label className="block text-sm font-medium mb-2">Slot Tersedia</label>
+                                      <Input
+                                        readOnly
+                                        disabled
+                                        value={`${Math.max(0, role.count - getAssignedCountForRole(role.title))} slot tersedia`}
+                                        className="bg-gray-100 font-medium"
+                                      />
                                   </div>
 
                                   <div>
@@ -1269,15 +1315,25 @@ export default function CreateProjectPage() {
                             </p>
                           )}
 
-                          {/* Existing Members Section */}
+                          {/* ===== PERUBAHAN 5: Logika Tombol "Tambah Anggota" ===== */}
                           <div className="mt-8">
-                            <div className="flex items-center justify-between mb-4">
-                              <h3 className="text-lg font-medium">Anggota Tim yang Sudah Ada</h3>
-                              <Button onClick={addExistingMember} size="sm" variant="outline">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Tambah Anggota
-                              </Button>
-                            </div>
+                              <div className="flex items-center justify-between mb-4">
+                                  <h3 className="text-lg font-medium">Anggota Tim yang Sudah Ada</h3>
+                                  <Button 
+                                      onClick={addExistingMember} 
+                                      size="sm" 
+                                      variant="outline"
+                                      disabled={remainingSlots <= 0} // Nonaktifkan jika slot sudah penuh
+                                  >
+                                      <Plus className="h-4 w-4 mr-2" />
+                                      Tambah Anggota
+                                  </Button>
+                              </div>
+                              {remainingSlots <= 0 && formData.existingMembers.length > 0 && (
+                                   <p className="text-sm text-yellow-700 mb-4">
+                                      Kapasitas tim sudah penuh. Anda tidak dapat menambahkan anggota lagi.
+                                  </p>
+                              )}
 
                             {formData.existingMembers.length === 0 && (
                               <p className="text-center text-sm text-gray-500 py-4">
@@ -1330,7 +1386,7 @@ export default function CreateProjectPage() {
                                       ) : (
                                         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                           <p className="text-sm text-yellow-700">
-                                            Silakan definisikan role terlebih dahulu di bagian "Role yang Dibutuhkan" di atas
+                                            Silakan definisikan role terlebih dahulu di bagian "Role pada Project Ini" di atas
                                           </p>
                                         </div>
                                       )}
