@@ -1221,7 +1221,7 @@ export default function CreateProjectPage() {
                                             <SelectItem key={num} value={num.toString()}>
                                               {num} orang
                                             </SelectItem>
-                                          ))}
+                                            ))}
                                         </SelectContent>
                                       </Select>
                                     </div>
