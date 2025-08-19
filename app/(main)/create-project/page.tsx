@@ -1054,17 +1054,22 @@ export default function CreateProjectPage() {
                             
                             <div className="flex flex-wrap gap-1 mt-3">
                               {formData.requiredSkills.length > 0 ? (
-                                formData.requiredSkills.map((skill) => (
-                                  <Badge key={skill} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
+                                formData.requiredSkills.map((skill, skillIndex) => (
+                                  <Badge key={`${skill}-${skillIndex}`} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
                                     {skill}
-                                    <X 
-                                      className="h-3 w-3 cursor-pointer" 
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-4 w-4 p-0 hover:bg-red-100"
                                       onClick={(e) => {
-                                        // Stop propagation to prevent badge click
+                                        e.preventDefault();
                                         e.stopPropagation();
                                         removeSkill(skill);
                                       }}
-                                    />
+                                    >
+                                      <X className="h-3 w-3 text-red-500 hover:text-red-700" />
+                                    </Button>
                                   </Badge>
                                 ))
                               ) : (
@@ -1282,12 +1287,16 @@ export default function CreateProjectPage() {
                                     </div>
                                     <div className="flex flex-wrap gap-1 mt-2">
                                       {role.skills.length > 0 ? (
-                                        role.skills.map((skill) => (
-                                          <Badge key={skill} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
+                                        role.skills.map((skill, skillIndex) => (
+                                          <Badge key={`${skill}-${skillIndex}`} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
                                             {skill}
-                                            <X 
-                                              className="h-3 w-3 cursor-pointer" 
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-4 w-4 p-0 hover:bg-red-100"
                                               onClick={(e) => {
+                                                e.preventDefault();
                                                 e.stopPropagation();
                                                 updateRole(
                                                   index, 
@@ -1295,7 +1304,9 @@ export default function CreateProjectPage() {
                                                   role.skills.filter(s => s !== skill)
                                                 );
                                               }}
-                                            />
+                                            >
+                                              <X className="h-3 w-3 text-red-500 hover:text-red-700" />
+                                            </Button>
                                           </Badge>
                                         ))
                                       ) : (
@@ -1446,17 +1457,26 @@ export default function CreateProjectPage() {
                                     </div>
                                     <div className="flex flex-wrap gap-1 mt-2">
                                       {member.skills.length > 0 ? (
-                                        member.skills.map((skill) => (
-                                          <Badge key={skill} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
+                                        member.skills.map((skill, skillIndex) => (
+                                          <Badge key={`${skill}-${skillIndex}`} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
                                             {skill}
-                                            <X 
-                                              className="h-3 w-3 cursor-pointer" 
-                                              onClick={() => updateExistingMember(
-                                                index, 
-                                                "skills", 
-                                                member.skills.filter(s => s !== skill)
-                                              )}
-                                            />
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-4 w-4 p-0 hover:bg-red-100"
+                                              onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                updateExistingMember(
+                                                  index, 
+                                                  "skills", 
+                                                  member.skills.filter(s => s !== skill)
+                                                );
+                                              }}
+                                            >
+                                              <X className="h-3 w-3 text-red-500 hover:text-red-700" />
+                                            </Button>
                                           </Badge>
                                         ))
                                       ) : (
@@ -1644,19 +1664,25 @@ export default function CreateProjectPage() {
                             </div>
                             <div className="flex flex-wrap gap-1 mt-2">
                               {formData.tags.length > 0 ? (
-                                formData.tags.map((tag) => (
-                                  <Badge key={tag} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
+                                formData.tags.map((tag, tagIndex) => (
+                                  <Badge key={`${tag}-${tagIndex}`} variant="secondary" className="text-xs py-1 px-2 flex items-center gap-1">
                                     {tag}
-                                    <X 
-                                      className="h-3 w-3 cursor-pointer" 
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-4 w-4 p-0 hover:bg-red-100"
                                       onClick={(e) => {
+                                        e.preventDefault();
                                         e.stopPropagation();
                                         handleInputChange(
                                           "tags", 
                                           formData.tags.filter(t => t !== tag)
                                         );
                                       }}
-                                    />
+                                    >
+                                      <X className="h-3 w-3 text-red-500 hover:text-red-700" />
+                                    </Button>
                                   </Badge>
                                 ))
                               ) : (
