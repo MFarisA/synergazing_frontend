@@ -27,12 +27,22 @@ export default function ProjectsPage() {
       try {
         setIsLoading(true);
         const token = localStorage.getItem("token");
-        if (!token) {
-          setError('Please log in to view projects.');
-          return;
+        
+        let response;
+        if (token) {
+          // Try authenticated endpoint first if user is logged in
+          try {
+            response = await api.getAllProjects(token);
+          } catch (authError) {
+            console.warn('Authenticated request failed, falling back to public endpoint:', authError);
+            // Fall back to public endpoint if authenticated request fails
+            response = await api.getAllProjectsPublic();
+          }
+        } else {
+          // Use public endpoint for non-logged-in users
+          response = await api.getAllProjectsPublic();
         }
         
-        const response = await api.getAllProjects(token);
         // Handle API response structure - data might be in response.data.projects or response.projects
         const projectsData = response.data?.projects || response.projects || response.data || [];
         setProjects(projectsData);

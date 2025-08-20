@@ -660,7 +660,28 @@ export const api = {
     }
   },
 
-  // Get all projects
+  // Get all projects (public access - no authentication required)
+  getAllProjectsPublic: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects/all`, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch projects (public):', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch projects: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error fetching projects (public):', error);
+      throw error;
+    }
+  },
+
+  // Get all projects (authenticated access - kept for backward compatibility)
   getAllProjects: async (token: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/projects/all`, {

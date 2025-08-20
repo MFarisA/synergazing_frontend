@@ -589,7 +589,8 @@ export default function ProfilePage() {
                 <CardTitle>Media Sosial & Tautan</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-              <a
+              {userData.website_url && (
+                <a
                   href={userData.website_url}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
@@ -597,6 +598,8 @@ export default function ProfilePage() {
                   <span className="text-sm">Website</span>
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
+              )}
+              {userData.github_url && (
                 <a
                   href={userData.github_url}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
@@ -605,6 +608,8 @@ export default function ProfilePage() {
                   <span className="text-sm">GitHub</span>
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
+              )}
+              {userData.linkedin_url && (
                 <a
                   href={userData.linkedin_url}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
@@ -613,6 +618,8 @@ export default function ProfilePage() {
                   <span className="text-sm">LinkedIn</span>
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
+              )}
+              {userData.instagram_url && (
                 <a
                   href={userData.instagram_url}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
@@ -621,6 +628,8 @@ export default function ProfilePage() {
                   <span className="text-sm">Instagram</span>
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
+              )}
+              {userData.portfolio_url && (
                 <a
                   href={userData.portfolio_url}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
@@ -629,6 +638,7 @@ export default function ProfilePage() {
                   <span className="text-sm">Portfolio</span>
                   <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                 </a>
+              )}
               </CardContent>
             </Card>
 
