@@ -251,7 +251,7 @@ export default function CollaboratorsPage() {
 											</Badge>
 										)}
 									</div>
-									<p className="text-sm text-gray-700 mb-4 line-clamp-3">
+									<p className="text-sm text-gray-700 mb-4 line-clamp-2 break-words">
 										{collaborator.about_me || 'No description available'}
 									</p>
 									<div className="flex gap-2 w-full mt-auto">
