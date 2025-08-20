@@ -23,9 +23,9 @@ const formatDate = (dateString: string): string => {
 
 export function ProjectSidebar({ project }: ProjectSidebarProps) {
   // Map API data to display format
-  const creatorProfile = project.creator.profile;
-  const creatorAvatar = creatorProfile?.profile_picture || '';
-  const creatorRole = creatorProfile?.interests || 'Project Creator';
+  const creatorAvatar = project.creator.profile_picture || '';
+  const creatorRole = project.creator.interests || 'Project Creator';
+  const creatorAbout = project.creator.about_me || `Passionate about ${project.project_type} projects. Experienced in full-stack development with a focus on innovative solutions.`;
   const statusText = project.status === "published" ? "Recruiting" : project.status;
   
   return (
@@ -51,7 +51,7 @@ export function ProjectSidebar({ project }: ProjectSidebarProps) {
             <Users className="h-5 w-5 text-gray-400 mt-0.5" />
             <div>
               <p className="font-medium">Tim</p>
-              <p className="text-gray-600">{project.filled_team}/{project.total_team}</p>
+              <p className="text-gray-600">{project.filled_team+1}/{project.total_team}</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
@@ -87,7 +87,7 @@ export function ProjectSidebar({ project }: ProjectSidebarProps) {
               <p className="text-sm text-gray-600">{project.project_type}</p>
             </div>
           </div>
-          <p className="text-sm text-gray-700 mb-4">Passionate about {project.project_type} projects. Experienced in full-stack development with a focus on innovative solutions.</p>
+          <p className="text-sm text-gray-700 mb-4">{creatorAbout}</p>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" className="flex-1 bg-transparent">
               <Github className="h-4 w-4 mr-1" />GitHub

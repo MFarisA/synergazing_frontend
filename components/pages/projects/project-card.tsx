@@ -39,10 +39,9 @@ const formatDate = (dateString: string): string => {
 export function ProjectCard({ project }: ProjectCardProps) {
   // Map API data to display format
   const skills = project.required_skills.map(skill => skill.skill.name);
-  const membersText = `${project.filled_team}/${project.total_team}`;
-  const creatorProfile = project.creator.profile;
-  const creatorAvatar = creatorProfile?.profile_picture || '';
-  const creatorRole = creatorProfile?.interests || 'Main Role';
+  const membersText = `${project.filled_team+1}/${project.total_team}`;
+  const creatorAvatar = project.creator.profile_picture || '';
+  const creatorRole = project.creator.interests || 'Main Role';
   
   return (
     <Card className="hover:shadow-lg transition-all duration-200 group flex flex-col overflow-hidden">
