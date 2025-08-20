@@ -33,13 +33,13 @@ import Image from "next/image"
 import { api } from "@/lib/api"
 
 const projectTypes = [
-  { value: "lomba", label: "Lomba", description: "Kompetisi atau hackathon" },
-  { value: "riset", label: "Riset Dosen", description: "Penelitian dengan dosen pembimbing" },
-  { value: "portolatihan", label: "Portofolio Latihan", description: "Proyek untuk berlatih berkolaborasi" },
-  { value: "kuliah", label: "Tugas Kuliah", description: "Proyek mata kuliah" },
-  { value: "open-source", label: "Open Source", description: "Proyek open source" },
-  { value: "social", label: "Social Impact", description: "Proyek dampak sosial" },
-  { value: "lainnya", label: "Lainnya", description: "Proyek Lain" },
+  { value: "Lomba", label: "Lomba", description: "Kompetisi atau hackathon" },
+  { value: "Riset", label: "Riset Dosen", description: "Penelitian dengan dosen pembimbing" },
+  { value: "Portofolio", label: "Portofolio Latihan", description: "Proyek untuk berlatih berkolaborasi" },
+  { value: "Kuliah", label: "Tugas Kuliah", description: "Proyek mata kuliah" },
+  { value: "Open-source", label: "Open Source", description: "Proyek open source" },
+  { value: "Social", label: "Social Impact", description: "Proyek dampak sosial" },
+  { value: "Lainnya", label: "Lainnya", description: "Proyek Lain" },
 ]
 
 const skillOptions = [
