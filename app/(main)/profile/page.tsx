@@ -71,7 +71,7 @@ export default function ProfilePage() {
   const [isUploading, setIsUploading] = useState(false)
   const [isSkillDialogOpen, setIsSkillDialogOpen] = useState(false)
   const [skillToEdit, setSkillToEdit] = useState<UserSkill | null>(null);
-  const [newSkill, setNewSkill] = useState({ name: "", proficiency: 75 });
+  const [newSkill, setNewSkill] = useState({ name: "" });
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -191,13 +191,12 @@ export default function ProfilePage() {
     // Initialize with empty array if user_skills is undefined
     let skillsToUpdate = [...(userData.user_skills || []).map(us => ({
       skill_name: us.skill.name,
-      proficiency: us.proficiency,
     }))];
 
     if (skillToEdit) { // Editing existing skill
-      skillsToUpdate = skillsToUpdate.map(s => s.skill_name === skillToEdit.skill.name ? { skill_name: newSkill.name, proficiency: newSkill.proficiency } : s);
+      skillsToUpdate = skillsToUpdate.map(s => s.skill_name === skillToEdit.skill.name ? { skill_name: newSkill.name } : s);
     } else { // Adding new skill
-      skillsToUpdate.push({ skill_name: newSkill.name, proficiency: newSkill.proficiency });
+      skillsToUpdate.push({ skill_name: newSkill.name });
     }
     
     console.log('Skills to update:', skillsToUpdate);
@@ -236,7 +235,7 @@ export default function ProfilePage() {
       setUserData(updatedProfileData);
       
       setIsSkillDialogOpen(false);
-      setNewSkill({ name: "", proficiency: 75 });
+      setNewSkill({ name: "" });
       setSkillToEdit(null);
       setApiError(null);
     } catch (error) {
@@ -453,7 +452,7 @@ export default function ProfilePage() {
                       size="sm" 
                       onClick={() => {
                         setSkillToEdit(null);
-                        setNewSkill({ name: "", proficiency: 75 });
+                        setNewSkill({ name: "" });
                         setIsSkillDialogOpen(true);
                       }}
                       className="h-8 px-2 lg:px-3"
@@ -471,7 +470,7 @@ export default function ProfilePage() {
                             className="p-2 cursor-pointer"
                             onClick={() => {
                               setSkillToEdit(userSkill);
-                              setNewSkill({ name: userSkill.skill.name, proficiency: userSkill.proficiency });
+                              setNewSkill({ name: userSkill.skill.name });
                               setIsSkillDialogOpen(true);
                             }}
                           >
@@ -714,18 +713,6 @@ export default function ProfilePage() {
                 ))}
               </datalist>
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Proficiency: {newSkill.proficiency}%</label>
-              <Input 
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                value={newSkill.proficiency} 
-                onChange={(e) => setNewSkill({...newSkill, proficiency: parseInt(e.target.value)})}
-              />
-            </div>
           </div>
           <DialogFooter className="flex gap-2 sm:justify-between">
             {skillToEdit && (
@@ -748,6 +735,7 @@ export default function ProfilePage() {
               <Button 
                 type="button"
                 onClick={handleAddOrUpdateSkill}
+                disabled={!newSkill.name.trim()}
               >
                 {skillToEdit ? 'Simpan Perubahan' : 'Tambah Skill'}
               </Button>
@@ -758,23 +746,52 @@ export default function ProfilePage() {
 
       {/* PDF Viewer Dialog */}
       <Dialog open={isPdfViewerOpen} onOpenChange={setIsPdfViewerOpen}>
-        <DialogContent className="max-w-5xl">
-          <div className="p-4">
-            <DialogTitle className="text-xl font-semibold mb-4 flex items-center justify-between">
+        <DialogContent className="max-w-6xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
               <span>CV Preview: {userData.cv_file?.split('/').pop()}</span>
-              <Button variant="outline" size="sm" className="bg-transparent" onClick={() => setIsPdfViewerOpen(false)}>
-                Close
-              </Button>
-            </DialogTitle>
-            <div className="bg-gray-100 rounded-lg p-2 border border-gray-200">
-              <div className="w-full h-[70vh] overflow-hidden">
-                <iframe src={userData.cv_file + "#toolbar=1"} className="w-full h-full border-0" title="CV Preview" />
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    if (userData.cv_file) {
+                      window.open(userData.cv_file, '_blank');
+                    }
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setIsPdfViewerOpen(false)}
+                >
+                  Close
+                </Button>
               </div>
-            </div>
-            <div className="flex justify-end mt-4">
-              <Button size="sm" onClick={() => setIsPdfViewerOpen(false)}>
-                Tutup
-              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            <div className="bg-gray-50 rounded-lg border border-gray-200 h-[75vh]">
+              {userData.cv_file ? (
+                <iframe 
+                  src={`${userData.cv_file}#toolbar=0&navpanes=0&scrollbar=1`}
+                  className="w-full h-full border-0 rounded-lg" 
+                  title="CV Preview"
+                  onError={(e) => {
+                    console.error('PDF preview error:', e);
+                    // Fallback: open in new tab if iframe fails
+                    window.open(userData.cv_file, '_blank');
+                    setIsPdfViewerOpen(false);
+                  }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-500">CV tidak tersedia</p>
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>

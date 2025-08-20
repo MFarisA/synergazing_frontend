@@ -304,21 +304,21 @@ export const api = {
   },
 
   // Add or update user skills
-  updateUserSkills: async (token: string, skills: { skill_name: string, proficiency: number }[]) => {
+  updateUserSkills: async (token: string, skills: { skill_name: string }[]) => {
     try {
       // Create FormData object
       const formData = new FormData();
       
-      // Add each skill as separate field with same name
+      // Add each skill as separate field with same name and default proficiency
       skills.forEach((skillItem) => {
         formData.append('skill', skillItem.skill_name);
-        formData.append('proficiencies', skillItem.proficiency.toString());
+        formData.append('proficiencies', '75'); // Default proficiency of 75%
       });
       
       console.log('Sending skills data:');
       skills.forEach((skillItem, index) => {
         console.log(`  skill[${index}]: ${skillItem.skill_name}`);
-        console.log(`  proficiencies[${index}]: ${skillItem.proficiency}`);
+        console.log(`  proficiencies[${index}]: 75 (default)`);
       });
       
       const response = await fetch(`${API_BASE_URL}/api/skills`, {
