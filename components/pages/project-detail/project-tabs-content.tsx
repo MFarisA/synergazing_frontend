@@ -2,19 +2,49 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CheckCircle, AlertCircle, Target } from "lucide-react";
+import { CheckCircle, AlertCircle, Target, Clock, Play, Check } from "lucide-react";
 import type { Project } from '@/types';
 
 interface ProjectTabsContentProps {
   project: Project;
 }
 
+// Timeline status configuration
+const TIMELINE_STATUS_CONFIG = {
+  "not-started": {
+    label: "Belum Dimulai",
+    color: "#6B7280", // Gray
+    bgColor: "bg-gray-100",
+    textColor: "text-gray-700",
+    icon: Clock
+  },
+  "in-progress": {
+    label: "Sedang Berjalan", 
+    color: "#F59E0B", // Yellow/Orange
+    bgColor: "bg-yellow-100",
+    textColor: "text-yellow-700",
+    icon: Play
+  },
+  "done": {
+    label: "Selesai",
+    color: "#10B981", // Green
+    bgColor: "bg-green-100", 
+    textColor: "text-green-700",
+    icon: Check
+  }
+};
+
 export function ProjectTabsContent({ project }: ProjectTabsContentProps) {
   // Map API data to display format
   const skills = project.required_skills.map(skill => skill.skill.name);
   const benefits = project.benefits.map(benefit => benefit.benefit.name);
   const conditions = project.conditions.map(condition => condition.description);
-  const timelineItems = project.timeline.map(item => item.timeline.name);
+  
+  // Updated timeline mapping to include status
+  const timelineItems = project.timeline.map(item => ({
+    name: item.timeline.name,
+    status: item.timeline_status || "not-started"
+  }));
 
   return (
     <Tabs defaultValue="overview" className="w-full">
@@ -48,20 +78,51 @@ export function ProjectTabsContent({ project }: ProjectTabsContentProps) {
 
       <TabsContent value="timeline" className="mt-4">
         <Card>
-          <CardHeader><CardTitle>Timeline Proyek</CardTitle><CardDescription>Rencana pengembangan dari awal hingga selesai.</CardDescription></CardHeader>
+          <CardHeader>
+            <CardTitle>Timeline Proyek</CardTitle>
+            <CardDescription>Rencana pengembangan dari awal hingga selesai dengan status terkini.</CardDescription>
+          </CardHeader>
           <CardContent className="space-y-4">
-            {timelineItems.map((phase, i) => (
-              <div key={i} className="flex items-start gap-4">
-                <div>
-                  <div className="h-6 w-6 rounded-full border-2 border-blue-300 bg-blue-100 flex items-center justify-center">
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+            {timelineItems.map((phase, i) => {
+              const statusConfig = TIMELINE_STATUS_CONFIG[phase.status as keyof typeof TIMELINE_STATUS_CONFIG] || TIMELINE_STATUS_CONFIG["not-started"];
+              const StatusIcon = statusConfig.icon;
+              
+              return (
+                <div key={i} className="flex items-start gap-4 p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                  <div className="flex flex-col items-center">
+                    <div 
+                      className={`h-8 w-8 rounded-full flex items-center justify-center ${statusConfig.bgColor}`}
+                      style={{ borderColor: statusConfig.color, borderWidth: '2px' }}
+                    >
+                      <StatusIcon 
+                        className="h-4 w-4" 
+                        style={{ color: statusConfig.color }}
+                      />
+                    </div>
+                    {i < timelineItems.length - 1 && (
+                      <div className="h-8 w-0.5 bg-gray-200 mt-2" />
+                    )}
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-medium text-gray-900">{phase.name}</h4>
+                      <Badge 
+                        variant="secondary" 
+                        className={`${statusConfig.bgColor} ${statusConfig.textColor} border-0 text-xs`}
+                      >
+                        {statusConfig.label}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <h4 className="font-medium">{phase}</h4>
-                </div>
+              );
+            })}
+            {timelineItems.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <Clock className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <p>Timeline belum ditentukan</p>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
       </TabsContent>

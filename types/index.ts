@@ -145,3 +145,10 @@ export interface UserSkill {
   proficiency: number;
   skill: Skill;
 }
+
+export interface TimelineStatusOption {
+  value: string;
+  label: string;
+  description: string;
+  color?: string;
+}

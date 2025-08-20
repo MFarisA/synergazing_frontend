@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -31,6 +31,29 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { api } from "@/lib/api"
+import { TimelineStatusOption } from "@/types"
+
+// Timeline status options - hardcoded based on backend constants
+const TIMELINE_STATUS_OPTIONS: TimelineStatusOption[] = [
+  {
+    value: "not-started",
+    label: "Belum Dimulai",
+    description: "Tahapan ini belum dimulai",
+    color: "#6B7280" // Gray
+  },
+  {
+    value: "in-progress", 
+    label: "Sedang Berjalan",
+    description: "Tahapan ini sedang dikerjakan",
+    color: "#F59E0B" // Yellow/Orange
+  },
+  {
+    value: "done",
+    label: "Selesai", 
+    description: "Tahapan ini telah diselesaikan",
+    color: "#10B981" // Green
+  }
+]
 
 const projectTypes = [
   { value: "Lomba", label: "Lomba", description: "Kompetisi atau hackathon" },
@@ -338,7 +361,7 @@ export default function CreateProjectPage() {
       const stage5Data = {
         benefits: formData.benefits.filter(benefit => benefit.trim()).map(benefit => ({ description: benefit })),
         timeline: formData.timelineSteps.filter(step => step.title.trim()).map(step => ({
-          title: step.title,
+          name: step.title,  // Changed from 'title' to 'name' to match backend expectation
           status: step.status,
         })),
         tags: formData.tags.map(tag => ({ name: tag })),
@@ -1600,34 +1623,27 @@ export default function CreateProjectPage() {
                                               <SelectValue placeholder="Pilih status" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                              <SelectItem value="not-started">
-                                                <div className="flex items-center">
-                                                  <span className="h-2 w-2 rounded-full bg-gray-400 mr-2"></span>
-                                                  <span>Belum Dimulai</span>
-                                                </div>
-                                              </SelectItem>
-                                              <SelectItem value="in-progress">
-                                                <div className="flex items-center">
-                                                  <span className="h-2 w-2 rounded-full bg-blue-500 mr-2"></span>
-                                                  <span>Sedang Berjalan</span>
-                                                </div>
-                                              </SelectItem>
-                                              <SelectItem value="done">
-                                                <div className="flex items-center">
-                                                  <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                                                  <span>Selesai</span>
-                                                </div>
-                                              </SelectItem>
-                                              </SelectContent>
-                                            </Select>
-                                          </div>
+                                              {TIMELINE_STATUS_OPTIONS.map((option) => (
+                                                <SelectItem key={option.value} value={option.value}>
+                                                  <div className="flex items-center">
+                                                    <span 
+                                                      className="h-2 w-2 rounded-full mr-2"
+                                                      style={{ backgroundColor: option.color || '#6B7280' }}
+                                                    ></span>
+                                                    <span>{option.label}</span>
+                                                  </div>
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
                                         </div>
-                                      </CardContent>
-                                    </Card>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            )}
+                          </div>
 
 
                           <div>

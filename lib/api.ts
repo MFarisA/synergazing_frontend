@@ -573,7 +573,7 @@ export const api = {
   // Stage 5: Finalize Project
   updateProjectStage5: async (token: string, projectId: string, data: {
     benefits: Array<{ description: string }>;
-    timeline: Array<{ title: string; status: string }>;
+    timeline: Array<{ name: string; status: string }>;
     tags: Array<{ name: string }>;
   }) => {
     try {
@@ -584,9 +584,8 @@ export const api = {
       const benefitNames = data.benefits.map(benefit => benefit.description);
       formData.append('benefits', JSON.stringify(benefitNames));
       
-      // Convert timeline objects to array of titles and stringify
-      const timelineNames = data.timeline.map(timeline => timeline.title);
-      formData.append('timeline', JSON.stringify(timelineNames));
+      // Send timeline data as JSON string with proper structure
+      formData.append('timeline', JSON.stringify(data.timeline));
       
       // Convert tag objects to array of names and stringify
       const tagNames = data.tags.map(tag => tag.name);
