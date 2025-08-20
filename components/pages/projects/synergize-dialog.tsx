@@ -18,6 +18,7 @@ export function SynergizeDialog({ project }: SynergizeDialogProps) {
     motivation: "",
     skills: "",
     contribution: "",
+    role: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -27,14 +28,19 @@ export function SynergizeDialog({ project }: SynergizeDialogProps) {
 
   const handleSendApplication = () => {
     // Validasi sederhana
-    if (applicationData.motivation && applicationData.skills && applicationData.contribution) {
+    if (applicationData.motivation && applicationData.skills && applicationData.contribution && applicationData.role) {
       console.log(`Mengirim aplikasi untuk proyek "${project.title}":`, applicationData);
-      setApplicationData({ motivation: "", skills: "", contribution: "" });
+      setApplicationData({ motivation: "", skills: "", contribution: "", role: "" });
       // Di sini bisa ditambahkan logika menutup dialog dan menampilkan notifikasi
     } else {
       alert("Harap isi semua kolom.");
     }
   };
+
+  // Map API data to display format
+  const creatorProfile = project.creator.profile;
+  const creatorAvatar = creatorProfile?.profile_picture || '';
+  const skills = project.required_skills.map(skill => skill.skill.name);
 
   return (
     <Dialog>
@@ -55,11 +61,15 @@ export function SynergizeDialog({ project }: SynergizeDialogProps) {
           <div className="mb-6">
             <h3 className="font-semibold text-lg mb-2">{project.title}</h3>
             <div className="flex items-center gap-2 mb-3">
-              <Avatar className="h-8 w-8"><AvatarImage src={project.recruiter.avatar} /><AvatarFallback>{project.recruiter.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
-              <span className="text-sm font-medium">{project.recruiter.name}</span>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={creatorAvatar} />
+                <AvatarFallback>{project.creator.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-medium">{project.creator.name}</span>
             </div>
             <div className="flex flex-wrap gap-1">
-              {project.skills.slice(0, 4).map((skill) => <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>)}
+              {skills.slice(0, 4).map((skill) => <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>)}
+              {skills.length > 4 && <Badge variant="secondary" className="text-xs">+{skills.length - 4}</Badge>}
             </div>
           </div>
           <div className="space-y-4">

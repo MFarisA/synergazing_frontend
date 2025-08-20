@@ -1,19 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Grid3X3, List } from "lucide-react";
 
-// Hapus import ProjectsHeader karena sudah tidak dipakai
-// import { ProjectsHeader } from "@/components/pages/projects/projects-header";
 import { SidebarFilters } from "@/components/pages/projects/sidebar-filters";
 import { ProjectList } from "@/components/pages/projects/project-list";
-
-// Import data dari file terpisah
-import { projects, skillOptions, locationOptions } from "@/lib/data";
+import { api } from "@/lib/api";
+import type { Project } from "@/types";
 
 export default function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
@@ -21,14 +21,58 @@ export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("newest");
 
+  // Fetch projects from API
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError('Please log in to view projects.');
+          return;
+        }
+        
+        const response = await api.getAllProjects(token);
+        // Handle API response structure - data might be in response.data.projects or response.projects
+        const projectsData = response.data?.projects || response.projects || response.data || [];
+        setProjects(projectsData);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch projects:', err);
+        setError('Failed to load projects. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  // Generate dynamic options from fetched projects
+  const skillOptions = Array.from(
+    new Set(
+      projects.flatMap(project => 
+        project.required_skills.map(skill => skill.skill.name)
+      )
+    )
+  ).sort();
+
+  const locationOptions = Array.from(
+    new Set(projects.map(project => project.location).filter(Boolean))
+  ).sort();
+
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.skills.some((skill) => skill.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesType = selectedType === "all" || project.type === selectedType;
+      project.required_skills.some((skill) => 
+        skill.skill.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    const matchesType = selectedType === "all" || project.project_type === selectedType;
     const matchesLocation = selectedLocation === "all" || project.location === selectedLocation;
-    const matchesSkills = selectedSkills.length === 0 || selectedSkills.some((skill) => project.skills.includes(skill));
+    const matchesSkills = selectedSkills.length === 0 || selectedSkills.some((skill) => 
+      project.required_skills.some(projectSkill => projectSkill.skill.name === skill)
+    );
     return matchesSearch && matchesType && matchesLocation && matchesSkills;
   });
 
@@ -51,13 +95,42 @@ export default function ProjectsPage() {
 
   const isFilterActive = searchQuery || selectedType !== "all" || selectedLocation !== "all" || selectedSkills.length > 0;
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Memuat proyek...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>
+                Coba Lagi
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen ">
-      {/* ProjectsHeader dihapus dari sini */}
-      
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Teruskan semua props filter ke SidebarFilters */}
           <SidebarFilters
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}

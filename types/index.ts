@@ -2,24 +2,105 @@ export type Project = {
   id: number;
   title: string;
   description: string;
-  recruiter: {
+  completion_stage: number;
+  creator_id: number;
+  creator: {
+    id: number;
     name: string;
-    avatar: string;
-    major: string;
-    university: string;
-    rating: number;
-    projects: number;
-    connections: number;
+    email: string;
+    phone: string;
+    status_collaboration: string;
+    created_at: string;
+    updated_at: string;
+    profile?: {
+      profile_picture?: string;
+      interests?: string;
+    };
   };
-  skills: string[];
+  status: string;
+  project_type: string;
+  picture_url: string;
   duration: string;
-  members: string;
-  type: string;
+  total_team: number;
+  filled_team: number;
+  remaining_team: number;
+  start_date: string;
+  end_date: string;
   location: string;
-  posted: string;
-  image: string;
-  views: number;
-  deadline: string;
+  budget: string;
+  registration_deadline: string;
+  time_commitment: string;
+  benefits: Array<{
+    project_id: number;
+    benefit_id: number;
+    benefit: {
+      id: number;
+      name: string;
+      created_at: string;
+      updated_at: string;
+    };
+  }>;
+  timeline: Array<{
+    project_id: number;
+    timeline_id: number;
+    timeline: {
+      id: number;
+      name: string;
+      created_at: string;
+      updated_at: string;
+    };
+  }>;
+  required_skills: Array<{
+    project_id: number;
+    skill_id: number;
+    skill: {
+      id: number;
+      name: string;
+      created_at: string;
+      updated_at: string;
+    };
+  }>;
+  conditions: Array<{
+    id: number;
+    project_id: number;
+    description: string;
+  }>;
+  tags: Array<{
+    project_id: number;
+    tag_id: number;
+    tag: {
+      id: number;
+      name: string;
+      created_at: string;
+      updated_at: string;
+    };
+  }>;
+  members: Array<{
+    name: string;
+    role_description: string;
+    role_name: string;
+    skill_names: string[];
+  }>;
+  roles: Array<{
+    id: number;
+    project_id: number;
+    name: string;
+    slots_available: number;
+    description: string;
+    required_skills: Array<{
+      project_role_id: number;
+      skill_id: number;
+      skill: {
+        id: number;
+        name: string;
+        created_at: string;
+        updated_at: string;
+      };
+    }>;
+    created_at: string;
+    updated_at: string;
+  }>;
+  created_at?: string;
 };
 
 // Tipe untuk data form aplikasi

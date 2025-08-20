@@ -659,6 +659,28 @@ export const api = {
       throw error;
     }
   },
+
+  // Get all projects
+  getAllProjects: async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects/all`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch projects:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch projects: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error fetching projects:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;

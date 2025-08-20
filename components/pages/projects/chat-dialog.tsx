@@ -18,7 +18,7 @@ export function ChatDialog({ project }: ChatDialogProps) {
   const handleSendMessage = () => {
     if (chatMessage.trim()) {
       // Di aplikasi nyata, di sini Anda akan memanggil API untuk mengirim pesan
-      console.log(`Mengirim pesan ke ${project.recruiter.name}:`, chatMessage);
+      console.log(`Mengirim pesan ke ${project.creator.name}:`, chatMessage);
       setChatMessage("");
       // Mungkin tambahkan notifikasi toast "Pesan terkirim!"
     }
@@ -27,6 +27,11 @@ export function ChatDialog({ project }: ChatDialogProps) {
   const setQuickMessage = (message: string) => {
     setChatMessage(message);
   };
+
+  // Map API data to display format
+  const creatorProfile = project.creator.profile;
+  const creatorAvatar = creatorProfile?.profile_picture || '';
+  const creatorRole = creatorProfile?.interests || 'Project Creator';
 
   return (
     <Dialog>
@@ -42,18 +47,18 @@ export function ChatDialog({ project }: ChatDialogProps) {
             <div>
               <DialogTitle className="text-lg font-semibold">Chat dengan Recruiter</DialogTitle>
               <DialogDescription className="text-sm text-gray-500">
-                Tanyakan detail proyek kepada {project.recruiter.name}
+                Tanyakan detail proyek kepada {project.creator.name}
               </DialogDescription>
             </div>
           </div>
           <div className="flex items-center gap-3 mb-6">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={project.recruiter.avatar} />
-              <AvatarFallback>{project.recruiter.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+              <AvatarImage src={creatorAvatar} />
+              <AvatarFallback>{project.creator.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold">{project.recruiter.name}</p>
-              <p className="text-sm text-gray-600">{project.recruiter.major} - {project.recruiter.university}</p>
+              <p className="font-semibold">{project.creator.name}</p>
+              <p className="text-sm text-gray-600">{creatorRole}</p>
             </div>
           </div>
           <div className="mb-6">
