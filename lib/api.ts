@@ -701,6 +701,28 @@ export const api = {
       throw error;
     }
   },
+
+  // Get user's created projects
+  getCreatedProjects: async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects/created`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch created projects:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch created projects: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error fetching created projects:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;

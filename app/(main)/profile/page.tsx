@@ -14,9 +14,11 @@ import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { api } from "@/lib/api"
-import { User, Skill, UserSkill } from "@/types"
+import { User, Skill, UserSkill, Project } from "@/types"
 
 // Mock data for projects (copied from app/recruiter-dashboard/page.tsx for consistency)
+// TODO: Remove this mock data once API integration is complete
+/*
 const allProjectsData = [
   {
     id: "1",
@@ -62,9 +64,11 @@ const allProjectsData = [
     technologies: ["React Native", "Firebase", "TensorFlow"],
   },
 ]
+*/
 
 export default function ProfilePage() {
   const [userData, setUserData] = useState<User | null>(null);
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [allSkills, setAllSkills] = useState<Skill[]>([]);
   const [activeTab, setActiveTab] = useState("overview")
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
@@ -91,8 +95,12 @@ export default function ProfilePage() {
         api.getUserSkills(token).catch(err => {
           console.error("Failed to fetch user skills:", err);
           return { data: { skills: [] } };
+        }),
+        api.getCreatedProjects(token).catch(err => {
+          console.error("Failed to fetch created projects:", err);
+          return { data: { projects: [] } };
         })
-      ]).then(([profileData, skillsData, userSkillsData]) => {
+      ]).then(([profileData, skillsData, userSkillsData, projectsResponse]) => {
         console.log('Full API response:', profileData);
         console.log('Profile data keys:', profileData?.data ? Object.keys(profileData.data) : 'No data');
         
@@ -130,6 +138,9 @@ export default function ProfilePage() {
           setUserData(updatedProfileData);
         }
         setAllSkills(skillsData?.data?.skills || []);
+        // Set user projects from API response
+        console.log('Projects API response:', projectsResponse);
+        setUserProjects(projectsResponse?.data || []);
         setIsLoading(false);
       });
     } else {
@@ -288,8 +299,7 @@ export default function ProfilePage() {
     }
   };
 
-  // Filter projects created by this user
-  const userProjects = userData ? allProjectsData.filter((project) => project.recruiterId === userData.id) : [];
+  // Calculate completed projects from API data
   const completedUserProjects = userProjects.filter((project) => project.status === "Completed").length;
 
   if (isLoading) {
@@ -504,7 +514,7 @@ export default function ProfilePage() {
                       <Card key={project.id} className="hover:shadow-lg transition-shadow">
                         <div className="relative">
                           <img
-                            // src={project.image || "/placeholder.svg?height=200&width=300&text=Project"}
+                            src={project.picture_url || "/placeholder.svg?height=200&width=300&text=Project"}
                             alt={project.title}
                             className="w-full h-48 object-cover rounded-t-lg"
                           />
@@ -523,17 +533,22 @@ export default function ProfilePage() {
                         <CardContent className="space-y-4">
                           <div className="flex items-center justify-between text-sm text-gray-600">
                             <span>
-                              Role: <span className="font-medium">{project.role}</span>
+                              Role: <span className="font-medium">Project Creator</span>
                             </span>
-                            <span>{project.teamSize} anggota tim</span>
+                            <span>{project.filled_team + 1}/{project.total_team} anggota tim</span>
                           </div>
 
                           <div className="flex flex-wrap gap-1">
-                            {project.skills.map((tech) => (
-                              <Badge key={tech} variant="outline" className="text-xs">
-                                {tech}
+                            {project.required_skills.slice(0, 4).map((skillItem) => (
+                              <Badge key={skillItem.skill.id} variant="outline" className="text-xs">
+                                {skillItem.skill.name}
                               </Badge>
                             ))}
+                            {project.required_skills.length > 4 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{project.required_skills.length - 4}
+                              </Badge>
+                            )}
                           </div>
 
                           <div className="flex gap-2">
