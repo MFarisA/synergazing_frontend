@@ -557,6 +557,11 @@ export default function ProfilePage() {
                                 <Eye className="h-4 w-4 mr-2" /> Lihat Detail
                               </Button>
                             </Link>
+                            <Link href={`/edit-project/${project.id}`} className="flex-1">
+                              <Button size="sm" variant="secondary" className="w-full">
+                                <Edit className="h-4 w-4 mr-2" /> Edit
+                              </Button>
+                            </Link>
                             <Link href={`/recruiter-dashboard?projectId=${project.id}`} className="flex-1">
                               <Button size="sm" className="w-full">
                                 <Users className="h-4 w-4 mr-2" /> Lihat Pelamar
