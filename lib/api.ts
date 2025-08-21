@@ -723,6 +723,56 @@ export const api = {
       throw error;
     }
   },
+
+  // Delete a project
+  deleteProject: async (token: string, projectId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to delete project:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to delete project: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error deleting project:', error);
+      throw error;
+    }
+  },
+
+  // Get a single project by ID
+  getProjectById: async (projectId: string, token?: string) => {
+    try {
+      const headers: HeadersInit = {
+        'Accept': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+        headers,
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch project by ID:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch project: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error fetching project by ID:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;

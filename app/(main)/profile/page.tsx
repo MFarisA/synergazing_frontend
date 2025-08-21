@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Mail, Phone, MapPin, Briefcase, GraduationCap, LinkIcon, Edit, Users, MessageCircle, Plus, Eye, Download, FileText, Upload, File, Camera, Github, Linkedin, Instagram } from 'lucide-react'
+import { Mail, Phone, MapPin, Briefcase, GraduationCap, LinkIcon, Edit, Users, MessageCircle, Plus, Eye, Download, FileText, Upload, File, Camera, Github, Linkedin, Instagram, Trash2, AlertTriangle } from 'lucide-react'
 import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -78,6 +78,9 @@ export default function ProfilePage() {
   const [newSkill, setNewSkill] = useState({ name: "" });
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -296,6 +299,36 @@ export default function ProfilePage() {
     } catch (error) {
       console.error(error);
       setApiError("Gagal menghapus skill. Coba lagi nanti.");
+    }
+  };
+
+  // Handle delete project functionality
+  const handleDeleteProject = (project: Project) => {
+    setProjectToDelete(project);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
+    
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setIsDeleting(true);
+    try {
+      await api.deleteProject(token, projectToDelete.id.toString());
+      
+      // Remove the project from the local state
+      setUserProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
+      
+      setIsDeleteDialogOpen(false);
+      setProjectToDelete(null);
+      setApiError(null);
+    } catch (error) {
+      console.error(error);
+      setApiError("Gagal menghapus proyek. Coba lagi nanti.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -567,6 +600,14 @@ export default function ProfilePage() {
                                 <Users className="h-4 w-4 mr-2" /> Lihat Pelamar
                               </Button>
                             </Link>
+                            <Button 
+                              size="sm" 
+                              variant="destructive" 
+                              className="bg-red-500 hover:bg-red-600 text-white border-2 border-red-400 shadow-lg hover:shadow-xl transition-all duration-200"
+                              onClick={() => handleDeleteProject(project)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -814,6 +855,71 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Project Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 text-red-500" />
+              Konfirmasi Hapus Proyek
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800">
+                <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan!
+              </p>
+            </div>
+            {projectToDelete && (
+              <div>
+                <p className="text-sm text-gray-700">
+                  Anda akan menghapus proyek:
+                </p>
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg border">
+                  <p className="font-medium text-gray-900">{projectToDelete.title}</p>
+                  <p className="text-sm text-gray-600 mt-1">{projectToDelete.description}</p>
+                </div>
+                <p className="text-sm text-gray-700 mt-3">
+                  Semua data proyek, termasuk aplikan dan informasi terkait akan dihapus secara permanen.
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setProjectToDelete(null);
+              }}
+              disabled={isDeleting}
+            >
+              Batal
+            </Button>
+            <Button 
+              type="button"
+              variant="destructive"
+              onClick={confirmDeleteProject}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isDeleting ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-t-white border-white/30 rounded-full animate-spin"></div>
+                  <span>Menghapus...</span>
+                </div>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Ya, Hapus Proyek
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
