@@ -1,79 +1,70 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Mail, Phone, MapPin, Briefcase, GraduationCap, LinkIcon, Edit, Users, MessageCircle, Plus, Eye, Download, FileText, Upload, File, Camera, Github, Linkedin, Instagram, Trash2, AlertTriangle } from 'lucide-react'
-import Link from "next/link"
-import { Progress } from "@/components/ui/progress"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { api } from "@/lib/api"
-import { User, Skill, UserSkill, Project } from "@/types"
-
-// Mock data for projects (copied from app/recruiter-dashboard/page.tsx for consistency)
-// TODO: Remove this mock data once API integration is complete
-/*
-const allProjectsData = [
-  {
-    id: "1",
-    title: "AI-Powered Content Generator",
-    description: "Develop a web application that uses AI to generate engaging content for various platforms.",
-    skills: ["Python", "TensorFlow", "React", "Next.js", "NLP"],
-    teamSize: 5,
-    duration: "3 months",
-    location: "Remote",
-    status: "In Progress", // Changed for demo
-    recruiterId: 1, // Assuming user with id 1 (Adit Cukur) is the recruiter
-    completion: 75,
-    role: "Project Lead",
-    technologies: ["React", "Node.js", "Arduino", "MongoDB"],
-  },
-  {
-    id: "2",
-    title: "E-commerce Platform Redesign",
-    description: "Revamp an existing e-commerce website with a modern UI/UX and improved performance.",
-    skills: ["React", "Node.js", "MongoDB", "UI/UX", "Figma"],
-    teamSize: 4,
-    duration: "2 months",
-    location: "Hybrid (Jakarta)",
-    status: "Completed",
-    recruiterId: 1, // Assuming user with id 1 (Adit Cukur) is the recruiter
-    completion: 100,
-    role: "Full-Stack Developer",
-    technologies: ["Vue.js", "Laravel", "MySQL"],
-  },
-  {
-    id: "3",
-    title: "Mobile Fitness Tracker App",
-    description:
-      "Build a cross-platform mobile application to track fitness activities and provide personalized workout plans.",
-    skills: ["React Native", "Firebase", "TypeScript", "Health API"],
-    teamSize: 3,
-    duration: "4 months",
-    location: "Remote",
-    status: "Open",
-    recruiterId: 2, // Another recruiter
-    completion: 0,
-    role: "Mobile Developer",
-    technologies: ["React Native", "Firebase", "TensorFlow"],
-  },
-]
-*/
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  GraduationCap,
+  LinkIcon,
+  Edit,
+  Users,
+  MessageCircle,
+  Plus,
+  Eye,
+  Download,
+  FileText,
+  Upload,
+  File,
+  Camera,
+  Github,
+  Linkedin,
+  Instagram,
+  Trash2,
+  AlertTriangle,
+} from "lucide-react";
+import Link from "next/link";
+import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { api } from "@/lib/api";
+import { User, Skill, UserSkill, Project } from "@/types";
 
 export default function ProfilePage() {
   const [userData, setUserData] = useState<User | null>(null);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [allSkills, setAllSkills] = useState<Skill[]>([]);
-  const [activeTab, setActiveTab] = useState("overview")
-  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [isSkillDialogOpen, setIsSkillDialogOpen] = useState(false)
+  // Initialize activeTab from localStorage or default to "overview"
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('profileActiveTab') || "overview";
+    }
+    return "overview";
+  });
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSkillDialogOpen, setIsSkillDialogOpen] = useState(false);
   const [skillToEdit, setSkillToEdit] = useState<UserSkill | null>(null);
   const [newSkill, setNewSkill] = useState({ name: "" });
   const [apiError, setApiError] = useState<string | null>(null);
@@ -81,45 +72,52 @@ export default function ProfilePage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       Promise.all([
-        api.getProfile(token).catch(err => {
+        api.getProfile(token).catch((err) => {
           console.error("Failed to fetch profile:", err);
           setApiError("Gagal memuat profil. Server mungkin tidak tersedia.");
           return null;
         }),
-        api.getAllSkills(token).catch(err => {
+        api.getAllSkills(token).catch((err) => {
           console.error("Failed to fetch skills:", err);
           return { data: { skills: [] } };
         }),
-        api.getUserSkills(token).catch(err => {
+        api.getUserSkills(token).catch((err) => {
           console.error("Failed to fetch user skills:", err);
           return { data: { skills: [] } };
         }),
-        api.getCreatedProjects(token).catch(err => {
+        api.getCreatedProjects(token).catch((err) => {
           console.error("Failed to fetch created projects:", err);
           return { data: { projects: [] } };
-        })
+        }),
       ]).then(([profileData, skillsData, userSkillsData, projectsResponse]) => {
-        console.log('Full API response:', profileData);
-        console.log('Profile data keys:', profileData?.data ? Object.keys(profileData.data) : 'No data');
-        
+        console.log("Full API response:", profileData);
+        console.log(
+          "Profile data keys:",
+          profileData?.data ? Object.keys(profileData.data) : "No data"
+        );
+
         if (profileData) {
           // The profile API returns profile details nested under 'profile' object
           // and skills directly under 'skills' array
           const profileInfo = profileData.data.profile || {};
           const directSkills = profileData.data.skills || [];
-          
+
           // Convert colaboration_status string to boolean for the toggle
           // Note: API returns "colaboration_status" (typo in backend - missing one 'l')
-          const collaborationStatus = profileData.data.colaboration_status === "ready";
-          
-          console.log('API colaboration_status:', profileData.data.colaboration_status);
-          console.log('Converted to boolean:', collaborationStatus);
-          
+          const collaborationStatus =
+            profileData.data.colaboration_status === "ready";
+
+          console.log(
+            "API colaboration_status:",
+            profileData.data.colaboration_status
+          );
+          console.log("Converted to boolean:", collaborationStatus);
+
           // Merge profile data with nested profile information
           const updatedProfileData = {
             ...profileData.data,
@@ -136,13 +134,16 @@ export default function ProfilePage() {
             // Set collaboration_status based on the API response
             collaboration_status: collaborationStatus,
             // Use skills from profile API if available, otherwise use getUserSkills data
-            user_skills: directSkills.length > 0 ? directSkills : (userSkillsData?.data?.skills || [])
+            user_skills:
+              directSkills.length > 0
+                ? directSkills
+                : userSkillsData?.data?.skills || [],
           };
           setUserData(updatedProfileData);
         }
         setAllSkills(skillsData?.data?.skills || []);
         // Set user projects from API response
-        console.log('Projects API response:', projectsResponse);
+        console.log("Projects API response:", projectsResponse);
         setUserProjects(projectsResponse?.data || []);
         setIsLoading(false);
       });
@@ -180,7 +181,7 @@ export default function ProfilePage() {
         setApiError("Gagal menghapus foto profil. Coba lagi nanti.");
       }
     }
-  }
+  };
 
   const handleDeleteCv = async () => {
     const token = localStorage.getItem("token");
@@ -194,43 +195,54 @@ export default function ProfilePage() {
         setApiError("Gagal menghapus CV. Coba lagi nanti.");
       }
     }
-  }
+  };
 
   const handleAddOrUpdateSkill = async () => {
     const token = localStorage.getItem("token");
     if (!token || !userData) return;
 
-    const skillExists = allSkills.find(skill => skill.name.toLowerCase() === newSkill.name.toLowerCase());
-    
-    // Initialize with empty array if user_skills is undefined
-    let skillsToUpdate = [...(userData.user_skills || []).map(us => ({
-      skill_name: us.skill.name,
-    }))];
+    const skillExists = allSkills.find(
+      (skill) => skill.name.toLowerCase() === newSkill.name.toLowerCase()
+    );
 
-    if (skillToEdit) { // Editing existing skill
-      skillsToUpdate = skillsToUpdate.map(s => s.skill_name === skillToEdit.skill.name ? { skill_name: newSkill.name } : s);
-    } else { // Adding new skill
+    // Initialize with empty array if user_skills is undefined
+    let skillsToUpdate = [
+      ...(userData.user_skills || []).map((us) => ({
+        skill_name: us.skill.name,
+      })),
+    ];
+
+    if (skillToEdit) {
+      // Editing existing skill
+      skillsToUpdate = skillsToUpdate.map((s) =>
+        s.skill_name === skillToEdit.skill.name
+          ? { skill_name: newSkill.name }
+          : s
+      );
+    } else {
+      // Adding new skill
       skillsToUpdate.push({ skill_name: newSkill.name });
     }
-    
-    console.log('Skills to update:', skillsToUpdate);
-    
+
+    console.log("Skills to update:", skillsToUpdate);
+
     try {
       await api.updateUserSkills(token, skillsToUpdate);
-      
+
       // Refresh both profile and user skills
       const [updatedProfile, updatedUserSkills] = await Promise.all([
         api.getProfile(token),
-        api.getUserSkills(token)
+        api.getUserSkills(token),
       ]);
-      
+
       // Handle the nested profile structure
       const profileInfo = updatedProfile.data.profile || {};
       const directSkills = updatedProfile.data.skills || [];
-      
+
       // Convert colaboration_status string to boolean for the toggle
-      const collaborationStatus = updatedProfile.data.colaboration_status === "ready";
-      
+      const collaborationStatus =
+        updatedProfile.data.colaboration_status === "ready";
+
       // Merge profile data with nested profile information
       const updatedProfileData = {
         ...updatedProfile.data,
@@ -244,10 +256,13 @@ export default function ProfilePage() {
         instagram_url: profileInfo.instagram_url || "",
         portfolio_url: profileInfo.portfolio_url || "",
         collaboration_status: collaborationStatus,
-        user_skills: directSkills.length > 0 ? directSkills : (updatedUserSkills?.data?.skills || [])
+        user_skills:
+          directSkills.length > 0
+            ? directSkills
+            : updatedUserSkills?.data?.skills || [],
       };
       setUserData(updatedProfileData);
-      
+
       setIsSkillDialogOpen(false);
       setNewSkill({ name: "" });
       setSkillToEdit(null);
@@ -263,20 +278,21 @@ export default function ProfilePage() {
     if (!token) return;
     try {
       await api.deleteUserSkill(token, skillName);
-      
+
       // Refresh both profile and user skills
       const [updatedProfile, updatedUserSkills] = await Promise.all([
         api.getProfile(token),
-        api.getUserSkills(token)
+        api.getUserSkills(token),
       ]);
-      
+
       // Handle the nested profile structure
       const profileInfo = updatedProfile.data.profile || {};
       const directSkills = updatedProfile.data.skills || [];
-      
+
       // Convert colaboration_status string to boolean for the toggle
-      const collaborationStatus = updatedProfile.data.colaboration_status === "ready";
-      
+      const collaborationStatus =
+        updatedProfile.data.colaboration_status === "ready";
+
       // Merge profile data with nested profile information
       const updatedProfileData = {
         ...updatedProfile.data,
@@ -290,10 +306,13 @@ export default function ProfilePage() {
         instagram_url: profileInfo.instagram_url || "",
         portfolio_url: profileInfo.portfolio_url || "",
         collaboration_status: collaborationStatus,
-        user_skills: directSkills.length > 0 ? directSkills : (updatedUserSkills?.data?.skills || [])
+        user_skills:
+          directSkills.length > 0
+            ? directSkills
+            : updatedUserSkills?.data?.skills || [],
       };
       setUserData(updatedProfileData);
-      
+
       setIsSkillDialogOpen(false);
       setApiError(null);
     } catch (error) {
@@ -310,17 +329,19 @@ export default function ProfilePage() {
 
   const confirmDeleteProject = async () => {
     if (!projectToDelete) return;
-    
+
     const token = localStorage.getItem("token");
     if (!token) return;
 
     setIsDeleting(true);
     try {
       await api.deleteProject(token, projectToDelete.id.toString());
-      
+
       // Remove the project from the local state
-      setUserProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
-      
+      setUserProjects((prev) =>
+        prev.filter((p) => p.id !== projectToDelete.id)
+      );
+
       setIsDeleteDialogOpen(false);
       setProjectToDelete(null);
       setApiError(null);
@@ -333,7 +354,9 @@ export default function ProfilePage() {
   };
 
   // Calculate completed projects from API data
-  const completedUserProjects = userProjects.filter((project) => project.status === "Completed").length;
+  const completedUserProjects = userProjects.filter(
+    (project) => project.status === "Completed"
+  ).length;
 
   if (isLoading) {
     return (
@@ -351,22 +374,32 @@ export default function ProfilePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-8 h-8 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Tidak Dapat Memuat Profil</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Tidak Dapat Memuat Profil
+          </h2>
           <p className="text-gray-600 mb-4">{apiError}</p>
-          <Button onClick={() => window.location.reload()}>
-            Coba Lagi
-          </Button>
+          <Button onClick={() => window.location.reload()}>Coba Lagi</Button>
         </div>
       </div>
     );
   }
 
   if (!userData) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
   return (
@@ -377,8 +410,16 @@ export default function ProfilePage() {
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span className="text-sm">{apiError}</span>
               </div>
@@ -386,8 +427,18 @@ export default function ProfilePage() {
                 onClick={() => setApiError(null)}
                 className="ml-2 text-red-500 hover:text-red-700"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -406,7 +457,9 @@ export default function ProfilePage() {
                   {/* Avatar Section */}
                   <div className="relative flex-shrink-0">
                     <Avatar className="h-24 w-24 border-4 border-background shadow-md">
-                      <AvatarImage src={userData.profile_picture || "/placeholder.svg"} />
+                      <AvatarImage
+                        src={userData.profile_picture || "/placeholder.svg"}
+                      />
                       <AvatarFallback className="text-2xl">
                         {userData.name
                           .split(" ")
@@ -428,7 +481,9 @@ export default function ProfilePage() {
                   {/* Info Section */}
                   <div className="flex-1 text-center sm:text-left">
                     <h1 className="text-2xl font-bold">{userData.name}</h1>
-                    <p className="text-muted-foreground">{userData.interests}</p>
+                    <p className="text-muted-foreground">
+                      {userData.interests}
+                    </p>
                     <div className="flex items-center justify-center sm:justify-start gap-4 mt-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <GraduationCap className="h-4 w-4" />
@@ -454,7 +509,9 @@ export default function ProfilePage() {
                 {/* Ready to Synergize Toggle */}
                 <div className="flex items-center justify-between p-3 mt-4 bg-blue-50 border border-blue-100 rounded-lg">
                   <div>
-                    <h4 className="font-medium text-sm">Siap untuk Kolaborasi (#ReadyToSynergize)</h4>
+                    <h4 className="font-medium text-sm">
+                      Siap untuk Kolaborasi (#ReadyToSynergize)
+                    </h4>
                     <p className="text-xs text-gray-500">
                       Tampilkan profil Anda apakah bersedia menjadi kolaborator.
                     </p>
@@ -468,7 +525,14 @@ export default function ProfilePage() {
             </Card>
 
             {/* Tabs Content */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => {
+                setActiveTab(value);
+                localStorage.setItem('profileActiveTab', value);
+              }}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="projects">Proyek</TabsTrigger>
@@ -481,18 +545,19 @@ export default function ProfilePage() {
                     <CardTitle>Tentang Saya</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700 leading-relaxed">{userData.about_me}</p>
+                    <p className="text-gray-700 leading-relaxed">
+                      {userData.about_me}
+                    </p>
                   </CardContent>
                 </Card>
-                
 
                 {/* Skills */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Skills & Keahlian</CardTitle>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => {
                         setSkillToEdit(null);
                         setNewSkill({ name: "" });
@@ -508,8 +573,8 @@ export default function ProfilePage() {
                     <div className="flex flex-wrap gap-2">
                       {userData.user_skills?.map((userSkill) => (
                         <div key={userSkill.id} className="relative group">
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="secondary"
                             className="p-2 cursor-pointer"
                             onClick={() => {
                               setSkillToEdit(userSkill);
@@ -529,7 +594,9 @@ export default function ProfilePage() {
 
               <TabsContent value="projects" className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">Proyek Saya ({userProjects.length})</h2>
+                  <h2 className="text-xl font-semibold">
+                    Proyek Saya ({userProjects.length})
+                  </h2>
                   <Link href="/create-project">
                     <Button>
                       <Plus className="h-4 w-4 mr-2" /> Buat Proyek Baru
@@ -544,39 +611,67 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     userProjects.map((project) => (
-                      <Card key={project.id} className="hover:shadow-lg transition-shadow">
+                      <Card
+                        key={project.id}
+                        className="hover:shadow-lg transition-shadow"
+                      >
                         <div className="relative">
                           <img
-                            src={project.picture_url || "/placeholder.svg?height=200&width=300&text=Project"}
+                            src={
+                              project.picture_url ||
+                              "/placeholder.svg?height=200&width=300&text=Project"
+                            }
                             alt={project.title}
                             className="w-full h-48 object-cover rounded-t-lg"
                           />
                           <Badge
                             className={`absolute top-3 left-3 ${
-                              project.status === "Completed" ? "bg-green-500" : "bg-blue-500"
+                              project.status === "published"
+                                ? "bg-blue-500"
+                                : project.status === "draft"
+                                ? "bg-yellow-500"
+                                : project.status === "completed"
+                                ? "bg-green-500"
+                                : "bg-gray-500"
                             }`}
                           >
                             {project.status}
                           </Badge>
                         </div>
                         <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">{project.title}</CardTitle>
-                          <CardDescription>{project.description}</CardDescription>
+                          <CardTitle className="text-lg">
+                            {project.title}
+                          </CardTitle>
+                          <CardDescription>
+                            {project.description}
+                          </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="flex items-center justify-between text-sm text-gray-600">
                             <span>
-                              Role: <span className="font-medium">Project Creator</span>
+                              Role:{" "}
+                              <span className="font-medium">
+                                Project Creator
+                              </span>
                             </span>
-                            <span>{project.filled_team + 1}/{project.total_team} anggota tim</span>
+                            <span>
+                              {project.filled_team + 1}/{project.total_team}{" "}
+                              anggota tim
+                            </span>
                           </div>
 
                           <div className="flex flex-wrap gap-1">
-                            {project.required_skills.slice(0, 4).map((skillItem) => (
-                              <Badge key={skillItem.skill.id} variant="outline" className="text-xs">
-                                {skillItem.skill.name}
-                              </Badge>
-                            ))}
+                            {project.required_skills
+                              .slice(0, 4)
+                              .map((skillItem) => (
+                                <Badge
+                                  key={skillItem.skill.id}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {skillItem.skill.name}
+                                </Badge>
+                              ))}
                             {project.required_skills.length > 4 && (
                               <Badge variant="outline" className="text-xs">
                                 +{project.required_skills.length - 4}
@@ -585,24 +680,41 @@ export default function ProfilePage() {
                           </div>
 
                           <div className="flex gap-2">
-                            <Link href={`/projects/${project.id}`} className="flex-1">
-                              <Button size="sm" variant="outline" className="w-full bg-transparent">
+                            <Link
+                              href={`/projects/${project.id}`}
+                              className="flex-1"
+                            >
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full bg-transparent"
+                              >
                                 <Eye className="h-4 w-4 mr-2" /> Lihat Detail
                               </Button>
                             </Link>
-                            <Link href={`/edit-project/${project.id}`} className="flex-1">
-                              <Button size="sm" variant="secondary" className="w-full">
+                            <Link
+                              href={`/edit-project/${project.id}`}
+                              className="flex-1"
+                            >
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="w-full"
+                              >
                                 <Edit className="h-4 w-4 mr-2" /> Edit
                               </Button>
                             </Link>
-                            <Link href={`/recruiter-dashboard?projectId=${project.id}`} className="flex-1">
+                            <Link
+                              href={`/recruiter-dashboard?projectId=${project.id}`}
+                              className="flex-1"
+                            >
                               <Button size="sm" className="w-full">
                                 <Users className="h-4 w-4 mr-2" /> Lihat Pelamar
                               </Button>
                             </Link>
-                            <Button 
-                              size="sm" 
-                              variant="destructive" 
+                            <Button
+                              size="sm"
+                              variant="destructive"
                               className="bg-red-500 hover:bg-red-600 text-white border-2 border-red-400 shadow-lg hover:shadow-xl transition-all duration-200"
                               onClick={() => handleDeleteProject(project)}
                             >
@@ -649,56 +761,56 @@ export default function ProfilePage() {
                 <CardTitle>Media Sosial & Tautan</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-              {userData.website_url && (
-                <a
-                  href={userData.website_url}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <LinkIcon className="h-5 w-5" />
-                  <span className="text-sm">Website</span>
-                  <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
-                </a>
-              )}
-              {userData.github_url && (
-                <a
-                  href={userData.github_url}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Github className="h-5 w-5" />
-                  <span className="text-sm">GitHub</span>
-                  <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
-                </a>
-              )}
-              {userData.linkedin_url && (
-                <a
-                  href={userData.linkedin_url}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Linkedin className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm">LinkedIn</span>
-                  <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
-                </a>
-              )}
-              {userData.instagram_url && (
-                <a
-                  href={userData.instagram_url}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Instagram className="h-5 w-5 text-pink-600" />
-                  <span className="text-sm">Instagram</span>
-                  <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
-                </a>
-              )}
-              {userData.portfolio_url && (
-                <a
-                  href={userData.portfolio_url}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <LinkIcon className="h-5 w-5 text-green-600" />
-                  <span className="text-sm">Portfolio</span>
-                  <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
-                </a>
-              )}
+                {userData.website_url && (
+                  <a
+                    href={userData.website_url}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <LinkIcon className="h-5 w-5" />
+                    <span className="text-sm">Website</span>
+                    <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
+                  </a>
+                )}
+                {userData.github_url && (
+                  <a
+                    href={userData.github_url}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Github className="h-5 w-5" />
+                    <span className="text-sm">GitHub</span>
+                    <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
+                  </a>
+                )}
+                {userData.linkedin_url && (
+                  <a
+                    href={userData.linkedin_url}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Linkedin className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm">LinkedIn</span>
+                    <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
+                  </a>
+                )}
+                {userData.instagram_url && (
+                  <a
+                    href={userData.instagram_url}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Instagram className="h-5 w-5 text-pink-600" />
+                    <span className="text-sm">Instagram</span>
+                    <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
+                  </a>
+                )}
+                {userData.portfolio_url && (
+                  <a
+                    href={userData.portfolio_url}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <LinkIcon className="h-5 w-5 text-green-600" />
+                    <span className="text-sm">Portfolio</span>
+                    <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
+                  </a>
+                )}
               </CardContent>
             </Card>
 
@@ -720,7 +832,9 @@ export default function ProfilePage() {
                     <div className="flex items-center">
                       <FileText className="h-8 w-8 text-blue-600 mr-3" />
                       <div className="flex-1">
-                        <p className="font-medium text-sm">{userData.cv_file.split('/').pop()}</p>
+                        <p className="font-medium text-sm">
+                          {userData.cv_file.split("/").pop()}
+                        </p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 mt-4">
@@ -732,15 +846,21 @@ export default function ProfilePage() {
                       >
                         <Eye className="h-4 w-4 mr-2" /> Lihat
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={handleDeleteCv}>
-                         Hapus
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleDeleteCv}
+                      >
+                        Hapus
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="bg-gray-50 rounded-lg p-6 text-center">
                     <File className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-3">Upload CV Anda untuk meningkatkan peluang kolaborasi</p>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Upload CV Anda untuk meningkatkan peluang kolaborasi
+                    </p>
                     <Link href="/profile/edit">
                       <Button size="sm">
                         <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload CV
@@ -753,23 +873,27 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-       {/* Skill Add/Edit Dialog */}
-       <Dialog open={isSkillDialogOpen} onOpenChange={setIsSkillDialogOpen}>
+      {/* Skill Add/Edit Dialog */}
+      <Dialog open={isSkillDialogOpen} onOpenChange={setIsSkillDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{skillToEdit ? 'Edit Skill' : 'Tambah Skill Baru'}</DialogTitle>
+            <DialogTitle>
+              {skillToEdit ? "Edit Skill" : "Tambah Skill Baru"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Nama Skill</label>
-              <Input 
-                value={newSkill.name} 
-                onChange={(e) => setNewSkill({...newSkill, name: e.target.value})}
+              <Input
+                value={newSkill.name}
+                onChange={(e) =>
+                  setNewSkill({ ...newSkill, name: e.target.value })
+                }
                 placeholder="contoh: React, Python, UI/UX Design"
                 list="skills-list"
               />
               <datalist id="skills-list">
-                {allSkills.map(skill => (
+                {allSkills.map((skill) => (
                   <option key={skill.id} value={skill.name} />
                 ))}
               </datalist>
@@ -777,8 +901,8 @@ export default function ProfilePage() {
           </div>
           <DialogFooter className="flex gap-2 sm:justify-between">
             {skillToEdit && (
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 type="button"
                 onClick={() => handleDeleteSkill(skillToEdit.skill.name)}
               >
@@ -793,12 +917,12 @@ export default function ProfilePage() {
               >
                 Batal
               </Button>
-              <Button 
+              <Button
                 type="button"
                 onClick={handleAddOrUpdateSkill}
                 disabled={!newSkill.name.trim()}
               >
-                {skillToEdit ? 'Simpan Perubahan' : 'Tambah Skill'}
+                {skillToEdit ? "Simpan Perubahan" : "Tambah Skill"}
               </Button>
             </div>
           </DialogFooter>
@@ -810,23 +934,23 @@ export default function ProfilePage() {
         <DialogContent className="max-w-6xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              <span>CV Preview: {userData.cv_file?.split('/').pop()}</span>
+              <span>CV Preview: {userData.cv_file?.split("/").pop()}</span>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     if (userData.cv_file) {
-                      window.open(userData.cv_file, '_blank');
+                      window.open(userData.cv_file, "_blank");
                     }
                   }}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setIsPdfViewerOpen(false)}
                 >
                   Close
@@ -837,14 +961,14 @@ export default function ProfilePage() {
           <div className="flex-1 overflow-hidden">
             <div className="bg-gray-50 rounded-lg border border-gray-200 h-[75vh]">
               {userData.cv_file ? (
-                <iframe 
+                <iframe
                   src={`${userData.cv_file}#toolbar=0&navpanes=0&scrollbar=1`}
-                  className="w-full h-full border-0 rounded-lg" 
+                  className="w-full h-full border-0 rounded-lg"
                   title="CV Preview"
                   onError={(e) => {
-                    console.error('PDF preview error:', e);
+                    console.error("PDF preview error:", e);
                     // Fallback: open in new tab if iframe fails
-                    window.open(userData.cv_file, '_blank');
+                    window.open(userData.cv_file, "_blank");
                     setIsPdfViewerOpen(false);
                   }}
                 />
@@ -870,7 +994,8 @@ export default function ProfilePage() {
           <div className="space-y-4 py-4">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-sm text-red-800">
-                <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan!
+                <strong>Peringatan:</strong> Tindakan ini tidak dapat
+                dibatalkan!
               </p>
             </div>
             {projectToDelete && (
@@ -879,11 +1004,16 @@ export default function ProfilePage() {
                   Anda akan menghapus proyek:
                 </p>
                 <div className="mt-2 p-3 bg-gray-50 rounded-lg border">
-                  <p className="font-medium text-gray-900">{projectToDelete.title}</p>
-                  <p className="text-sm text-gray-600 mt-1">{projectToDelete.description}</p>
+                  <p className="font-medium text-gray-900">
+                    {projectToDelete.title}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {projectToDelete.description}
+                  </p>
                 </div>
                 <p className="text-sm text-gray-700 mt-3">
-                  Semua data proyek, termasuk aplikan dan informasi terkait akan dihapus secara permanen.
+                  Semua data proyek, termasuk aplikan dan informasi terkait akan
+                  dihapus secara permanen.
                 </p>
               </div>
             )}
@@ -900,7 +1030,7 @@ export default function ProfilePage() {
             >
               Batal
             </Button>
-            <Button 
+            <Button
               type="button"
               variant="destructive"
               onClick={confirmDeleteProject}
@@ -923,5 +1053,5 @@ export default function ProfilePage() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
