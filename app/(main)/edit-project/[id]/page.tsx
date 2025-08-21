@@ -1541,7 +1541,7 @@ export default function EditProjectPage() {
                             )}
                           </div>
 
-                          <div>
+                          {/* <div>
                             <label className="block text-sm font-medium mb-2">Tags (Opsional)</label>
                             <div className="flex items-center gap-2">
                               <Input
@@ -1601,7 +1601,7 @@ export default function EditProjectPage() {
                               )}
                             </div>
                             <p className="text-xs text-gray-500 mt-1">Tambahkan tag yang relevan dengan proyek ini</p>
-                          </div>
+                          </div> */}
                         </div>
                       )}
                     </motion.div>

@@ -162,6 +162,7 @@ export default function CreateProjectPage() {
       if (!formData.type) newErrors.type = "Tipe proyek wajib dipilih"
       if (!formData.description.trim()) newErrors.description = "Deskripsi proyek wajib diisi"
       if (formData.description.length < 50) newErrors.description = "Deskripsi minimal 50 karakter"
+      if (!formData.image) newErrors.image = "Gambar proyek wajib diunggah"
     }
 
     if (step === 2) {
@@ -822,7 +823,7 @@ export default function CreateProjectPage() {
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium mb-2">Gambar Proyek (Opsional)</label>
+                            <label className="block text-sm font-medium mb-2">Gambar Proyek *</label>
                             {formData.image ? (
                               // Image Preview
                               <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4">
@@ -888,6 +889,12 @@ export default function CreateProjectPage() {
                                 }
                               }}
                             />
+                            {errors.image && (
+                              <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                <AlertCircle className="h-4 w-4" />
+                                {errors.image}
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1419,10 +1426,10 @@ export default function CreateProjectPage() {
                                         </Select>
                                       ) : (
                                         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                          <p className="text-sm text-yellow-700">
-                                            Silakan definisikan role terlebih dahulu di bagian "Role pada Project Ini" di atas
-                                          </p>
-                                        </div>
+                                            <p className="text-sm text-yellow-700">
+                                              Silakan definisikan role terlebih dahulu di bagian "Role pada Project Ini" di atas
+                                            </p>
+                                          </div>
                                       )}
                                     </div>
                                   </div>
@@ -1646,7 +1653,7 @@ export default function CreateProjectPage() {
                           </div>
 
 
-                          <div>
+                          {/* <div>
                             <label className="block text-sm font-medium mb-2">Tags (Opsional)</label>
                             <div className="flex items-center gap-2">
                               <Input
@@ -1706,7 +1713,7 @@ export default function CreateProjectPage() {
                               )}
                             </div>
                             <p className="text-xs text-gray-500 mt-1">Tambahkan tag yang relevan dengan proyek ini</p>
-                          </div>
+                          </div> */}
                         </div>
                       )}
                     </motion.div>
