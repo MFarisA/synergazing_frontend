@@ -48,7 +48,7 @@ export default function CollaboratorsPage() {
 			try {
 				const token = localStorage.getItem("token");
 				if (!token) {
-					setError("Authentication required");
+					setError("Please log in to view collaborators");
 					setIsLoading(false);
 					return;
 				}
@@ -152,10 +152,10 @@ export default function CollaboratorsPage() {
 							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 						</svg>
 					</div>
-					<h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Collaborators</h2>
+					<h2 className="text-xl font-semibold text-gray-900 mb-2">Kolaborator Tidak Ditemukan</h2>
 					<p className="text-gray-600 mb-4">{error}</p>
 					<Button onClick={() => window.location.reload()}>
-						Try Again
+						Coba Lagi
 					</Button>
 				</div>
 			</div>

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useState, useEffect } from "react";
 
 interface SidebarFiltersProps {
   searchQuery: string;
@@ -34,6 +35,14 @@ export function SidebarFilters({
   selectedSkills,
   handleSkillToggle,
 }: SidebarFiltersProps) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check if user is logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
   const areMainFiltersActive =
     searchQuery !== "" || selectedType !== "all" || selectedLocation !== "all";
 
@@ -45,13 +54,15 @@ export function SidebarFilters({
 
   return (
     <aside className="w-full lg:w-80 space-y-6 flex-shrink-0">
-      <Link href="/create-project" className="block">
-        {/* PERUBAHAN DILAKUKAN DI SINI */}
-        <Button className="w-full bg-primary text-white h-12 text-base font-medium transition-all hover:brightness-90">
-          <Plus className="h-5 w-5 mr-2" />
-          Buat Proyek Baru
-        </Button>
-      </Link>
+      {/* Conditionally render the "Buat Proyek Baru" button only when logged in */}
+      {isLoggedIn && (
+        <Link href="/create-project" className="block">
+          <Button className="w-full bg-primary text-white h-12 text-base font-medium transition-all hover:brightness-90">
+            <Plus className="h-5 w-5 mr-2" />
+            Buat Proyek Baru
+          </Button>
+        </Link>
+      )}
 
       <Card>
         <CardContent className="p-4 space-y-4">
