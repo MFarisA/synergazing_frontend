@@ -25,6 +25,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState("")
+  const [alertMessage, setAlertMessage] = useState("")
+  const [alertType, setAlertType] = useState<"error" | "warning" | "">("")
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -52,6 +54,8 @@ export default function LoginPage() {
 
     setIsLoading(true)
     setApiError("")
+    setAlertMessage("")
+    setAlertType("")
 
     try {
       const response = await api.login({
@@ -69,7 +73,23 @@ export default function LoginPage() {
       router.push("/profile")
     } catch (error: any) {
       console.error("Login failed:", error)
-      setApiError(error.response?.data?.message || "Invalid credentials. Please try again.")
+      
+      const errorMessage = error.response?.data?.message || ""
+      
+      // Check for specific error messages from backend
+      if (errorMessage.includes("Invalid Credetial Email")) {
+        setAlertType("warning")
+        setAlertMessage("Email tidak terdaftar. Silakan daftar terlebih dahulu atau periksa kembali email Anda.")
+        setApiError("Email tidak terdaftar")
+      } else if (errorMessage.includes("Invalid Credential Password")) {
+        setAlertType("error")
+        setAlertMessage("Password yang Anda masukkan salah. Silakan periksa kembali password Anda.")
+        setApiError("Password salah")
+      } else {
+        setAlertType("error")
+        setAlertMessage("Login gagal. Silakan periksa kembali email dan password Anda.")
+        setApiError(errorMessage || "Invalid credentials. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -100,6 +120,37 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Selamat Datang di Synergazing</h1>
           <p className="text-gray-600">Masuk ke akun Anda untuk memulai kolaborasi</p>
         </motion.div>
+
+        {/* Alert Message */}
+        {alertMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`mb-4 p-4 rounded-lg border ${
+              alertType === "error"
+                ? "bg-red-50 border-red-200 text-red-800"
+                : "bg-amber-50 border-amber-200 text-amber-800"
+            }`}
+          >
+            <div className="flex items-start gap-2">
+              <AlertCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                alertType === "error" ? "text-red-500" : "text-amber-500"
+              }`} />
+              <div>
+                <p className="font-medium">{alertType === "error" ? "Login Gagal" : "Perhatian"}</p>
+                <p className="text-sm mt-1">{alertMessage}</p>
+                {alertType === "warning" && (
+                  <p className="text-sm mt-2">
+                    Belum punya akun?{" "}
+                    <Link href="/register" className="font-medium underline hover:no-underline">
+                      Daftar di sini
+                    </Link>
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Login Form */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
