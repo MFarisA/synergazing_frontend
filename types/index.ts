@@ -152,3 +152,66 @@ export interface TimelineStatusOption {
   description: string;
   color?: string;
 }
+
+// ======================
+// CHAT TYPES
+// ======================
+
+export interface ChatUser {
+  id: number;
+  name: string;
+  email?: string;
+  profile?: {
+    profile_picture?: string;
+  };
+}
+
+export interface ChatMessage {
+  id: number;
+  chat_id: number;
+  sender_id: number;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  updated_at: string;
+  sender: ChatUser;
+}
+
+export interface Chat {
+  id: number;
+  user1_id: number;
+  user2_id: number;
+  user1: ChatUser;
+  user2: ChatUser;
+  messages?: ChatMessage[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConversationListItem {
+  id: number;
+  name: string;
+  avatar: string;
+  title: string;
+  lastMessage: string;
+  timestamp: string;
+  unread: number;
+  isOnline: boolean;
+  isGroup?: boolean;
+  chatId: number;
+  otherUserId: number;
+}
+
+export interface ChatAPIResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
+export interface UnreadNotification {
+  chat_id: number;
+  sender_name: string;
+  last_message: string;
+  unread_count: number;
+  timestamp: string;
+}
