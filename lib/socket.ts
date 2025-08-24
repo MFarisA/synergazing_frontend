@@ -8,7 +8,7 @@ export interface WebSocketMessage {
   type: string
   chat_id?: number
   content?: string
-  data?: any
+  data?: Record<string, unknown>
 }
 
 // WebSocket connection status

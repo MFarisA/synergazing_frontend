@@ -22,7 +22,7 @@ export default function Navbar({ className }: { className?: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userData, setUserData] = useState<any>(null)
+  const [userData, setUserData] = useState<{ name?: string } | null>(null)
 
   // Check if user is logged in
   useEffect(() => {

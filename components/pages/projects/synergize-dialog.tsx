@@ -55,7 +55,7 @@ export function SynergizeDialog({ project }: SynergizeDialogProps) {
           <div className="mb-6">
             <DialogTitle className="text-lg font-semibold mb-2">Bergabung dengan Proyek</DialogTitle>
             <DialogDescription className="text-sm text-gray-500">
-              Ajukan diri Anda untuk bergabung dengan "{project.title}"
+              Ajukan diri Anda untuk bergabung dengan &ldquo;{project.title}&rdquo;
             </DialogDescription>
           </div>
           <div className="mb-6">
@@ -94,6 +94,9 @@ export function SynergizeDialog({ project }: SynergizeDialogProps) {
               Synergize It!
             </Button>
           </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Kirim pesan ke &ldquo;{project.creator.name}&rdquo; untuk memulai kolaborasi pada proyek ini.
+          </p>
         </div>
       </DialogContent>
     </Dialog>

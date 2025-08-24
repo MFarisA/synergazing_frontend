@@ -1,14 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/toast"
 import {
   Plus,
@@ -23,11 +21,9 @@ import {
   ArrowLeft,
   ArrowRight,
   Zap,
-  Home,
   Minus,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { api } from "@/lib/api"
@@ -399,7 +395,7 @@ export default function CreateProjectPage() {
     setCurrentStep(currentStep - 1)
   }
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
@@ -437,7 +433,7 @@ export default function CreateProjectPage() {
     }))
   }
 
-  const updateRole = (index: number, field: string, value: any) => {
+  const updateRole = (index: number, field: string, value: unknown) => {
     setFormData((prev) => ({
       ...prev,
       roles: prev.roles.map((role, i) => (i === index ? { ...role, [field]: value } : role)),
@@ -517,7 +513,7 @@ export default function CreateProjectPage() {
     }))
   }
 
-  const updateExistingMember = (index: number, field: string, value: any) => {
+  const updateExistingMember = (index: number, field: string, value: unknown) => {
     setFormData((prev) => ({
       ...prev,
       existingMembers: prev.existingMembers.map((member, i) => 
@@ -544,7 +540,7 @@ export default function CreateProjectPage() {
     }))
   }
 
-  const updateTimelineStep = (index: number, field: string, value: any) => {
+  const updateTimelineStep = (index: number, field: string, value: unknown) => {
     setFormData((prev) => ({
       ...prev,
       timelineSteps: prev.timelineSteps.map((step, i) => (
@@ -1427,7 +1423,7 @@ export default function CreateProjectPage() {
                                       ) : (
                                         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                             <p className="text-sm text-yellow-700">
-                                              Silakan definisikan role terlebih dahulu di bagian "Role pada Project Ini" di atas
+                                              Silakan definisikan role terlebih dahulu di bagian &ldquo;Role pada Project Ini&rdquo; di atas
                                             </p>
                                           </div>
                                       )}

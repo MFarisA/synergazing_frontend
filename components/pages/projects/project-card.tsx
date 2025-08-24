@@ -40,8 +40,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
   // Map API data to display format
   const skills = project.required_skills.map(skill => skill.skill.name);
   const membersText = `${project.filled_team+1}/${project.total_team}`;
-  const creatorAvatar = project.creator.profile_picture || '';
-  const creatorRole = project.creator.interests || 'Main Role';
+  const creatorAvatar = project.creator.profile?.profile_picture || '';
+  const creatorRole = project.creator.profile?.interests || 'Main Role';
   
   return (
     <Card className="hover:shadow-lg transition-all duration-200 group flex flex-col overflow-hidden">

@@ -71,10 +71,10 @@ export default function LoginPage() {
 
       // Redirect to profile page or dashboard
       router.push("/profile")
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login failed:", error)
       
-      const errorMessage = error.response?.data?.message || ""
+      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message || ""
       
       // Check for specific error messages from backend
       if (errorMessage.includes("Invalid Credetial Email")) {

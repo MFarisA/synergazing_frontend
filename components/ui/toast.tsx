@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import * as React from "react"
+import { useState, createContext, useContext } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -19,8 +20,6 @@ interface ToastContextType {
   addToast: (toast: Omit<ToastProps, "id">) => void
   removeToast: (id: string) => void
 }
-
-import { createContext, useContext } from "react"
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
 

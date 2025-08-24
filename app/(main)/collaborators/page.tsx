@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, MessageCircle, Search, Send, X, ChevronLeft } from "lucide-react"
+import { MapPin, MessageCircle, Search, Send, X } from "lucide-react"
 import Link from "next/link"
 import { AnimatedModal } from "@/components/ui/animated-modal"
 import { api } from "@/lib/api"
@@ -73,7 +73,7 @@ export default function CollaboratorsPage() {
 	const [newMessage, setNewMessage] = useState("")
 	const [isLoadingChat, setIsLoadingChat] = useState(false)
 	const [isSendingMessage, setIsSendingMessage] = useState(false)
-	const [currentUser, setCurrentUser] = useState<any>(null)
+	const [currentUser, setCurrentUser] = useState<{ id: number; name: string } | null>(null)
 
 	// WebSocket
 	const { connectionStatus, lastMessage, connect, disconnect, sendMessage } = useWebSocket()
@@ -106,10 +106,11 @@ export default function CollaboratorsPage() {
 					if (lastMessage.data && currentChat && lastMessage.data.chat_id === currentChat.id) {
 						setChatMessages(prev => {
 							// Check if message already exists to avoid duplicates
-							const exists = prev.some(msg => msg.id === lastMessage.data.id);
+							const messageData = lastMessage.data as unknown as ChatMessage;
+							const exists = prev.some(msg => msg.id === messageData.id);
 							if (exists) return prev;
 							
-							return [...prev, lastMessage.data as ChatMessage];
+							return [...prev, messageData];
 						});
 					}
 					break;
@@ -173,14 +174,14 @@ export default function CollaboratorsPage() {
 				console.log('Number of collaborators:', collaboratorsData.length);
 				
 				// Debug each collaborator's profile data
-				collaboratorsData.forEach((collaborator, index) => {
+				collaboratorsData.forEach((collaborator: Record<string, unknown>, index: number) => {
 					console.log(`Collaborator ${index + 1}:`, {
 						name: collaborator.name,
 						profile: collaborator.profile,
 						user_skills: collaborator.user_skills,
-						interests: collaborator.profile?.interests,
-						location: collaborator.profile?.location,
-						about_me: collaborator.profile?.about_me
+						interests: (collaborator.profile as Record<string, unknown>)?.interests,
+						location: (collaborator.profile as Record<string, unknown>)?.location,
+						about_me: (collaborator.profile as Record<string, unknown>)?.about_me
 					});
 				});
 				

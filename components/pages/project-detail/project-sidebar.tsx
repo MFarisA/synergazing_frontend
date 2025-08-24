@@ -23,9 +23,9 @@ const formatDate = (dateString: string): string => {
 
 export function ProjectSidebar({ project }: ProjectSidebarProps) {
   // Map API data to display format
-  const creatorAvatar = project.creator.profile_picture || '';
-  const creatorRole = project.creator.interests || 'Project Creator';
-  const creatorAbout = project.creator.about_me || `Passionate about ${project.project_type} projects. Experienced in full-stack development with a focus on innovative solutions.`;
+  const creatorAvatar = project.creator.profile?.profile_picture || '';
+  const creatorRole = project.creator.profile?.interests || 'Project Creator';
+  const creatorAbout = `Passionate about ${project.project_type} projects. Experienced in full-stack development with a focus on innovative solutions.`;
   const statusText = project.status === "published" ? "Recruiting" : project.status;
   
   return (

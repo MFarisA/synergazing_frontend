@@ -1,16 +1,15 @@
 'use client'
 
-import React, { useState, useRef, useEffect, useMemo, memo, useCallback } from 'react'
+import React, { useState, useRef, useEffect, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageSquare, Send, Search, X, ChevronLeft, MoreHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useWebSocket } from '@/lib/socket'
 import { api } from '@/lib/api'
-import { Chat, ChatMessage, ConversationListItem, ChatUser } from '@/types'
+import { Chat, ChatMessage, ConversationListItem } from '@/types'
 
 // Debounce hook
 const useDebounce = (value: string, delay: number) => {
@@ -102,6 +101,8 @@ const MessageInput = memo(({
     </form>
   )
 })
+
+MessageInput.displayName = 'MessageInput'
 
 export function ChatBubble() {
   // State management
@@ -314,19 +315,19 @@ export function ChatBubble() {
   useEffect(() => {
     if (!lastMessage || !isAuthenticated) return
 
-    if (lastMessage.type === 'new_message') {
-      const messageData = lastMessage.data
+    if (lastMessage.type === 'new_message' && lastMessage.data) {
+      const messageData = lastMessage.data as Record<string, unknown>
       const newMsg: ChatMessage = {
-        id: messageData.id,
-        chat_id: messageData.chat_id,
-        sender_id: messageData.sender_id,
-        content: messageData.content,
-        is_read: messageData.is_read,
-        created_at: messageData.created_at,
-        updated_at: messageData.created_at,
+        id: messageData.id as number,
+        chat_id: messageData.chat_id as number,
+        sender_id: messageData.sender_id as number,
+        content: messageData.content as string,
+        is_read: messageData.is_read as boolean,
+        created_at: messageData.created_at as string,
+        updated_at: messageData.created_at as string,
         sender: {
-          id: messageData.sender.id,
-          name: messageData.sender.name
+          id: (messageData.sender as Record<string, unknown>).id as number,
+          name: (messageData.sender as Record<string, unknown>).name as string
         }
       }
 
@@ -374,19 +375,6 @@ export function ChatBubble() {
     conversationsRef.current = conversations
   }, [conversations])
   
-  // Create a stable search callback that doesn't change
-  const handleSearchChange = useRef((query: string) => {
-    currentSearchQuery.current = query
-    if (!query) {
-      setFilteredConversations(conversationsRef.current)
-    } else {
-      const filtered = conversationsRef.current.filter(convo =>
-        convo.name.toLowerCase().includes(query.toLowerCase())
-      )
-      setFilteredConversations(filtered)
-    }
-  }).current
-
   // Listen for search events from SearchInput component
   useEffect(() => {
     const handleSearchQueryChanged = (event: CustomEvent) => {

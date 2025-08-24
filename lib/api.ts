@@ -20,7 +20,7 @@ export interface AuthResponse {
   success: boolean;
   message: string;
   data?: {
-    user?: any;
+    user?: Record<string, unknown>;
     token?: string;
   };
 }
@@ -41,7 +41,7 @@ const safeJsonParse = async (response: Response) => {
 
 // API utilities for testing and debugging backend connectivity
 export const apiUtils = {
-  testConnection: async (): Promise<{ status: string; message: string; details?: any }> => {
+  testConnection: async (): Promise<{ status: string; message: string; details?: Record<string, unknown> }> => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
@@ -92,8 +92,9 @@ export const apiUtils = {
           }
         };
       }
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
+    } catch (error: unknown) {
+      const err = error as { name?: string; message?: string }
+      if (err.name === 'AbortError') {
         return {
           status: 'error',
           message: `Connection to ${API_BASE_URL} timed out. Server may be down or unreachable.`
@@ -102,13 +103,13 @@ export const apiUtils = {
       
       return {
         status: 'error',
-        message: `Failed to connect to backend at ${API_BASE_URL}: ${error.message}`
+        message: `Failed to connect to backend at ${API_BASE_URL}: ${err.message || 'Unknown error'}`
       };
     }
   },
   
   // Test registration endpoint specifically
-  testRegisterEndpoint: async (): Promise<{ status: string; message: string; details?: any }> => {
+  testRegisterEndpoint: async (): Promise<{ status: string; message: string; details?: Record<string, unknown> }> => {
     try {
       // Send a basic OPTIONS request to check if the endpoint is accessible
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
@@ -145,10 +146,11 @@ export const apiUtils = {
           details: { headers }
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string }
       return {
         status: 'error',
-        message: `Error testing registration endpoint: ${error.message}`
+        message: `Error testing registration endpoint: ${err.message || 'Unknown error'}`
       };
     }
   }
@@ -196,7 +198,7 @@ export const api = {
       }
       
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
       throw error;
     }
@@ -226,7 +228,7 @@ export const api = {
       }
       
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       throw error;
     }
