@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
+  images: {
+    domains: ['synergazing.bahasakita.store'],
+  },
 };
 
 export default nextConfig;
