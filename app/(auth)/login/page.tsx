@@ -14,6 +14,8 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 
+const API_BASE_URL = 'https://synergazing.bahasakita.store'
+
 export default function LoginPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
@@ -107,9 +109,34 @@ export default function LoginPage() {
     }
   }
 
-  const handleSocialLogin = (provider: string) => {
-    console.log(`Login with ${provider}`)
-    // Handle social login
+  const handleSocialLogin = async (provider: string) => {
+    if (provider === "google") {
+      setIsLoading(true)
+      setApiError("")
+      setAlertMessage("")
+      setAlertType("")
+
+      try {
+        console.log("Initiating Google login...")
+        
+        // Simply redirect to the backend Google login endpoint
+        // This is the most reliable approach for OAuth
+        window.location.href = `${API_BASE_URL}/api/auth/google/login`
+        
+        // The backend will handle the entire OAuth flow and should redirect back
+        // to your frontend with the auth data
+        
+      } catch (error: unknown) {
+        console.error("Google login failed:", error)
+        setAlertType("error")
+        setAlertMessage("Google login gagal. " + (error as Error).message)
+        setApiError("Failed to initiate Google login")
+        setIsLoading(false)
+      }
+    } else {
+      console.log(`Login with ${provider}`)
+      // Handle other social login providers
+    }
   }
 
   return (

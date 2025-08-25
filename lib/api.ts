@@ -234,6 +234,65 @@ export const api = {
     }
   },
 
+  // Google Authentication
+  googleLogin: async (): Promise<{ url: string }> => {
+    try {
+      console.log('Initiating Google login request to:', `${API_BASE_URL}/api/auth/google/login`);
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/google/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+      
+      const data = await safeJsonParse(response);
+      
+      if (!response.ok) {
+        throw { 
+          status: response.status, 
+          response: { data } 
+        };
+      }
+      
+      return data;
+    } catch (error: unknown) {
+      console.error('Google login initiation error:', error);
+      throw error;
+    }
+  },
+
+  // Handle Google callback (if needed for client-side processing)
+  googleCallback: async (code: string, state?: string): Promise<AuthResponse> => {
+    try {
+      console.log('Processing Google callback with code:', code.substring(0, 10) + '...');
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/google/callback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ code, state }),
+      });
+      
+      const data = await safeJsonParse(response);
+      
+      if (!response.ok) {
+        throw { 
+          status: response.status, 
+          response: { data } 
+        };
+      }
+      
+      return data;
+    } catch (error: unknown) {
+      console.error('Google callback error:', error);
+      throw error;
+    }
+  },
+
   // Fetch user profile
   getProfile: async (token: string) => {
     const response = await fetch(`${API_BASE_URL}/api/profile`, {

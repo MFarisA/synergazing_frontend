@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .success {
+            color: #27ae60;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .processing {
+            color: #3498db;
+            font-size: 16px;
+        }
+        .json-debug {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <div class="success">Login berhasil!</div>
+        <div class="processing">Memproses data dan menutup jendela...</div>
+        <div id="debug" class="json-debug" style="display: none;"></div>
+    </div>
+
+    <script>
+        let processed = false;
+
+        function processAuthData() {
+            if (processed) return;
+            
+            try {
+                // Get all text content from the page body
+                const bodyText = document.body.innerText || document.body.textContent || '';
+                
+                console.log('Page content:', bodyText);
+                
+                // Multiple ways to try to find and parse JSON
+                let data = null;
+                
+                // Method 1: Look for JSON object pattern
+                const jsonMatch = bodyText.match(/\{[\s\S]*"success"[\s\S]*\}/);
+                if (jsonMatch) {
+                    try {
+                        data = JSON.parse(jsonMatch[0]);
+                        console.log('Parsed JSON from match:', data);
+                    } catch (e) {
+                        console.log('Failed to parse matched JSON:', e);
+                    }
+                }
+                
+                // Method 2: Try to parse the entire body as JSON
+                if (!data) {
+                    try {
+                        // Clean up the text - remove extra whitespace and HTML
+                        const cleanText = bodyText.trim().replace(/\s+/g, ' ');
+                        if (cleanText.startsWith('{') && cleanText.endsWith('}')) {
+                            data = JSON.parse(cleanText);
+                            console.log('Parsed JSON from clean text:', data);
+                        }
+                    } catch (e) {
+                        console.log('Failed to parse clean text as JSON:', e);
+                    }
+                }
+                
+                // Method 3: Look for specific patterns in the text
+                if (!data) {
+                    const successMatch = bodyText.match(/"success":\s*true/);
+                    const tokenMatch = bodyText.match(/"token":\s*"([^"]+)"/);
+                    const userMatch = bodyText.match(/"user":\s*\{[^}]+\}/);
+                    
+                    if (successMatch && tokenMatch) {
+                        console.log('Found success and token patterns');
+                        data = {
+                            success: true,
+                            data: {
+                                token: tokenMatch[1],
+                                user: userMatch ? JSON.parse(userMatch[0].split(':')[1]) : {}
+                            }
+                        };
+                    }
+                }
+                
+                // Show debug info
+                const debugEl = document.getElementById('debug');
+                if (debugEl) {
+                    debugEl.style.display = 'block';
+                    debugEl.textContent = `Body text: ${bodyText.substring(0, 500)}...`;
+                }
+                
+                if (data && data.success && data.data && data.data.token) {
+                    console.log('Successfully extracted auth data:', data);
+                    processed = true;
+                    
+                    // Update UI
+                    document.querySelector('.success').textContent = 'Login berhasil!';
+                    document.querySelector('.processing').textContent = 'Menyimpan data dan menutup jendela...';
+                    
+                    if (window.opener && !window.opener.closed) {
+                        // Send success message to parent window
+                        window.opener.postMessage({
+                            type: 'GOOGLE_LOGIN_SUCCESS',
+                            token: data.data.token,
+                            user: data.data.user || {}
+                        }, '*');
+                        
+                        console.log('Sent success message to parent window');
+                        
+                        // Close popup after a short delay
+                        setTimeout(() => {
+                            window.close();
+                        }, 1000);
+                    } else {
+                        // Fallback: store directly and redirect
+                        localStorage.setItem('token', data.data.token);
+                        localStorage.setItem('user', JSON.stringify(data.data.user || {}));
+                        window.location.href = '/profile';
+                    }
+                    
+                    return true;
+                } else {
+                    console.log('No valid auth data found');
+                    return false;
+                }
+                
+            } catch (error) {
+                console.error('Error processing auth data:', error);
+                return false;
+            }
+        }
+
+        // Try immediately when script loads
+        if (processAuthData()) {
+            console.log('Processed immediately on script load');
+        } else {
+            // Try when DOM is ready
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOM loaded, trying to process...');
+                if (processAuthData()) {
+                    console.log('Processed on DOM ready');
+                } else {
+                    // Keep trying for a few seconds
+                    let attempts = 0;
+                    const maxAttempts = 10;
+                    
+                    const interval = setInterval(() => {
+                        attempts++;
+                        console.log(`Attempt ${attempts} to process auth data`);
+                        
+                        if (processAuthData() || attempts >= maxAttempts) {
+                            clearInterval(interval);
+                            
+                            if (attempts >= maxAttempts && !processed) {
+                                console.log('Failed to process after maximum attempts');
+                                if (window.opener && !window.opener.closed) {
+                                    window.opener.postMessage({
+                                        type: 'GOOGLE_LOGIN_ERROR',
+                                        error: 'Gagal memproses response dari server'
+                                    }, '*');
+                                }
+                                setTimeout(() => window.close(), 2000);
+                            }
+                        }
+                    }, 500);
+                }
+            });
+        }
+
+        // Handle URL parameters as fallback
+        const urlParams = new URLSearchParams(window.location.search);
+        const success = urlParams.get('success');
+        const token = urlParams.get('token');
+        const user = urlParams.get('user');
+        const error = urlParams.get('error');
+        
+        if (success === 'true' && token) {
+            processed = true;
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                    type: 'GOOGLE_LOGIN_SUCCESS',
+                    token: token,
+                    user: user ? JSON.parse(decodeURIComponent(user)) : {}
+                }, '*');
+                window.close();
+            } else {
+                localStorage.setItem('token', token);
+                if (user) {
+                    localStorage.setItem('user', decodeURIComponent(user));
+                }
+                window.location.href = '/profile';
+            }
+        } else if (error) {
+            processed = true;
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                    type: 'GOOGLE_LOGIN_ERROR',
+                    error: error
+                }, '*');
+                window.close();
+            } else {
+                window.location.href = '/login?error=' + encodeURIComponent(error);
+            }
+        }
+    </script>
+</body>
+</html>

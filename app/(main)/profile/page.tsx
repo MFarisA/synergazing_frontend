@@ -593,18 +593,18 @@ export default function ProfilePage() {
               </TabsContent>
 
               <TabsContent value="projects" className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <h2 className="text-xl font-semibold">
                     Proyek Saya ({userProjects.length})
                   </h2>
                   <Link href="/create-project">
-                    <Button>
+                    <Button className="w-full sm:w-auto">
                       <Plus className="h-4 w-4 mr-2" /> Buat Proyek Baru
                     </Button>
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-6">
                   {userProjects.length === 0 ? (
                     <div className="col-span-full text-center text-gray-500 py-10">
                       Anda belum membuat proyek apa pun.
@@ -613,7 +613,7 @@ export default function ProfilePage() {
                     userProjects.map((project) => (
                       <Card
                         key={project.id}
-                        className="hover:shadow-lg transition-shadow"
+                        className="hover:shadow-lg transition-all duration-200 flex flex-col"
                       >
                         <div className="relative">
                           <img
@@ -622,10 +622,10 @@ export default function ProfilePage() {
                               "/placeholder.svg?height=200&width=300&text=Project"
                             }
                             alt={project.title}
-                            className="w-full h-48 object-cover rounded-t-lg"
+                            className="w-full h-36 sm:h-40 md:h-44 lg:h-48 object-cover rounded-t-lg"
                           />
                           <Badge
-                            className={`absolute top-3 left-3 ${
+                            className={`absolute top-2 left-2 text-xs ${
                               project.status === "published"
                                 ? "bg-blue-500"
                                 : project.status === "draft"
@@ -638,88 +638,101 @@ export default function ProfilePage() {
                             {project.status}
                           </Badge>
                         </div>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">
+                        <CardHeader className="pb-2 px-3 sm:px-6">
+                          <CardTitle className="text-base sm:text-lg line-clamp-2">
                             {project.title}
                           </CardTitle>
-                          <CardDescription>
+                          <CardDescription className="line-clamp-2 text-sm">
                             {project.description}
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="flex items-center justify-between text-sm text-gray-600">
-                            <span>
+                        <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 flex-1 flex flex-col">
+                          <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600">
+                            <span className="truncate mr-2">
                               Role:{" "}
                               <span className="font-medium">
                                 Project Creator
                               </span>
                             </span>
-                            <span>
+                            <span className="text-nowrap">
                               {project.filled_team + 1}/{project.total_team}{" "}
-                              anggota tim
+                              anggota
                             </span>
                           </div>
 
                           <div className="flex flex-wrap gap-1">
                             {project.required_skills
-                              .slice(0, 4)
+                              .slice(0, 3)
                               .map((skillItem) => (
                                 <Badge
                                   key={skillItem.skill.id}
                                   variant="outline"
-                                  className="text-xs"
+                                  className="text-xs px-2 py-1"
                                 >
                                   {skillItem.skill.name}
                                 </Badge>
                               ))}
-                            {project.required_skills.length > 4 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{project.required_skills.length - 4}
+                            {project.required_skills.length > 3 && (
+                              <Badge variant="outline" className="text-xs px-2 py-1">
+                                +{project.required_skills.length - 3}
                               </Badge>
                             )}
                           </div>
 
-                          <div className="flex gap-2">
-                            <Link
-                              href={`/projects/${project.id}`}
-                              className="flex-1"
-                            >
+                          <div className="flex flex-col gap-2 mt-auto">
+                            {/* First row: View and Edit buttons */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <Link
+                                href={`/projects/${project.id}`}
+                                className="flex-1"
+                              >
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full bg-transparent text-xs sm:text-sm h-8 sm:h-9"
+                                >
+                                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> 
+                                  <span className="hidden xs:inline">Lihat</span>
+                                  <span className="xs:hidden">Detail</span>
+                                </Button>
+                              </Link>
+                              <Link
+                                href={`/edit-project/${project.id}`}
+                                className="flex-1"
+                              >
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="w-full text-xs sm:text-sm h-8 sm:h-9"
+                                >
+                                  <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> 
+                                  Edit
+                                </Button>
+                              </Link>
+                            </div>
+                            
+                            {/* Second row: Applicants and Delete buttons */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <Link
+                                href={`/recruiter-dashboard?projectId=${project.id}`}
+                                className="flex-1"
+                              >
+                                <Button size="sm" className="w-full text-xs sm:text-sm h-8 sm:h-9">
+                                  <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> 
+                                  <span className="hidden xs:inline">Lihat</span>
+                                  <span className="xs:hidden">Pelamar</span>
+                                </Button>
+                              </Link>
                               <Button
                                 size="sm"
-                                variant="outline"
-                                className="w-full bg-transparent"
+                                variant="destructive"
+                                className="bg-red-500 hover:bg-red-600 text-white border-2 border-red-400 shadow-lg hover:shadow-xl transition-all duration-200 text-xs sm:text-sm h-8 sm:h-9"
+                                onClick={() => handleDeleteProject(project)}
                               >
-                                <Eye className="h-4 w-4 mr-2" /> Lihat Detail
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="hidden xs:inline">Hapus</span>
                               </Button>
-                            </Link>
-                            <Link
-                              href={`/edit-project/${project.id}`}
-                              className="flex-1"
-                            >
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                className="w-full"
-                              >
-                                <Edit className="h-4 w-4 mr-2" /> Edit
-                              </Button>
-                            </Link>
-                            <Link
-                              href={`/recruiter-dashboard?projectId=${project.id}`}
-                              className="flex-1"
-                            >
-                              <Button size="sm" className="w-full">
-                                <Users className="h-4 w-4 mr-2" /> Lihat Pelamar
-                              </Button>
-                            </Link>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="bg-red-500 hover:bg-red-600 text-white border-2 border-red-400 shadow-lg hover:shadow-xl transition-all duration-200"
-                              onClick={() => handleDeleteProject(project)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
