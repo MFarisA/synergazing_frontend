@@ -282,16 +282,20 @@ export default function CollaboratorsPage() {
 		setNewMessage("");
 	};
 
-	// Extract all skills from collaborators for filtering
+	// Extract all skills from collaborators for filtering (excluding current user)
+	const collaboratorsExcludingCurrentUser = collaborators.filter(collaborator => 
+		!currentUser || collaborator.id !== currentUser.id
+	);
+
 	const allSkills = Array.from(
 		new Set(
-			collaborators.flatMap(collaborator => 
+			collaboratorsExcludingCurrentUser.flatMap(collaborator => 
 				(collaborator.skills || []).map(userSkill => userSkill.skill.name)
 			)
 		)
 	).sort();
 
-	const filteredCollaborators = collaborators.filter((collaborator) => {
+	const filteredCollaborators = collaboratorsExcludingCurrentUser.filter((collaborator) => {
 		const searchableText = [
 			collaborator.name,
 			collaborator.interests || '',
