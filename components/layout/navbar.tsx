@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Bell, LogOut, User } from "lucide-react"
+import { Bell, LogOut, User, Menu, X } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -19,6 +19,7 @@ import { usePathname, useRouter } from "next/navigation"
 export default function Navbar({ className }: { className?: string }) {
   const [prevScrollPos, setPrevScrollPos] = useState(0)
   const [visible, setVisible] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -41,6 +42,11 @@ export default function Navbar({ className }: { className?: string }) {
       setUserData(null)
     }
   }, [pathname]) // Re-check when pathname changes
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [pathname])
 
   // useEffect(() => {
   //   const handleScroll = () => {
@@ -66,6 +72,7 @@ export default function Navbar({ className }: { className?: string }) {
     localStorage.removeItem("user")
     setIsLoggedIn(false)
     setUserData(null)
+    setMobileMenuOpen(false)
 
     // Redirect to home page
     router.push("/")
@@ -103,7 +110,9 @@ export default function Navbar({ className }: { className?: string }) {
           <span className="font-bold text-xl">Synergazing</span>
         </div>
       </Link>
-      <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
+
+      {/* Desktop Navigation */}
+      <nav className="ml-auto hidden md:flex gap-4 sm:gap-6 items-center">
         {navLinks.map(({ href, label }) => (
           <Link
             key={href}
@@ -184,6 +193,109 @@ export default function Navbar({ className }: { className?: string }) {
           </Button>
         )}
       </nav>
+
+      {/* Mobile Navigation */}
+      <div className="ml-auto md:hidden flex items-center gap-2">
+        {isLoggedIn && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {unreadNotificationsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                    {unreadNotificationsCount}
+                  </span>
+                )}
+                <span className="sr-only">Notifikasi</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {notifications.length > 0 ? (
+                notifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className="flex flex-col items-start gap-1 py-2 cursor-pointer"
+                  >
+                    <span className={cn("text-sm", notification.read ? "text-gray-500" : "font-medium")}>
+                      {notification.message}
+                    </span>
+                    {!notification.read && <span className="text-xs text-blue-600">Baru</span>}
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem className="text-gray-500">Tidak ada notifikasi baru.</DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden"
+        >
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <span className="sr-only">Menu</span>
+        </Button>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="absolute top-16 left-0 right-0 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/95 border-b shadow-lg md:hidden">
+          <nav className="flex flex-col p-4 space-y-4">
+            {navLinks.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "text-sm font-medium transition-colors py-2",
+                  pathname === href ? "text-blue-600 font-semibold" : "hover:text-blue-600 text-gray-700",
+                )}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
+            
+            <div className="border-t pt-4">
+              {isLoggedIn ? (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-gray-900 mb-2">
+                    {userData?.name || "Pengguna"}
+                  </div>
+                  <Link
+                    href="/profile"
+                    className="block text-sm text-gray-700 hover:text-blue-600 py-1"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Profil
+                  </Link>
+                  <Link
+                    href="/profile/edit"
+                    className="block text-sm text-gray-700 hover:text-blue-600 py-1"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Edit Profil
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block text-sm text-red-600 hover:text-red-700 py-1 text-left"
+                  >
+                    Keluar
+                  </button>
+                </div>
+              ) : (
+                <Button size="sm" className="bg-primary text-white w-full" asChild>
+                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>Masuk</Link>
+                </Button>
+              )}
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   )
 }
