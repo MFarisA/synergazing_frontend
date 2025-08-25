@@ -8,24 +8,20 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Mail,
   Phone,
   MapPin,
-  Briefcase,
   GraduationCap,
   LinkIcon,
   Edit,
   Users,
-  MessageCircle,
   Plus,
   Eye,
   Download,
@@ -40,7 +36,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { User, Skill, UserSkill, Project } from "@/types";
+import Image from "next/image";
 
 export default function ProfilePage() {
   const [userData, setUserData] = useState<User | null>(null);
@@ -63,7 +59,6 @@ export default function ProfilePage() {
     return "overview";
   });
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [isSkillDialogOpen, setIsSkillDialogOpen] = useState(false);
   const [skillToEdit, setSkillToEdit] = useState<UserSkill | null>(null);
   const [newSkill, setNewSkill] = useState({ name: "" });
@@ -165,20 +160,6 @@ export default function ProfilePage() {
       } catch (error) {
         console.error(error);
         setApiError("Gagal mengubah status kolaborasi. Coba lagi nanti.");
-      }
-    }
-  };
-
-  const handleDeletePicture = async () => {
-    const token = localStorage.getItem("token");
-    if (token && userData) {
-      try {
-        await api.deleteProfilePicture(token);
-        setUserData({ ...userData, profile_picture: "" });
-        setApiError(null);
-      } catch (error) {
-        console.error(error);
-        setApiError("Gagal menghapus foto profil. Coba lagi nanti.");
       }
     }
   };
@@ -352,11 +333,6 @@ export default function ProfilePage() {
       setIsDeleting(false);
     }
   };
-
-  // Calculate completed projects from API data
-  const completedUserProjects = userProjects.filter(
-    (project) => project.status === "Completed"
-  ).length;
 
   if (isLoading) {
     return (
@@ -616,12 +592,14 @@ export default function ProfilePage() {
                         className="hover:shadow-lg transition-all duration-200 flex flex-col"
                       >
                         <div className="relative">
-                          <img
+                          <Image
                             src={
                               project.picture_url ||
                               "/placeholder.svg?height=200&width=300&text=Project"
                             }
                             alt={project.title}
+                            width={300}
+                            height={200}
                             className="w-full h-36 sm:h-40 md:h-44 lg:h-48 object-cover rounded-t-lg"
                           />
                           <Badge
@@ -835,12 +813,7 @@ export default function ProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {isUploading ? (
-                  <div className="flex flex-col items-center justify-center py-4">
-                    <div className="w-8 h-8 border-2 border-t-blue-600 border-blue-200 rounded-full animate-spin mb-3"></div>
-                    <p className="text-sm text-gray-500">Mengupload CV...</p>
-                  </div>
-                ) : userData.cv_file ? (
+                {userData.cv_file ? (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center">
                       <FileText className="h-8 w-8 text-blue-600 mr-3" />

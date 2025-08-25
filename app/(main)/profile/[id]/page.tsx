@@ -18,7 +18,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Briefcase,
   GraduationCap,
   LinkIcon,
   Users,
@@ -288,7 +287,23 @@ export default function UserProfilePage() {
             collaboratorsData = collaboratorsResponse;
           }
 
-          const targetUser = collaboratorsData.find((user: any) => user.id === parseInt(userId));
+          const targetUser = collaboratorsData.find((user: {
+            id: number;
+            name: string;
+            email?: string;
+            phone?: string;
+            profile_picture?: string;
+            about_me?: string;
+            location?: string;
+            interests?: string;
+            academic?: string;
+            website_url?: string;
+            github_url?: string;
+            linkedin_url?: string;
+            instagram_url?: string;
+            portfolio_url?: string;
+            skills?: any[];
+          }) => user.id === parseInt(userId));
           
           if (targetUser) {
             // Transform collaborator data to match User interface

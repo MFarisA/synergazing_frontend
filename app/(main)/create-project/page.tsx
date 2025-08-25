@@ -333,7 +333,7 @@ export default function CreateProjectPage() {
     if (!validateStep(5)) return
     if (!projectId) {
       addToast({
-        title: "Error",
+        title: "Error", 
         description: "Project ID not found. Please start over.",
         type: "error",
       })
