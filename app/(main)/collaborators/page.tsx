@@ -419,6 +419,9 @@ export default function CollaboratorsPage() {
 									</Avatar>
 									<h3 className="text-xl font-bold">{collaborator.name}</h3>
 									<p className="text-md text-gray-600 mb-2">{collaborator.interests || 'No title specified'}</p>
+									{collaborator.academic && (
+										<p className="text-sm text-gray-500 mb-2">{collaborator.academic}</p>
+									)}
 									<div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
 										<MapPin className="h-4 w-4" />
 										<span>{collaborator.location || 'Location not specified'}</span>

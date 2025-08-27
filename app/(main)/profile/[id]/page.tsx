@@ -274,63 +274,101 @@ export default function UserProfilePage() {
             setUserProjects(projectsResponse?.data || []);
           }
         } else {
-          // For other users, we'll need to call a different endpoint
-          // Since we can't modify backend, we'll try to get user info from collaborators list
-          const collaboratorsResponse = await api.getCollaborators(token);
-          
-          let collaboratorsData = [];
-          if (collaboratorsResponse.data && collaboratorsResponse.data.users) {
-            collaboratorsData = collaboratorsResponse.data.users;
-          } else if (collaboratorsResponse.data && Array.isArray(collaboratorsResponse.data)) {
-            collaboratorsData = collaboratorsResponse.data;
-          } else if (Array.isArray(collaboratorsResponse)) {
-            collaboratorsData = collaboratorsResponse;
-          }
+          // For other users, use the direct profile endpoint
+          try {
+            const userProfileResponse = await api.getUserProfile(token, userId);
+            console.log('User profile API response:', userProfileResponse);
+            
+            if (userProfileResponse.success && userProfileResponse.data) {
+              const userData = userProfileResponse.data;
+              
+              // Transform user data to match User interface, handling both field name variations
+              const transformedUser = {
+                id: userData.id,
+                name: userData.name || "",
+                email: userData.email || "",
+                phone: userData.phone || "",
+                profile_picture: userData.profile_picture || "",
+                about_me: userData.about_me || "",
+                location: userData.location || "",
+                interests: userData.interests || "",
+                academic: userData.academic || "",
+                website_url: userData.website_url || "",
+                github_url: userData.github_url || "",
+                linkedin_url: userData.linkedin_url || "",
+                instagram_url: userData.instagram_url || "",
+                portfolio_url: userData.portfolio_url || userData.portofolio_url || "", // Handle both spellings
+                cv_file: userData.cv_file || "", // Available in direct profile endpoint
+                collaboration_status: true, // User is ready since they're accessible via this endpoint
+                user_skills: userData.skills || [],
+              };
+              
+              console.log('Transformed user data:', transformedUser);
+              setUserData(transformedUser);
+              setUserProjects([]); // Don't load projects for other users for privacy
+            } else {
+              throw new Error("User profile data not found");
+            }
+          } catch (directProfileError) {
+            console.error('Failed to get direct profile, falling back to collaborators list:', directProfileError);
+            
+            // Fallback: try to get user info from collaborators list
+            const collaboratorsResponse = await api.getCollaborators(token);
+            
+            let collaboratorsData = [];
+            if (collaboratorsResponse.data && collaboratorsResponse.data.users) {
+              collaboratorsData = collaboratorsResponse.data.users;
+            } else if (collaboratorsResponse.data && Array.isArray(collaboratorsResponse.data)) {
+              collaboratorsData = collaboratorsResponse.data;
+            } else if (Array.isArray(collaboratorsResponse)) {
+              collaboratorsData = collaboratorsResponse;
+            }
 
-          const targetUser = collaboratorsData.find((user: {
-            id: number;
-            name: string;
-            email?: string;
-            phone?: string;
-            profile_picture?: string;
-            about_me?: string;
-            location?: string;
-            interests?: string;
-            academic?: string;
-            website_url?: string;
-            github_url?: string;
-            linkedin_url?: string;
-            instagram_url?: string;
-            portfolio_url?: string;
-            skills?: any[];
-          }) => user.id === parseInt(userId));
-          
-          if (targetUser) {
-            // Transform collaborator data to match User interface
-            const transformedUser = {
-              id: targetUser.id,
-              name: targetUser.name,
-              email: targetUser.email || "",
-              phone: targetUser.phone || "",
-              profile_picture: targetUser.profile_picture || "",
-              about_me: targetUser.about_me || "",
-              location: targetUser.location || "",
-              interests: targetUser.interests || "",
-              academic: targetUser.academic || "",
-              website_url: targetUser.website_url || "",
-              github_url: targetUser.github_url || "",
-              linkedin_url: targetUser.linkedin_url || "",
-              instagram_url: targetUser.instagram_url || "",
-              portfolio_url: targetUser.portfolio_url || "",
-              cv_file: "", // Not available for other users
-              collaboration_status: true, // They're in collaborators list, so they're ready
-              user_skills: targetUser.skills || [],
-            };
-            setUserData(transformedUser);
-            // Don't load projects for other users for privacy
-            setUserProjects([]);
-          } else {
-            throw new Error("User not found");
+            const targetUser = collaboratorsData.find((user: {
+              id: number;
+              name: string;
+              email?: string;
+              phone?: string;
+              profile_picture?: string;
+              about_me?: string;
+              location?: string;
+              interests?: string;
+              academic?: string;
+              website_url?: string;
+              github_url?: string;
+              linkedin_url?: string;
+              instagram_url?: string;
+              portfolio_url?: string;
+              portofolio_url?: string; // Handle both spellings
+              skills?: any[];
+            }) => user.id === parseInt(userId));
+            
+            if (targetUser) {
+              // Transform collaborator data to match User interface
+              const transformedUser = {
+                id: targetUser.id,
+                name: targetUser.name,
+                email: targetUser.email || "",
+                phone: targetUser.phone || "",
+                profile_picture: targetUser.profile_picture || "",
+                about_me: targetUser.about_me || "",
+                location: targetUser.location || "",
+                interests: targetUser.interests || "",
+                academic: targetUser.academic || "",
+                website_url: targetUser.website_url || "",
+                github_url: targetUser.github_url || "",
+                linkedin_url: targetUser.linkedin_url || "",
+                instagram_url: targetUser.instagram_url || "",
+                portfolio_url: targetUser.portfolio_url || targetUser.portofolio_url || "", // Handle both spellings
+                cv_file: "", // Not available for other users in collaborators endpoint
+                collaboration_status: true, // They're in collaborators list, so they're ready
+                user_skills: targetUser.skills || [],
+              };
+              setUserData(transformedUser);
+              setUserProjects([]); // Don't load projects for other users for privacy
+            } else {
+              throw new Error("User not found in collaborators list");
+            }
           }
         }
         setApiError(null);
@@ -813,8 +851,8 @@ export default function UserProfilePage() {
               </CardContent>
             </Card>
 
-            {/* CV Section - Only for own profile */}
-            {isOwnProfile && (
+            {/* CV Section - Show for all users if they have a CV */}
+            {userData.cv_file && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
@@ -822,38 +860,66 @@ export default function UserProfilePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {userData.cv_file ? (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <FileText className="h-8 w-8 text-blue-600 mr-3" />
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">
-                            {userData.cv_file.split("/").pop()}
-                          </p>
-                        </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center">
+                      <FileText className="h-8 w-8 text-blue-600 mr-3" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">
+                          {userData.cv_file.split("/").pop()}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {isOwnProfile ? "CV Anda" : `CV ${userData.name}`}
+                        </p>
                       </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 bg-transparent"
-                          onClick={() => setIsPdfViewerOpen(true)}
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 bg-transparent"
+                        onClick={() => setIsPdfViewerOpen(true)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" /> Lihat CV
+                      </Button>
+                      {!isOwnProfile && (
+                        <a
+                          href={userData.cv_file}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1"
                         >
-                          <Eye className="h-4 w-4 mr-2" /> Lihat
-                        </Button>
-                      </div>
+                          <Button
+                            size="sm"
+                            className="w-full"
+                          >
+                            <FileText className="h-4 w-4 mr-2" /> Download
+                          </Button>
+                        </a>
+                      )}
                     </div>
-                  ) : (
-                    <div className="bg-gray-50 rounded-lg p-6 text-center">
-                      <FileText className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600 mb-3">
-                        Upload CV Anda untuk meningkatkan peluang kolaborasi
-                      </p>
-                      <Link href="/profile/edit">
-                        <Button size="sm">Upload CV</Button>
-                      </Link>
-                    </div>
-                  )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* CV Section - Only show upload option for own profile without CV */}
+            {isOwnProfile && !userData.cv_file && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>CV / Resume</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-gray-50 rounded-lg p-6 text-center">
+                    <FileText className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 mb-3">
+                      Upload CV Anda untuk meningkatkan peluang kolaborasi
+                    </p>
+                    <Link href="/profile/edit">
+                      <Button size="sm">Upload CV</Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -861,8 +927,8 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      {/* PDF Viewer Dialog - Only for own profile */}
-      {isOwnProfile && (
+      {/* PDF Viewer Dialog - Available for all users when CV exists */}
+      {userData.cv_file && (
         <Dialog open={isPdfViewerOpen} onOpenChange={setIsPdfViewerOpen}>
           <DialogContent className="max-w-6xl max-h-[90vh]">
             <DialogHeader>

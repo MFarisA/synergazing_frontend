@@ -848,7 +848,7 @@ export const api = {
     }
   },
 
-  // Get total unread count
+  // Get unread count
   getUnreadCount: async (token: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/chat/unread-count`, {
@@ -866,6 +866,28 @@ export const api = {
       return response.json();
     } catch (error) {
       console.error('Network error getting unread count:', error);
+      throw error;
+    }
+  },
+
+  // Get user profile by ID (for viewing other users)
+  getUserProfile: async (token: string, userId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/profile-ready`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to get user profile:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get user profile: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting user profile:', error);
       throw error;
     }
   },

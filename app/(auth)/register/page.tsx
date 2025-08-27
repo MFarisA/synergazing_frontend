@@ -178,7 +178,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Bergabung dengan Komunitas</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Bergabung dengan Synergazing</h1>
           <p className="text-gray-600">Mulai kolaborasi dengan mahasiswa se-Indonesia</p>
         </motion.div>
 
@@ -199,7 +199,7 @@ export default function RegisterPage() {
             ))}
           </div>
           <div className="flex justify-between text-xs text-gray-500 px-16">
-            <span>Dasar</span>
+            <span>Mulai</span>
             <span>Selesai</span>
           </div>
         </motion.div>
