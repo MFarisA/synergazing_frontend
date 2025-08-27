@@ -164,17 +164,20 @@ export const api = {
       console.log('Sending registration request to:', `${API_BASE_URL}/api/auth/register`);
       console.log('With data:', userData);
       
+      // Create FormData object since the backend expects form values, not JSON
+      const formData = new FormData();
+      formData.append('name', userData.name);
+      formData.append('email', userData.email);
+      formData.append('password', userData.password);
+      formData.append('phone', userData.phone || ''); // Provide empty string if phone is undefined
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
-          // Add API key or client ID if your backend requires it
-          // 'X-API-Key': 'your-api-key-here',
-          // Uncomment and modify if your backend uses a different auth header
-          // 'Authorization': 'Bearer your-token-here',
+          // Don't set Content-Type for FormData - let the browser set it
         },
-        body: JSON.stringify(userData),
+        body: formData,
       });
       
       const data = await safeJsonParse(response);
@@ -209,13 +212,18 @@ export const api = {
     try {
       console.log('Sending login request to:', `${API_BASE_URL}/api/auth/login`);
       
+      // Create FormData object since the backend expects form values, not JSON
+      const formData = new FormData();
+      formData.append('email', credentials.email);
+      formData.append('password', credentials.password);
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
+          // Don't set Content-Type for FormData - let the browser set it
         },
-        body: JSON.stringify(credentials),
+        body: formData,
       });
       
       const data = await safeJsonParse(response);
