@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,8 @@ import { Separator } from "@/components/ui/separator"
 // Import ArrowLeft ditambahkan
 import { CheckCircle, XCircle, Zap, MapPin, ArrowLeft } from "lucide-react"
 import { AnimatedModal } from "@/components/ui/animated-modal"
+import { api } from "@/lib/api"
+import { useToast } from "@/components/ui/toast"
 
 // Mock data for collaborators (copied from app/collaborators/page.tsx for self-containment)
 const collaboratorsData = [
@@ -127,21 +129,136 @@ const initialApplications = [
 export default function RecruiterDashboardPage() {
   const searchParams = useSearchParams()
   const projectId = searchParams.get("projectId")
+  const { addToast } = useToast()
 
   const [applications, setApplications] = useState(initialApplications)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedCollaborator, setSelectedCollaborator] = useState<(typeof collaboratorsData)[0] | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [currentProject, setCurrentProject] = useState<any>(null)
 
-  const getApplicant = (id: number) => collaboratorsData.find((c) => c.id === id)
+  // Fetch project data and applications from API
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!projectId) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("Please login to view applications");
+          return;
+        }
+
+        // Fetch project details first
+        try {
+          const projectResponse = await api.getProjectById(projectId, token);
+          const projectData = projectResponse.data || projectResponse;
+          setCurrentProject(projectData);
+        } catch (projectError) {
+          console.error('Failed to fetch project details:', projectError);
+          // Continue even if project fetch fails
+        }
+
+        // Fetch applications for the project
+        const response = await api.getProjectApplications(token, projectId);
+        const applicationsData = response.data || response || [];
+        
+        // Transform API data to match component expectations
+        const transformedApplications = applicationsData.map((app: any) => ({
+          id: app.id.toString(),
+          applicantId: app.user.id,
+          projectId: app.project_id.toString(),
+          status: app.status,
+          message: app.why_interested,
+          appliedAt: new Date(app.applied_at).toLocaleDateString("id-ID"),
+          applicant: {
+            id: app.user.id,
+            name: app.user.name,
+            avatar: app.user.profile?.profile_picture || "/placeholder.svg",
+            title: "Developer", // Default title since not in API response
+            location: app.user.profile?.location || "Indonesia",
+            skills: [], // Would need to fetch user skills separately
+            bio: app.skills_experience,
+            email: app.user.email,
+            phone: app.user.profile?.phone || "",
+            experience: app.contribution,
+            portfolio: app.user.profile?.portfolio || "",
+            isReadyForCollaboration: true,
+          },
+          roleData: {
+            name: app.project_role?.name || "General",
+            description: app.project_role?.description || "",
+          }
+        }));
+
+        setApplications(transformedApplications);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        setError('Failed to load applications. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [projectId]);
+
+  const getApplicant = (id: number) => {
+    const application = applications.find((app) => app.applicantId === id);
+    return application?.applicant || collaboratorsData.find((c) => c.id === id);
+  }
   const getProject = (id: string) => projectsData.find((p) => p.id === id)
 
   const filteredApplications = projectId ? applications.filter((app) => app.projectId === projectId) : applications
 
-  const currentProjectTitle = projectId ? getProject(projectId)?.title : "Semua Proyek"
+  // Use real project data or fallback to mock data
+  const currentProjectTitle = currentProject 
+    ? currentProject.title 
+    : projectId 
+      ? getProject(projectId)?.title || "Proyek Tidak Ditemukan"
+      : "Semua Proyek"
 
-  const handleStatusChange = (appId: string, newStatus: string) => {
-    setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app)))
-    console.log(`Application ${appId} status changed to ${newStatus}`)
+  const handleStatusChange = async (appId: string, newStatus: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        addToast({
+          title: "Error",
+          description: "Please login to review applications",
+          type: "error",
+        });
+        return;
+      }
+
+      const action = newStatus === "Accepted" ? "accept" : "reject";
+      await api.reviewApplication(token, appId, action);
+
+      // Update local state
+      setApplications((prev) => 
+        prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app))
+      );
+
+      addToast({
+        title: "Application Updated",
+        description: `Application has been ${action}ed successfully`,
+        type: "success",
+      });
+
+      console.log(`Application ${appId} status changed to ${newStatus}`);
+    } catch (error: any) {
+      console.error('Failed to update application status:', error);
+      addToast({
+        title: "Failed to Update Application",
+        description: error.message || "Please try again later",
+        type: "error",
+      });
+    }
   }
 
   return (
@@ -168,7 +285,15 @@ export default function RecruiterDashboardPage() {
       <div className="container mx-auto px-4 py-6">
         <h2 className="text-2xl font-bold mb-6">Daftar Pelamar</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredApplications.length === 0 ? (
+          {isLoading ? (
+            <div className="col-span-full text-center text-gray-500 py-10">
+              Loading applications...
+            </div>
+          ) : error ? (
+            <div className="col-span-full text-center text-red-500 py-10">
+              {error}
+            </div>
+          ) : filteredApplications.length === 0 ? (
             <div className="col-span-full text-center text-gray-500 py-10">
               Tidak ada aplikasi yang masuk untuk proyek ini.
             </div>
