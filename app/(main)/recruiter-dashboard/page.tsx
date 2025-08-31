@@ -216,7 +216,8 @@ export default function RecruiterDashboardPage() {
 
   const getApplicant = (id: number) => {
     const application = applications.find((app) => app.applicantId === id);
-    return application?.applicant || collaboratorsData.find((c) => c.id === id);
+    // Check if the application has applicant data (from API) or fallback to mock data
+    return (application as any)?.applicant || collaboratorsData.find((c) => c.id === id);
   }
   const getProject = (id: string) => projectsData.find((p) => p.id === id)
 
@@ -241,8 +242,8 @@ export default function RecruiterDashboardPage() {
         return;
       }
 
-      // Use the newStatus directly (should be "accepted" or "rejected")
-      const action = newStatus;
+      // Convert status to API expected format
+      const action = newStatus === "accepted" ? "accept" : "reject";
       await api.reviewApplication(token, appId, action);
 
       // Update local state with proper status formatting
@@ -308,7 +309,7 @@ export default function RecruiterDashboardPage() {
             filteredApplications.map((app) => {
               const applicant = getApplicant(app.applicantId)
               // Use the project data from the transformed application instead of mock data
-              const project = app.project || getProject(app.projectId)
+              const project = (app as any).project || getProject(app.projectId)
 
               if (!applicant || !project) return null
 
@@ -321,7 +322,7 @@ export default function RecruiterDashboardPage() {
                         <AvatarFallback>
                           {applicant.name
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
@@ -344,7 +345,7 @@ export default function RecruiterDashboardPage() {
                     </div>
                     <p className="text-sm text-gray-700 line-clamp-2 mt-2">Pesan: &quot;{app.message}&quot;</p>
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {applicant.skills.map((skill) => (
+                      {applicant.skills.map((skill: string) => (
                         <Badge key={skill} variant="secondary" className="text-xs">
                           {skill}
                         </Badge>
@@ -418,7 +419,7 @@ export default function RecruiterDashboardPage() {
                 <AvatarFallback className="text-3xl">
                   {selectedCollaborator.name
                     .split(" ")
-                    .map((n) => n[0])
+                    .map((n: string) => n[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
