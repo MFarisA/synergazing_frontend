@@ -180,10 +180,10 @@ export default function RecruiterDashboardPage() {
             id: app.user.id,
             name: app.user.name,
             avatar: app.user.profile?.profile_picture || "/placeholder.svg",
-            title: "Developer", // Default title since not in API response
+            title: app.user.profile?.title || "Developer", // Get title from profile if available
             location: app.user.profile?.location || "Indonesia",
-            skills: [], // Would need to fetch user skills separately
-            bio: app.skills_experience,
+            skills: app.user.profile?.skills || [], // Get skills from profile if available
+            bio: app.user.profile?.bio || app.skills_experience, // Use profile bio or skills_experience as fallback
             email: app.user.email,
             phone: app.user.profile?.phone || "",
             experience: app.contribution,
@@ -193,6 +193,11 @@ export default function RecruiterDashboardPage() {
           roleData: {
             name: app.project_role?.name || "General",
             description: app.project_role?.description || "",
+          },
+          // Add project data from API response - remove "Unknown Project" fallback
+          project: {
+            id: app.project?.id?.toString() || app.project_id.toString(),
+            title: app.project?.title || currentProject?.title,
           }
         }));
 
@@ -236,12 +241,14 @@ export default function RecruiterDashboardPage() {
         return;
       }
 
-      const action = newStatus === "Accepted" ? "accept" : "reject";
+      // Use the newStatus directly (should be "accepted" or "rejected")
+      const action = newStatus;
       await api.reviewApplication(token, appId, action);
 
-      // Update local state
+      // Update local state with proper status formatting
+      const displayStatus = newStatus === "accepted" ? "Accepted" : "Rejected";
       setApplications((prev) => 
-        prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app))
+        prev.map((app) => (app.id === appId ? { ...app, status: displayStatus } : app))
       );
 
       addToast({
@@ -300,9 +307,10 @@ export default function RecruiterDashboardPage() {
           ) : (
             filteredApplications.map((app) => {
               const applicant = getApplicant(app.applicantId)
-              const project = getProject(app.projectId)
+              // Use the project data from the transformed application instead of mock data
+              const project = app.project || getProject(app.projectId)
 
-              if (!applicant || !project) return null // Should not happen with valid mock data
+              if (!applicant || !project) return null
 
               return (
                 <Card key={app.id} className="flex flex-col hover:shadow-lg transition-shadow">
@@ -360,25 +368,26 @@ export default function RecruiterDashboardPage() {
                       variant="outline"
                       className="flex-1 bg-transparent"
                       onClick={() => {
-                        setSelectedCollaborator(applicant)
-                        setIsDetailModalOpen(true)
+                        // Navigate to collaborator profile page instead of showing modal
+                        window.location.href = `/collaborators/${applicant.id}?from=recruiter&projectId=${projectId}`;
                       }}
                     >
                       Detail Pelamar
                     </Button>
-                    {app.status === "Pending" && (
+                    {/* Fix status check - backend uses "pending" (lowercase) not "Pending" */}
+                    {(app.status === "pending" || app.status === "Pending") && (
                       <>
                         <Button
                           variant="default"
-                          className="flex-1 bg-green-500 hover:bg-green-600"
-                          onClick={() => handleStatusChange(app.id, "Accepted")}
+                          className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                          onClick={() => handleStatusChange(app.id, "accepted")}
                         >
                           <CheckCircle className="h-4 w-4 mr-2" /> Terima
                         </Button>
                         <Button
                           variant="destructive"
                           className="flex-1"
-                          onClick={() => handleStatusChange(app.id, "Rejected")}
+                          onClick={() => handleStatusChange(app.id, "rejected")}
                         >
                           <XCircle className="h-4 w-4 mr-2" /> Tolak
                         </Button>
