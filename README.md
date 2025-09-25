@@ -1,3 +1,4 @@
+www.synergazing.app
 -----
 # Synergazing - Platform Kolaborasi Proyek Mahasiswa
 -----

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,8 @@ import { Separator } from "@/components/ui/separator"
 // Import ArrowLeft ditambahkan
 import { CheckCircle, XCircle, Zap, MapPin, ArrowLeft } from "lucide-react"
 import { AnimatedModal } from "@/components/ui/animated-modal"
+import { api } from "@/lib/api"
+import { useToast } from "@/components/ui/toast"
 
 // Mock data for collaborators (copied from app/collaborators/page.tsx for self-containment)
 const collaboratorsData = [
@@ -127,21 +129,144 @@ const initialApplications = [
 export default function RecruiterDashboardPage() {
   const searchParams = useSearchParams()
   const projectId = searchParams.get("projectId")
+  const { addToast } = useToast()
 
   const [applications, setApplications] = useState(initialApplications)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedCollaborator, setSelectedCollaborator] = useState<(typeof collaboratorsData)[0] | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [currentProject, setCurrentProject] = useState<any>(null)
 
-  const getApplicant = (id: number) => collaboratorsData.find((c) => c.id === id)
+  // Fetch project data and applications from API
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!projectId) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("Please login to view applications");
+          return;
+        }
+
+        // Fetch project details first
+        try {
+          const projectResponse = await api.getProjectById(projectId, token);
+          const projectData = projectResponse.data || projectResponse;
+          setCurrentProject(projectData);
+        } catch (projectError) {
+          console.error('Failed to fetch project details:', projectError);
+          // Continue even if project fetch fails
+        }
+
+        // Fetch applications for the project
+        const response = await api.getProjectApplications(token, projectId);
+        const applicationsData = response.data || response || [];
+        
+        // Transform API data to match component expectations
+        const transformedApplications = applicationsData.map((app: any) => ({
+          id: app.id.toString(),
+          applicantId: app.user.id,
+          projectId: app.project_id.toString(),
+          status: app.status,
+          message: app.why_interested,
+          appliedAt: new Date(app.applied_at).toLocaleDateString("id-ID"),
+          applicant: {
+            id: app.user.id,
+            name: app.user.name,
+            avatar: app.user.profile?.profile_picture || "/placeholder.svg",
+            title: app.user.profile?.title || "Developer", // Get title from profile if available
+            location: app.user.profile?.location || "Indonesia",
+            skills: app.user.profile?.skills || [], // Get skills from profile if available
+            bio: app.user.profile?.bio || app.skills_experience, // Use profile bio or skills_experience as fallback
+            email: app.user.email,
+            phone: app.user.profile?.phone || "",
+            experience: app.contribution,
+            portfolio: app.user.profile?.portfolio || "",
+            isReadyForCollaboration: true,
+          },
+          roleData: {
+            name: app.project_role?.name || "General",
+            description: app.project_role?.description || "",
+          },
+          // Add project data from API response - remove "Unknown Project" fallback
+          project: {
+            id: app.project?.id?.toString() || app.project_id.toString(),
+            title: app.project?.title || currentProject?.title,
+          }
+        }));
+
+        setApplications(transformedApplications);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        setError('Failed to load applications. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [projectId]);
+
+  const getApplicant = (id: number) => {
+    const application = applications.find((app) => app.applicantId === id);
+    // Check if the application has applicant data (from API) or fallback to mock data
+    return (application as any)?.applicant || collaboratorsData.find((c) => c.id === id);
+  }
   const getProject = (id: string) => projectsData.find((p) => p.id === id)
 
   const filteredApplications = projectId ? applications.filter((app) => app.projectId === projectId) : applications
 
-  const currentProjectTitle = projectId ? getProject(projectId)?.title : "Semua Proyek"
+  // Use real project data or fallback to mock data
+  const currentProjectTitle = currentProject 
+    ? currentProject.title 
+    : projectId 
+      ? getProject(projectId)?.title || "Proyek Tidak Ditemukan"
+      : "Semua Proyek"
 
-  const handleStatusChange = (appId: string, newStatus: string) => {
-    setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app)))
-    console.log(`Application ${appId} status changed to ${newStatus}`)
+  const handleStatusChange = async (appId: string, newStatus: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        addToast({
+          title: "Error",
+          description: "Please login to review applications",
+          type: "error",
+        });
+        return;
+      }
+
+      // Convert status to API expected format
+      const action = newStatus === "accepted" ? "accept" : "reject";
+      await api.reviewApplication(token, appId, action);
+
+      // Update local state with proper status formatting
+      const displayStatus = newStatus === "accepted" ? "Accepted" : "Rejected";
+      setApplications((prev) => 
+        prev.map((app) => (app.id === appId ? { ...app, status: displayStatus } : app))
+      );
+
+      addToast({
+        title: "Application Updated",
+        description: `Application has been ${action}ed successfully`,
+        type: "success",
+      });
+
+      console.log(`Application ${appId} status changed to ${newStatus}`);
+    } catch (error: any) {
+      console.error('Failed to update application status:', error);
+      addToast({
+        title: "Failed to Update Application",
+        description: error.message || "Please try again later",
+        type: "error",
+      });
+    }
   }
 
   return (
@@ -168,16 +293,25 @@ export default function RecruiterDashboardPage() {
       <div className="container mx-auto px-4 py-6">
         <h2 className="text-2xl font-bold mb-6">Daftar Pelamar</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredApplications.length === 0 ? (
+          {isLoading ? (
+            <div className="col-span-full text-center text-gray-500 py-10">
+              Loading applications...
+            </div>
+          ) : error ? (
+            <div className="col-span-full text-center text-red-500 py-10">
+              {error}
+            </div>
+          ) : filteredApplications.length === 0 ? (
             <div className="col-span-full text-center text-gray-500 py-10">
               Tidak ada aplikasi yang masuk untuk proyek ini.
             </div>
           ) : (
             filteredApplications.map((app) => {
               const applicant = getApplicant(app.applicantId)
-              const project = getProject(app.projectId)
+              // Use the project data from the transformed application instead of mock data
+              const project = (app as any).project || getProject(app.projectId)
 
-              if (!applicant || !project) return null // Should not happen with valid mock data
+              if (!applicant || !project) return null
 
               return (
                 <Card key={app.id} className="flex flex-col hover:shadow-lg transition-shadow">
@@ -188,7 +322,7 @@ export default function RecruiterDashboardPage() {
                         <AvatarFallback>
                           {applicant.name
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
@@ -211,7 +345,7 @@ export default function RecruiterDashboardPage() {
                     </div>
                     <p className="text-sm text-gray-700 line-clamp-2 mt-2">Pesan: &quot;{app.message}&quot;</p>
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {applicant.skills.map((skill) => (
+                      {applicant.skills.map((skill: string) => (
                         <Badge key={skill} variant="secondary" className="text-xs">
                           {skill}
                         </Badge>
@@ -235,25 +369,26 @@ export default function RecruiterDashboardPage() {
                       variant="outline"
                       className="flex-1 bg-transparent"
                       onClick={() => {
-                        setSelectedCollaborator(applicant)
-                        setIsDetailModalOpen(true)
+                        // Navigate to collaborator profile page instead of showing modal
+                        window.location.href = `/collaborators/${applicant.id}?from=recruiter&projectId=${projectId}`;
                       }}
                     >
                       Detail Pelamar
                     </Button>
-                    {app.status === "Pending" && (
+                    {/* Fix status check - backend uses "pending" (lowercase) not "Pending" */}
+                    {(app.status === "pending" || app.status === "Pending") && (
                       <>
                         <Button
                           variant="default"
-                          className="flex-1 bg-green-500 hover:bg-green-600"
-                          onClick={() => handleStatusChange(app.id, "Accepted")}
+                          className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                          onClick={() => handleStatusChange(app.id, "accepted")}
                         >
                           <CheckCircle className="h-4 w-4 mr-2" /> Terima
                         </Button>
                         <Button
                           variant="destructive"
                           className="flex-1"
-                          onClick={() => handleStatusChange(app.id, "Rejected")}
+                          onClick={() => handleStatusChange(app.id, "rejected")}
                         >
                           <XCircle className="h-4 w-4 mr-2" /> Tolak
                         </Button>
@@ -284,7 +419,7 @@ export default function RecruiterDashboardPage() {
                 <AvatarFallback className="text-3xl">
                   {selectedCollaborator.name
                     .split(" ")
-                    .map((n) => n[0])
+                    .map((n: string) => n[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>

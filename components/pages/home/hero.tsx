@@ -16,26 +16,28 @@ export function Hero() {
               Platform Kolaborasi Proyek Mahasiswa
             </h1>
             <p className="mx-auto max-w-[700px] text-gray-600 md:text-xl dark:text-gray-300">
-            Your Next Great Team is Here. Platform eksklusif bagi mahasiswa untuk berkolaborasi, berinovasi, dan membangun portofolio. Temukan proyek, rekrut talenta, wujudkan karyamu.
+              Your Next Great Team is Here. Platform eksklusif bagi mahasiswa
+              untuk berkolaborasi, berinovasi, dan membangun portofolio. Temukan
+              proyek, rekrut talenta, wujudkan karyamu.
             </p>
           </div>
           <div className="space-x-4">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]"
-            >
-              Mulai Berkolaborasi
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <Link href="/collaborators">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]"
+              >
+                Mulai Berkolaborasi
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
             <Link href="/projects">
               <Button variant="outline" size="lg">
                 Jelajahi Proyek
               </Button>
             </Link>
-            
           </div>
           <div className="space-y-4">
-            
             {/* Efek Typewriting untuk Slogan dan Deskripsi */}
             <TypeAnimation
               sequence={[

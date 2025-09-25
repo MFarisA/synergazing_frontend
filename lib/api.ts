@@ -20,7 +20,7 @@ export interface AuthResponse {
   success: boolean;
   message: string;
   data?: {
-    user?: any;
+    user?: Record<string, unknown>;
     token?: string;
   };
 }
@@ -41,7 +41,7 @@ const safeJsonParse = async (response: Response) => {
 
 // API utilities for testing and debugging backend connectivity
 export const apiUtils = {
-  testConnection: async (): Promise<{ status: string; message: string; details?: any }> => {
+  testConnection: async (): Promise<{ status: string; message: string; details?: Record<string, unknown> }> => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
@@ -92,8 +92,9 @@ export const apiUtils = {
           }
         };
       }
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
+    } catch (error: unknown) {
+      const err = error as { name?: string; message?: string }
+      if (err.name === 'AbortError') {
         return {
           status: 'error',
           message: `Connection to ${API_BASE_URL} timed out. Server may be down or unreachable.`
@@ -102,13 +103,13 @@ export const apiUtils = {
       
       return {
         status: 'error',
-        message: `Failed to connect to backend at ${API_BASE_URL}: ${error.message}`
+        message: `Failed to connect to backend at ${API_BASE_URL}: ${err.message || 'Unknown error'}`
       };
     }
   },
   
   // Test registration endpoint specifically
-  testRegisterEndpoint: async (): Promise<{ status: string; message: string; details?: any }> => {
+  testRegisterEndpoint: async (): Promise<{ status: string; message: string; details?: Record<string, unknown> }> => {
     try {
       // Send a basic OPTIONS request to check if the endpoint is accessible
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
@@ -145,10 +146,11 @@ export const apiUtils = {
           details: { headers }
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string }
       return {
         status: 'error',
-        message: `Error testing registration endpoint: ${error.message}`
+        message: `Error testing registration endpoint: ${err.message || 'Unknown error'}`
       };
     }
   }
@@ -162,17 +164,20 @@ export const api = {
       console.log('Sending registration request to:', `${API_BASE_URL}/api/auth/register`);
       console.log('With data:', userData);
       
+      // Create FormData object since the backend expects form values, not JSON
+      const formData = new FormData();
+      formData.append('name', userData.name);
+      formData.append('email', userData.email);
+      formData.append('password', userData.password);
+      formData.append('phone', userData.phone || ''); // Provide empty string if phone is undefined
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
-          // Add API key or client ID if your backend requires it
-          // 'X-API-Key': 'your-api-key-here',
-          // Uncomment and modify if your backend uses a different auth header
-          // 'Authorization': 'Bearer your-token-here',
+          // Don't set Content-Type for FormData - let the browser set it
         },
-        body: JSON.stringify(userData),
+        body: formData,
       });
       
       const data = await safeJsonParse(response);
@@ -196,7 +201,7 @@ export const api = {
       }
       
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
       throw error;
     }
@@ -207,13 +212,18 @@ export const api = {
     try {
       console.log('Sending login request to:', `${API_BASE_URL}/api/auth/login`);
       
+      // Create FormData object since the backend expects form values, not JSON
+      const formData = new FormData();
+      formData.append('email', credentials.email);
+      formData.append('password', credentials.password);
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
+          // Don't set Content-Type for FormData - let the browser set it
         },
-        body: JSON.stringify(credentials),
+        body: formData,
       });
       
       const data = await safeJsonParse(response);
@@ -226,8 +236,67 @@ export const api = {
       }
       
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
+      throw error;
+    }
+  },
+
+  // Google Authentication
+  googleLogin: async (): Promise<{ url: string }> => {
+    try {
+      console.log('Initiating Google login request to:', `${API_BASE_URL}/api/auth/google/login`);
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/google/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+      
+      const data = await safeJsonParse(response);
+      
+      if (!response.ok) {
+        throw { 
+          status: response.status, 
+          response: { data } 
+        };
+      }
+      
+      return data;
+    } catch (error: unknown) {
+      console.error('Google login initiation error:', error);
+      throw error;
+    }
+  },
+
+  // Handle Google callback (if needed for client-side processing)
+  googleCallback: async (code: string, state?: string): Promise<AuthResponse> => {
+    try {
+      console.log('Processing Google callback with code:', code.substring(0, 10) + '...');
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/google/callback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ code, state }),
+      });
+      
+      const data = await safeJsonParse(response);
+      
+      if (!response.ok) {
+        throw { 
+          status: response.status, 
+          response: { data } 
+        };
+      }
+      
+      return data;
+    } catch (error: unknown) {
+      console.error('Google callback error:', error);
       throw error;
     }
   },
@@ -659,6 +728,170 @@ export const api = {
     }
   },
 
+  // ======================
+  // CHAT API FUNCTIONS
+  // ======================
+
+  // Get or create chat with another user
+  getChatWithUser: async (token: string, userId: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat/with/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to get chat with user:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get chat with user: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting chat with user:', error);
+      throw error;
+    }
+  },
+
+  // Get all user chats
+  getChatList: async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to get chat list:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get chat list: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting chat list:', error);
+      throw error;
+    }
+  },
+
+  // Get chat messages
+  getChatMessages: async (token: string, chatId: number, page: number = 1, limit: number = 50) => {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/chat/${chatId}/messages?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to get chat messages:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get chat messages: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting chat messages:', error);
+      throw error;
+    }
+  },
+
+  // Mark chat messages as read
+  markMessagesAsRead: async (token: string, chatId: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat/${chatId}/read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to mark messages as read:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to mark messages as read: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error marking messages as read:', error);
+      throw error;
+    }
+  },
+
+  // Get unread message notifications
+  getUnreadNotifications: async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat/notifications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to get unread notifications:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get unread notifications: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting unread notifications:', error);
+      throw error;
+    }
+  },
+
+  // Get unread count
+  getUnreadCount: async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat/unread-count`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to get unread count:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get unread count: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting unread count:', error);
+      throw error;
+    }
+  },
+
+  // Get user profile by ID (for viewing other users)
+  getUserProfile: async (token: string, userId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/profile-ready`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to get user profile:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get user profile: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting user profile:', error);
+      throw error;
+    }
+  },
+
   // Get all projects (public access - no authentication required)
   getAllProjectsPublic: async () => {
     try {
@@ -770,6 +1003,166 @@ export const api = {
       return response.json();
     } catch (error) {
       console.error('Network error fetching project by ID:', error);
+      throw error;
+    }
+  },
+
+  // Project Application API Functions
+
+  // Apply to a project
+  applyToProject: async (token: string, projectId: string, applicationData: {
+    project_role_id: string;
+    why_interested: string;
+    skills_experience: string;
+    contribution: string;
+  }) => {
+    try {
+      const formData = new FormData();
+      formData.append('project_role_id', applicationData.project_role_id);
+      formData.append('why_interested', applicationData.why_interested);
+      formData.append('skills_experience', applicationData.skills_experience);
+      formData.append('contribution', applicationData.contribution);
+
+      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/apply`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to apply to project:', response.status, response.statusText);
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to apply to project: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error applying to project:', error);
+      throw error;
+    }
+  },
+
+  // Get applications for a project (for project owners)
+  getProjectApplications: async (token: string, projectId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/applications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to get project applications:', response.status, response.statusText);
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get project applications: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting project applications:', error);
+      throw error;
+    }
+  },
+
+  // Get user's own applications
+  getUserApplications: async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/applications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to get user applications:', response.status, response.statusText);
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get user applications: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting user applications:', error);
+      throw error;
+    }
+  },
+
+  // Review an application (accept/reject)
+  reviewApplication: async (token: string, applicationId: string, action: 'accept' | 'reject', reviewNotes?: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('action', action);
+      if (reviewNotes) {
+        formData.append('review_notes', reviewNotes);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/projects/applications/${applicationId}/review`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to review application:', response.status, response.statusText);
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to review application: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error reviewing application:', error);
+      throw error;
+    }
+  },
+
+  // Get application details
+  getApplicationDetails: async (token: string, applicationId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects/applications/${applicationId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to get application details:', response.status, response.statusText);
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get application details: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting application details:', error);
+      throw error;
+    }
+  },
+
+  // Withdraw an application
+  withdrawApplication: async (token: string, applicationId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects/applications/${applicationId}/withdraw`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to withdraw application:', response.status, response.statusText);
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to withdraw application: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error withdrawing application:', error);
       throw error;
     }
   },

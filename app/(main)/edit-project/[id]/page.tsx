@@ -7,13 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/toast"
 import {
   Plus,
   X,
-  Upload,
   Calendar,
   Users,
   Briefcase,
@@ -23,14 +20,11 @@ import {
   ArrowLeft,
   ArrowRight,
   Zap,
-  Home,
   Minus,
   Edit,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import Link from "next/link"
 import { useRouter, useParams } from "next/navigation"
-import Image from "next/image"
 import { api } from "@/lib/api"
 import { TimelineStatusOption, Project } from "@/types"
 
@@ -107,7 +101,7 @@ export default function EditProjectPage() {
   const [isLoadingProject, setIsLoadingProject] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [projectData, setProjectData] = useState<Project | null>(null)
-  const [originalFormData, setOriginalFormData] = useState<any>(null) // Store original data for cancel functionality
+  const [originalFormData, setOriginalFormData] = useState<typeof formData | null>(null) // Store original data for cancel functionality
   const { addToast } = useToast()
 
   const [formData, setFormData] = useState({
@@ -216,25 +210,25 @@ export default function EditProjectPage() {
           teamSize: project.total_team || 2,
           budget: project.budget || "",
           deadline: formatDate(project.registration_deadline),
-          existingMembers: project.members?.map((member: any) => ({
-            name: member.name || "",
-            role: member.role_name || "",
-            description: member.role_description || "",
-            skills: member.skill_names || [],
+          existingMembers: project.members?.map((member: Record<string, unknown>) => ({
+            name: (member.name as string) || "",
+            role: (member.role_name as string) || "",
+            description: (member.role_description as string) || "",
+            skills: (member.skill_names as string[]) || [],
           })) || [],
 
           // Step 3: Requirements
-          requiredSkills: project.required_skills?.map((skill: any) => skill.skill.name) || [],
+          requiredSkills: project.required_skills?.map((skill: Record<string, unknown>) => (skill.skill as Record<string, unknown>).name as string) || [],
           experience: "",
           commitment: project.time_commitment || "",
-          requirements: project.conditions?.map((condition: any) => condition.description) || [],
+          requirements: project.conditions?.map((condition: Record<string, unknown>) => condition.description as string) || [],
 
           // Step 4: Team & Roles
-          roles: project.roles?.map((role: any) => ({
-            title: role.name || "",
-            description: role.description || "",
-            skills: role.required_skills?.map((skill: any) => skill.skill.name) || [],
-            count: role.slots_available || 1,
+          roles: project.roles?.map((role: Record<string, unknown>) => ({
+            title: (role.name as string) || "",
+            description: (role.description as string) || "",
+            skills: (role.required_skills as Record<string, unknown>[])?.map((skill: Record<string, unknown>) => (skill.skill as Record<string, unknown>).name as string) || [],
+            count: (role.slots_available as number) || 1,
           })) || [{
             title: "",
             description: "",
@@ -243,12 +237,12 @@ export default function EditProjectPage() {
           }],
 
           // Step 5: Additional Info
-          benefits: project.benefits?.map((benefit: any) => benefit.benefit.name) || [],
-          timelineSteps: project.timeline?.map((timeline: any) => ({
-            title: timeline.timeline.name || "",
-            status: timeline.timeline_status as "not-started" | "in-progress" | "done" || "not-started",
+          benefits: project.benefits?.map((benefit: Record<string, unknown>) => (benefit.benefit as Record<string, unknown>).name as string) || [],
+          timelineSteps: project.timeline?.map((timeline: Record<string, unknown>) => ({
+            title: ((timeline.timeline as Record<string, unknown>).name as string) || "",
+            status: (timeline.timeline_status as "not-started" | "in-progress" | "done") || "not-started",
           })) || [],
-          tags: project.tags?.map((tag: any) => tag.tag.name) || [],
+          tags: project.tags?.map((tag: Record<string, unknown>) => (tag.tag as Record<string, unknown>).name as string) || [],
         }
 
         setFormData(initialFormData)
@@ -466,7 +460,7 @@ export default function EditProjectPage() {
     setCurrentStep(currentStep - 1)
   }
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
@@ -506,7 +500,7 @@ export default function EditProjectPage() {
     }))
   }
 
-  const updateRole = (index: number, field: string, value: any) => {
+  const updateRole = (index: number, field: string, value: unknown) => {
     setFormData((prev) => ({
       ...prev,
       roles: prev.roles.map((role, i) => (i === index ? { ...role, [field]: value } : role)),
@@ -527,7 +521,7 @@ export default function EditProjectPage() {
     }))
   }
 
-  const updateExistingMember = (index: number, field: string, value: any) => {
+  const updateExistingMember = (index: number, field: string, value: unknown) => {
     setFormData((prev) => ({
       ...prev,
       existingMembers: prev.existingMembers.map((member, i) => 
@@ -553,7 +547,7 @@ export default function EditProjectPage() {
     }))
   }
 
-  const updateTimelineStep = (index: number, field: string, value: any) => {
+  const updateTimelineStep = (index: number, field: string, value: unknown) => {
     setFormData((prev) => ({
       ...prev,
       timelineSteps: prev.timelineSteps.map((step, i) => (
@@ -749,7 +743,7 @@ export default function EditProjectPage() {
                       transition={{ duration: 0.3 }}
                       className="space-y-8"
                     >
-                      {console.log("Rendering step:", currentStep)} {/* Debug render */}
+                      {/* Debug render - Step: {currentStep} */}
                       
                  
                       
@@ -1293,6 +1287,9 @@ export default function EditProjectPage() {
                                         value={member.name}
                                         onChange={(e) => updateExistingMember(index, "name", e.target.value)}
                                       />
+                                      <p className="text-xs text-yellow-600 mt-1">
+                                        ⚠️ Harus sesuai dengan nama user yang sudah terdaftar di sistem
+                                      </p>
                                     </div>
                                     <div>
                                       <label className="block text-sm font-medium mb-2">Role</label>
@@ -1317,7 +1314,7 @@ export default function EditProjectPage() {
                                       ) : (
                                         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                           <p className="text-sm text-yellow-700">
-                                            Silakan definisikan role terlebih dahulu di bagian "Role pada Project Ini" di atas
+                                            Silakan definisikan role terlebih dahulu di bagian &ldquo;Role pada Project Ini&rdquo; di atas
                                           </p>
                                         </div>
                                       )}

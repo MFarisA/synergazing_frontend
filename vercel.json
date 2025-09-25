@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "buildCommand": "bun run build",
+  "devCommand": "bun run dev",
+  "installCommand": "bun install",
+  "framework": "nextjs",
+  "regions": ["sin1"],
+  "functions": {
+    "app/**/*": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NEXT_RUNTIME": "nodejs"
+  }
+}

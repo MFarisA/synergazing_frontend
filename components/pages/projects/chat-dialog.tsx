@@ -6,21 +6,92 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } 
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Send } from "lucide-react";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
 import type { Project } from '@/types';
 
 interface ChatDialogProps {
   project: Project;
+  onChatStart?: () => void; // Callback to trigger chat bubble opening
 }
 
-export function ChatDialog({ project }: ChatDialogProps) {
+export function ChatDialog({ project, onChatStart }: ChatDialogProps) {
   const [chatMessage, setChatMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = () => {
-    if (chatMessage.trim()) {
-      // Di aplikasi nyata, di sini Anda akan memanggil API untuk mengirim pesan
-      console.log(`Mengirim pesan ke ${project.creator.name}:`, chatMessage);
+  const handleSendMessage = async () => {
+    if (!chatMessage.trim()) {
+      toast.error("Pesan tidak boleh kosong");
+      return;
+    }
+
+    // Get auth data from localStorage
+    const getAuthData = () => {
+      try {
+        const token = localStorage.getItem('token');
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : null;
+        
+        if (!token || !user) {
+          throw new Error('Authentication required');
+        }
+        
+        return { token, user };
+      } catch (error) {
+        throw new Error('Please login first');
+      }
+    };
+
+    try {
+      setIsLoading(true);
+      const authData = getAuthData();
+
+      // Check if user is trying to chat with themselves
+      if (authData.user.id === project.creator.id) {
+        toast.error("Anda tidak dapat mengirim pesan kepada diri sendiri");
+        return;
+      }
+
+      // Step 1: Get or create chat with the project creator
+      const chatResponse = await api.getChatWithUser(authData.token, project.creator.id);
+      
+      if (!chatResponse.success || !chatResponse.data) {
+        throw new Error('Gagal membuat chat');
+      }
+
+      const chat = chatResponse.data;
+
+      // Step 2: Send the initial message via WebSocket
+      // We'll dispatch a custom event that the chat bubble can listen to
+      const messageData = {
+        type: 'send_initial_message',
+        chatId: chat.id,
+        creatorId: project.creator.id,
+        creatorName: project.creator.name,
+        creatorAvatar: project.creator.profile?.profile_picture || '',
+        message: chatMessage.trim(),
+        projectTitle: project.title
+      };
+
+      // Dispatch custom event for chat bubble to handle
+      window.dispatchEvent(new CustomEvent('startChat', {
+        detail: messageData
+      }));
+
+      // Clear message and close dialog
       setChatMessage("");
-      // Mungkin tambahkan notifikasi toast "Pesan terkirim!"
+      
+      // Call onChatStart callback to trigger chat bubble opening
+      onChatStart?.();
+
+      toast.success(`Pesan terkirim ke ${project.creator.name}`);
+
+    } catch (error: unknown) {
+      console.error('Error sending message:', error);
+      const err = error as { message?: string }
+      toast.error(err.message || "Gagal mengirim pesan");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -70,10 +141,20 @@ export function ChatDialog({ project }: ChatDialogProps) {
             </div>
           </div>
           <div className="space-y-3">
-            <Textarea placeholder="Tulis pesan Anda..." value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} className="min-h-[80px] resize-none" />
-            <Button onClick={handleSendMessage} className="w-full bg-black hover:bg-gray-800 text-white">
+            <Textarea 
+              placeholder="Tulis pesan Anda..." 
+              value={chatMessage} 
+              onChange={(e) => setChatMessage(e.target.value)} 
+              className="min-h-[80px] resize-none"
+              disabled={isLoading}
+            />
+            <Button 
+              onClick={handleSendMessage} 
+              className="w-full bg-black hover:bg-gray-800 text-white"
+              disabled={isLoading || !chatMessage.trim()}
+            >
               <Send className="h-4 w-4 mr-2" />
-              Kirim Pesan
+              {isLoading ? 'Mengirim...' : 'Kirim Pesan'}
             </Button>
           </div>
         </div>

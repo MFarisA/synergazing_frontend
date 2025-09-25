@@ -40,10 +40,10 @@ export function ProjectTabsContent({ project }: ProjectTabsContentProps) {
   const benefits = project.benefits.map(benefit => benefit.benefit.name);
   const conditions = project.conditions.map(condition => condition.description);
   
-  // Updated timeline mapping to include status
+  // Updated timeline mapping to handle the correct structure
   const timelineItems = project.timeline.map(item => ({
     name: item.timeline.name,
-    status: item.timeline_status || "not-started"
+    status: "not-started" // Default status since timeline_status doesn't exist in the type
   }));
 
   return (

@@ -1,16 +1,18 @@
 "use client"
 
 import { Checkbox } from "@/components/ui/checkbox"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, MessageCircle, Search } from "lucide-react"
+import { MapPin, MessageCircle, Search, Send, X } from "lucide-react"
 import Link from "next/link"
 import { AnimatedModal } from "@/components/ui/animated-modal"
 import { api } from "@/lib/api"
+import { useWebSocket } from "@/lib/socket"
+import { cn } from "@/lib/utils"
 
 // Type definition for collaborator from API
 interface Collaborator {
@@ -33,6 +35,29 @@ interface Collaborator {
 	}>;
 }
 
+// Chat message interface
+interface ChatMessage {
+	id: number;
+	chat_id: number;
+	sender_id: number;
+	content: string;
+	is_read: boolean;
+	created_at: string;
+	sender: {
+		id: number;
+		name: string;
+	};
+}
+
+// Chat interface
+interface Chat {
+	id: number;
+	user1_id: number;
+	user2_id: number;
+	created_at: string;
+	updated_at: string;
+}
+
 export default function CollaboratorsPage() {
 	const [searchTerm, setSearchTerm] = useState("")
 	const [selectedSkills, setSelectedSkills] = useState<string[]>([])
@@ -41,6 +66,77 @@ export default function CollaboratorsPage() {
 	const [collaborators, setCollaborators] = useState<Collaborator[]>([])
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
+
+	// Chat state
+	const [currentChat, setCurrentChat] = useState<Chat | null>(null)
+	const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+	const [newMessage, setNewMessage] = useState("")
+	const [isLoadingChat, setIsLoadingChat] = useState(false)
+	const [isSendingMessage, setIsSendingMessage] = useState(false)
+	const [currentUser, setCurrentUser] = useState<{ id: number; name: string } | null>(null)
+
+	// WebSocket
+	const { connectionStatus, lastMessage, connect, disconnect, sendMessage } = useWebSocket()
+
+	// Refs
+	const chatEndRef = useRef<HTMLDivElement>(null)
+
+	// Get current user from localStorage
+	useEffect(() => {
+		const token = localStorage.getItem("token");
+		if (token) {
+			// Decode token to get user info (or fetch from API)
+			try {
+				const payload = JSON.parse(atob(token.split('.')[1]));
+				setCurrentUser({ id: payload.user_id, name: payload.name || 'You' });
+				
+				// Connect to WebSocket
+				connect(payload.user_id, token);
+			} catch (err) {
+				console.error('Failed to decode token:', err);
+			}
+		}
+	}, [connect]);
+
+	// Handle WebSocket messages
+	useEffect(() => {
+		if (lastMessage) {
+			switch (lastMessage.type) {
+				case 'new_message':
+					if (lastMessage.data && currentChat && lastMessage.data.chat_id === currentChat.id) {
+						setChatMessages(prev => {
+							// Check if message already exists to avoid duplicates
+							const messageData = lastMessage.data as unknown as ChatMessage;
+							const exists = prev.some(msg => msg.id === messageData.id);
+							if (exists) return prev;
+							
+							return [...prev, messageData];
+						});
+					}
+					break;
+				case 'connected':
+					console.log('WebSocket connected successfully');
+					break;
+				case 'error':
+					console.error('WebSocket error:', lastMessage.data?.error);
+					break;
+				default:
+					console.log('Unknown message type:', lastMessage.type);
+			}
+		}
+	}, [lastMessage, currentChat]);
+
+	// Scroll to bottom when new messages arrive
+	useEffect(() => {
+		chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+	}, [chatMessages]);
+
+	// Cleanup WebSocket on unmount
+	useEffect(() => {
+		return () => {
+			disconnect();
+		};
+	}, [disconnect]);
 
 	// Fetch collaborators on component mount
 	useEffect(() => {
@@ -78,14 +174,14 @@ export default function CollaboratorsPage() {
 				console.log('Number of collaborators:', collaboratorsData.length);
 				
 				// Debug each collaborator's profile data
-				collaboratorsData.forEach((collaborator, index) => {
+				collaboratorsData.forEach((collaborator: Record<string, unknown>, index: number) => {
 					console.log(`Collaborator ${index + 1}:`, {
 						name: collaborator.name,
 						profile: collaborator.profile,
 						user_skills: collaborator.user_skills,
-						interests: collaborator.profile?.interests,
-						location: collaborator.profile?.location,
-						about_me: collaborator.profile?.about_me
+						interests: (collaborator.profile as Record<string, unknown>)?.interests,
+						location: (collaborator.profile as Record<string, unknown>)?.location,
+						about_me: (collaborator.profile as Record<string, unknown>)?.about_me
 					});
 				});
 				
@@ -102,16 +198,104 @@ export default function CollaboratorsPage() {
 		fetchCollaborators();
 	}, []);
 
-	// Extract all skills from collaborators for filtering
+	// Initialize chat when collaborator is selected
+	const initializeChat = async (collaborator: Collaborator) => {
+		try {
+			setIsLoadingChat(true);
+			const token = localStorage.getItem("token");
+			if (!token) {
+				throw new Error("No authentication token found");
+			}
+
+			// Get or create chat with the collaborator
+			const chatResponse = await api.getChatWithUser(token, collaborator.id);
+			console.log('Chat response:', chatResponse);
+
+			if (chatResponse.success && chatResponse.data) {
+				const chat = chatResponse.data;
+				setCurrentChat(chat);
+
+				// Load messages for this chat
+				const messagesResponse = await api.getChatMessages(token, chat.id);
+				console.log('Messages response:', messagesResponse);
+
+				if (messagesResponse.success && messagesResponse.data) {
+					setChatMessages(messagesResponse.data.messages || []);
+				}
+
+				// Join chat via WebSocket
+				if (connectionStatus === 'connected') {
+					sendMessage({
+						type: 'join_chat',
+						chat_id: chat.id
+					});
+				}
+			}
+		} catch (err) {
+			console.error('Error initializing chat:', err);
+			setError('Failed to initialize chat');
+		} finally {
+			setIsLoadingChat(false);
+		}
+	};
+
+	// Send message function
+	const handleSendMessage = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!newMessage.trim() || !currentChat || isSendingMessage) return;
+
+		try {
+			setIsSendingMessage(true);
+
+			// Send via WebSocket
+			const success = sendMessage({
+				type: 'send_message',
+				chat_id: currentChat.id,
+				content: newMessage.trim()
+			});
+
+			if (success) {
+				setNewMessage("");
+			} else {
+				throw new Error('Failed to send message via WebSocket');
+			}
+		} catch (err) {
+			console.error('Error sending message:', err);
+		} finally {
+			setIsSendingMessage(false);
+		}
+	};
+
+	// Handle collaborator contact button
+	const handleContactCollaborator = async (collaborator: Collaborator) => {
+		setSelectedCollaborator(collaborator);
+		await initializeChat(collaborator);
+		setIsMessageModalOpen(true);
+	};
+
+	// Close chat modal
+	const handleCloseChat = () => {
+		setIsMessageModalOpen(false);
+		setSelectedCollaborator(null);
+		setCurrentChat(null);
+		setChatMessages([]);
+		setNewMessage("");
+	};
+
+	// Extract all skills from collaborators for filtering (excluding current user)
+	const collaboratorsExcludingCurrentUser = collaborators.filter(collaborator => 
+		!currentUser || collaborator.id !== currentUser.id
+	);
+
 	const allSkills = Array.from(
 		new Set(
-			collaborators.flatMap(collaborator => 
+			collaboratorsExcludingCurrentUser.flatMap(collaborator => 
 				(collaborator.skills || []).map(userSkill => userSkill.skill.name)
 			)
 		)
 	).sort();
 
-	const filteredCollaborators = collaborators.filter((collaborator) => {
+	const filteredCollaborators = collaboratorsExcludingCurrentUser.filter((collaborator) => {
 		const searchableText = [
 			collaborator.name,
 			collaborator.interests || '',
@@ -168,7 +352,7 @@ export default function CollaboratorsPage() {
 
 			<div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
 				{/* Sidebar Filters */}
-				<aside className="lg:col-span-1 space-y-6">
+				<aside className="lg:col-span-1 space-y-6 sticky top-6 self-start h-fit">
 					<Card>
 						<CardHeader>
 							<CardTitle className="text-lg">Cari Kolaborator</CardTitle>
@@ -235,6 +419,9 @@ export default function CollaboratorsPage() {
 									</Avatar>
 									<h3 className="text-xl font-bold">{collaborator.name}</h3>
 									<p className="text-md text-gray-600 mb-2">{collaborator.interests || 'No title specified'}</p>
+									{collaborator.academic && (
+										<p className="text-sm text-gray-500 mb-2">{collaborator.academic}</p>
+									)}
 									<div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
 										<MapPin className="h-4 w-4" />
 										<span>{collaborator.location || 'Location not specified'}</span>
@@ -270,10 +457,7 @@ export default function CollaboratorsPage() {
 										<Button
 											variant="outline"
 											className="flex-1 w-full bg-transparent"
-											onClick={() => {
-												setSelectedCollaborator(collaborator)
-												setIsMessageModalOpen(true)
-											}}
+											onClick={() => handleContactCollaborator(collaborator)}
 										>
 											<MessageCircle className="h-4 w-4 mr-2" />
 											Hubungi
@@ -294,25 +478,130 @@ export default function CollaboratorsPage() {
 				</main>
 			</div>
 
-			{/* Message Modal */}
+			{/* Chat Modal */}
 			{selectedCollaborator && (
 				<AnimatedModal
 					isOpen={isMessageModalOpen}
-					onClose={() => setIsMessageModalOpen(false)}
-					showCloseButton={true}
-					className="max-w-lg"
+					onClose={handleCloseChat}
+					showCloseButton={false}
+					className="max-w-lg h-[600px]"
 				>
-					<div className="p-6">
-						<h2 className="text-2xl font-bold mb-4">Komunikasi Dengan {selectedCollaborator.name}</h2>
-						<div className="border rounded-lg p-4 h-64 overflow-y-auto bg-gray-50 flex flex-col-reverse">
-							{/* Chat messages will go here */}
-							<div className="text-center text-gray-500 text-sm">
-								Mulai Komunikasi Dengan {selectedCollaborator.name}
+					<div className="flex flex-col h-full">
+						{/* Chat Header */}
+						<div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+							<div className="flex items-center gap-3">
+								<Avatar className="h-10 w-10">
+									<AvatarImage src={selectedCollaborator.profile_picture || "/placeholder.svg"} />
+									<AvatarFallback>
+										{selectedCollaborator.name
+											.split(" ")
+											.map((n) => n[0])
+											.join("")}
+									</AvatarFallback>
+								</Avatar>
+								<div>
+									<h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+										{selectedCollaborator.name}
+									</h2>
+									<p className="text-sm text-gray-500 dark:text-gray-400">
+										{connectionStatus === 'connected' ? 'Online' : 'Offline'}
+									</p>
+								</div>
 							</div>
+							<Button variant="ghost" size="icon" onClick={handleCloseChat}>
+								<X className="h-5 w-5" />
+							</Button>
 						</div>
-						<div className="flex gap-2 mt-4">
-							<Input placeholder="Ketik Pesanmu..." className="flex-grow" />
-							<Button>Kirim</Button>
+
+						{/* Chat Messages */}
+						<div className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+							{isLoadingChat ? (
+								<div className="flex items-center justify-center h-full">
+									<div className="text-center">
+										<div className="w-6 h-6 border-2 border-t-blue-600 border-blue-200 rounded-full animate-spin mb-2 mx-auto"></div>
+										<p className="text-sm text-gray-500">Memuat percakapan...</p>
+									</div>
+								</div>
+							) : (
+								<div className="space-y-4">
+									{chatMessages.length === 0 ? (
+										<div className="text-center text-gray-500 dark:text-gray-400 py-8">
+											<MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+											<p>Mulai percakapan dengan {selectedCollaborator.name}</p>
+										</div>
+									) : (
+										chatMessages.map((message) => {
+											const isSent = currentUser && message.sender_id === currentUser.id;
+											return (
+												<div
+													key={message.id}
+													className={cn(
+														"flex items-end gap-2",
+														isSent ? "justify-end" : "justify-start"
+													)}
+												>
+													{!isSent && (
+														<Avatar className="h-6 w-6">
+															<AvatarImage src={selectedCollaborator.profile_picture || "/placeholder.svg"} />
+															<AvatarFallback className="text-xs">
+																{selectedCollaborator.name.charAt(0)}
+															</AvatarFallback>
+														</Avatar>
+													)}
+													<div className="flex flex-col max-w-xs">
+														<div
+															className={cn(
+																"px-3 py-2 rounded-lg text-sm shadow-sm",
+																isSent
+																	? "bg-blue-500 text-white rounded-br-sm"
+																	: "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-sm"
+															)}
+														>
+															{message.content}
+														</div>
+														<p className="text-xs text-gray-400 dark:text-gray-500 mt-1 px-3">
+															{new Date(message.created_at).toLocaleTimeString('id-ID', {
+																hour: '2-digit',
+																minute: '2-digit'
+															})}
+														</p>
+													</div>
+												</div>
+											);
+										})
+									)}
+									<div ref={chatEndRef} />
+								</div>
+							)}
+						</div>
+
+						{/* Message Input */}
+						<div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+							<form onSubmit={handleSendMessage} className="flex gap-2">
+								<Input
+									value={newMessage}
+									onChange={(e) => setNewMessage(e.target.value)}
+									placeholder="Ketik pesan..."
+									className="flex-1"
+									disabled={connectionStatus !== 'connected' || isSendingMessage}
+								/>
+								<Button 
+									type="submit" 
+									size="icon"
+									disabled={!newMessage.trim() || connectionStatus !== 'connected' || isSendingMessage}
+								>
+									{isSendingMessage ? (
+										<div className="w-4 h-4 border-2 border-t-white border-gray-300 rounded-full animate-spin" />
+									) : (
+										<Send className="h-4 w-4" />
+									)}
+								</Button>
+							</form>
+							{connectionStatus !== 'connected' && (
+								<p className="text-xs text-red-500 mt-2">
+									Koneksi terputus. Mencoba menyambung kembali...
+								</p>
+							)}
 						</div>
 					</div>
 				</AnimatedModal>

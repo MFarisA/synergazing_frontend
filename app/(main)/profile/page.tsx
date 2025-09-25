@@ -8,24 +8,20 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Mail,
   Phone,
   MapPin,
-  Briefcase,
   GraduationCap,
   LinkIcon,
   Edit,
   Users,
-  MessageCircle,
   Plus,
   Eye,
   Download,
@@ -40,7 +36,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { User, Skill, UserSkill, Project } from "@/types";
+import Image from "next/image";
 
 export default function ProfilePage() {
   const [userData, setUserData] = useState<User | null>(null);
@@ -63,7 +59,6 @@ export default function ProfilePage() {
     return "overview";
   });
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [isSkillDialogOpen, setIsSkillDialogOpen] = useState(false);
   const [skillToEdit, setSkillToEdit] = useState<UserSkill | null>(null);
   const [newSkill, setNewSkill] = useState({ name: "" });
@@ -165,20 +160,6 @@ export default function ProfilePage() {
       } catch (error) {
         console.error(error);
         setApiError("Gagal mengubah status kolaborasi. Coba lagi nanti.");
-      }
-    }
-  };
-
-  const handleDeletePicture = async () => {
-    const token = localStorage.getItem("token");
-    if (token && userData) {
-      try {
-        await api.deleteProfilePicture(token);
-        setUserData({ ...userData, profile_picture: "" });
-        setApiError(null);
-      } catch (error) {
-        console.error(error);
-        setApiError("Gagal menghapus foto profil. Coba lagi nanti.");
       }
     }
   };
@@ -352,11 +333,6 @@ export default function ProfilePage() {
       setIsDeleting(false);
     }
   };
-
-  // Calculate completed projects from API data
-  const completedUserProjects = userProjects.filter(
-    (project) => project.status === "Completed"
-  ).length;
 
   if (isLoading) {
     return (
@@ -593,18 +569,18 @@ export default function ProfilePage() {
               </TabsContent>
 
               <TabsContent value="projects" className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <h2 className="text-xl font-semibold">
                     Proyek Saya ({userProjects.length})
                   </h2>
                   <Link href="/create-project">
-                    <Button>
+                    <Button className="w-full sm:w-auto">
                       <Plus className="h-4 w-4 mr-2" /> Buat Proyek Baru
                     </Button>
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-6">
                   {userProjects.length === 0 ? (
                     <div className="col-span-full text-center text-gray-500 py-10">
                       Anda belum membuat proyek apa pun.
@@ -613,19 +589,21 @@ export default function ProfilePage() {
                     userProjects.map((project) => (
                       <Card
                         key={project.id}
-                        className="hover:shadow-lg transition-shadow"
+                        className="hover:shadow-lg transition-all duration-200 flex flex-col"
                       >
                         <div className="relative">
-                          <img
+                          <Image
                             src={
                               project.picture_url ||
                               "/placeholder.svg?height=200&width=300&text=Project"
                             }
                             alt={project.title}
-                            className="w-full h-48 object-cover rounded-t-lg"
+                            width={300}
+                            height={200}
+                            className="w-full h-36 sm:h-40 md:h-44 lg:h-48 object-cover rounded-t-lg"
                           />
                           <Badge
-                            className={`absolute top-3 left-3 ${
+                            className={`absolute top-2 left-2 text-xs ${
                               project.status === "published"
                                 ? "bg-blue-500"
                                 : project.status === "draft"
@@ -638,88 +616,101 @@ export default function ProfilePage() {
                             {project.status}
                           </Badge>
                         </div>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">
+                        <CardHeader className="pb-2 px-3 sm:px-6">
+                          <CardTitle className="text-base sm:text-lg line-clamp-2">
                             {project.title}
                           </CardTitle>
-                          <CardDescription>
+                          <CardDescription className="line-clamp-2 text-sm">
                             {project.description}
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="flex items-center justify-between text-sm text-gray-600">
-                            <span>
+                        <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 flex-1 flex flex-col">
+                          <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600">
+                            <span className="truncate mr-2">
                               Role:{" "}
                               <span className="font-medium">
                                 Project Creator
                               </span>
                             </span>
-                            <span>
+                            <span className="text-nowrap">
                               {project.filled_team + 1}/{project.total_team}{" "}
-                              anggota tim
+                              anggota
                             </span>
                           </div>
 
                           <div className="flex flex-wrap gap-1">
                             {project.required_skills
-                              .slice(0, 4)
+                              .slice(0, 3)
                               .map((skillItem) => (
                                 <Badge
                                   key={skillItem.skill.id}
                                   variant="outline"
-                                  className="text-xs"
+                                  className="text-xs px-2 py-1"
                                 >
                                   {skillItem.skill.name}
                                 </Badge>
                               ))}
-                            {project.required_skills.length > 4 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{project.required_skills.length - 4}
+                            {project.required_skills.length > 3 && (
+                              <Badge variant="outline" className="text-xs px-2 py-1">
+                                +{project.required_skills.length - 3}
                               </Badge>
                             )}
                           </div>
 
-                          <div className="flex gap-2">
-                            <Link
-                              href={`/projects/${project.id}`}
-                              className="flex-1"
-                            >
+                          <div className="flex flex-col gap-2 mt-auto">
+                            {/* First row: View and Edit buttons */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <Link
+                                href={`/projects/${project.id}`}
+                                className="flex-1"
+                              >
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full bg-transparent text-xs sm:text-sm h-8 sm:h-9"
+                                >
+                                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> 
+                                  <span className="hidden xs:inline">Lihat</span>
+                                  <span className="xs:hidden">Detail</span>
+                                </Button>
+                              </Link>
+                              <Link
+                                href={`/edit-project/${project.id}`}
+                                className="flex-1"
+                              >
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="w-full text-xs sm:text-sm h-8 sm:h-9"
+                                >
+                                  <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> 
+                                  Edit
+                                </Button>
+                              </Link>
+                            </div>
+                            
+                            {/* Second row: Applicants and Delete buttons */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <Link
+                                href={`/recruiter-dashboard?projectId=${project.id}`}
+                                className="flex-1"
+                              >
+                                <Button size="sm" className="w-full text-xs sm:text-sm h-8 sm:h-9">
+                                  <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> 
+                                  <span className="hidden xs:inline">Lihat</span>
+                                  <span className="xs:hidden">Pelamar</span>
+                                </Button>
+                              </Link>
                               <Button
                                 size="sm"
-                                variant="outline"
-                                className="w-full bg-transparent"
+                                variant="destructive"
+                                className="bg-red-500 hover:bg-red-600 text-white border-2 border-red-400 shadow-lg hover:shadow-xl transition-all duration-200 text-xs sm:text-sm h-8 sm:h-9"
+                                onClick={() => handleDeleteProject(project)}
                               >
-                                <Eye className="h-4 w-4 mr-2" /> Lihat Detail
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="hidden xs:inline">Hapus</span>
                               </Button>
-                            </Link>
-                            <Link
-                              href={`/edit-project/${project.id}`}
-                              className="flex-1"
-                            >
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                className="w-full"
-                              >
-                                <Edit className="h-4 w-4 mr-2" /> Edit
-                              </Button>
-                            </Link>
-                            <Link
-                              href={`/recruiter-dashboard?projectId=${project.id}`}
-                              className="flex-1"
-                            >
-                              <Button size="sm" className="w-full">
-                                <Users className="h-4 w-4 mr-2" /> Lihat Pelamar
-                              </Button>
-                            </Link>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="bg-red-500 hover:bg-red-600 text-white border-2 border-red-400 shadow-lg hover:shadow-xl transition-all duration-200"
-                              onClick={() => handleDeleteProject(project)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -822,12 +813,7 @@ export default function ProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {isUploading ? (
-                  <div className="flex flex-col items-center justify-center py-4">
-                    <div className="w-8 h-8 border-2 border-t-blue-600 border-blue-200 rounded-full animate-spin mb-3"></div>
-                    <p className="text-sm text-gray-500">Mengupload CV...</p>
-                  </div>
-                ) : userData.cv_file ? (
+                {userData.cv_file ? (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center">
                       <FileText className="h-8 w-8 text-blue-600 mr-3" />
