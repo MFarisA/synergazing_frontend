@@ -82,11 +82,11 @@ export function useWebSocket() {
         }
       }
 
-      ws.onerror = (event) => {
-        console.error('WebSocket error:', event)
-        setConnectionStatus('error')
-        setError('WebSocket connection failed')
-      }
+      // ws.onerror = (event) => {
+      //   console.error('WebSocket error occurred:', event.type || 'Unknown error')
+      //   setConnectionStatus('error')
+      //   setError('WebSocket connection failed')
+      // }
     } catch (err) {
       console.error('Failed to create WebSocket connection:', err)
       setConnectionStatus('error')
