@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['synergazing.bahasakita.store'],
+    domains: ["synergazing.bahasakita.store"],
   },
 };
 
