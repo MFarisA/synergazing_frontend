@@ -284,10 +284,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen from-blue-50 via-white to-purple-50 flex flex-col justify-center p-4">
+      <div className="w-full max-w-md mx-auto">
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Bergabung dengan Synergazing</h1>
           <p className="text-gray-600">Mulai kolaborasi dengan mahasiswa se-Indonesia</p>
         </motion.div>
@@ -328,7 +328,7 @@ export default function RegisterPage() {
         )}
 
         {/* Progress Indicator (updated for 3 steps) */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
           <div className="flex items-center justify-between mb-2 px-8 relative">
             {/* Connecting Lines */}
             <div className="absolute top-1/2 left-12 right-12 h-0.5 bg-gray-200 -translate-y-1/2">
@@ -367,12 +367,12 @@ export default function RegisterPage() {
               <CardTitle className="text-xl text-center">{getStepTitle()}</CardTitle>
               <CardDescription className="text-center">{getStepDescription()}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {/* Step 1: Basic Information */}
               {currentStep === 1 && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Full Name */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label htmlFor="fullName" className="text-sm font-medium text-gray-700">
                       Nama Lengkap
                     </label>
@@ -396,7 +396,7 @@ export default function RegisterPage() {
                   </div>
 
                   {/* Email */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label htmlFor="email" className="text-sm font-medium text-gray-700">
                       Email
                     </label>
@@ -420,7 +420,7 @@ export default function RegisterPage() {
                   </div>
 
                   {/* Phone Number */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label htmlFor="phone" className="text-sm font-medium text-gray-700">
                       Nomor Telepon
                     </label>
@@ -444,7 +444,7 @@ export default function RegisterPage() {
                   </div>
 
                   {/* Password */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label htmlFor="password" className="text-sm font-medium text-gray-700">
                       Password
                     </label>
@@ -475,7 +475,7 @@ export default function RegisterPage() {
                   </div>
 
                   {/* Confirm Password */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
                       Konfirmasi Password
                     </label>
@@ -524,9 +524,9 @@ export default function RegisterPage() {
 
               {/* Step 2: OTP Verification */}
               {currentStep === 2 && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* OTP Code Input */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label htmlFor="otpCode" className="text-sm font-medium text-gray-700">
                       Kode OTP
                     </label>
@@ -719,7 +719,7 @@ export default function RegisterPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-center mt-6"
+          className="text-center mt-4"
         >
           <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
             <ArrowLeft className="h-4 w-4" />
