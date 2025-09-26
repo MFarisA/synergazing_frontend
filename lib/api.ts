@@ -1166,6 +1166,74 @@ export const api = {
       throw error;
     }
   },
+
+  // Forgot Password - Send reset link to email
+  forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      console.log('Sending forgot password request to:', `${API_BASE_URL}/api/auth/forgot-password`);
+      
+      // Create FormData object since the backend expects form values
+      const formData = new FormData();
+      formData.append('email', email);
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: formData,
+      });
+      
+      const data = await safeJsonParse(response);
+      
+      if (!response.ok) {
+        throw { 
+          status: response.status, 
+          response: { data } 
+        };
+      }
+      
+      return data;
+    } catch (error: unknown) {
+      console.error('Forgot password error:', error);
+      throw error;
+    }
+  },
+
+  // Reset Password - Update password with token
+  resetPassword: async (token: string, password: string, passwordConfirm: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      console.log('Sending reset password request to:', `${API_BASE_URL}/api/auth/reset-password`);
+      
+      // Create FormData object since the backend expects form values
+      const formData = new FormData();
+      formData.append('token', token);
+      formData.append('password', password);
+      formData.append('passwordConfirm', passwordConfirm);
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: formData,
+      });
+      
+      const data = await safeJsonParse(response);
+      
+      if (!response.ok) {
+        throw { 
+          status: response.status, 
+          response: { data } 
+        };
+      }
+      
+      return data;
+    } catch (error: unknown) {
+      console.error('Reset password error:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;
