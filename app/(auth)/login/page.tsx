@@ -25,10 +25,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { useRouter } from "next/navigation"
+import { api } from "@/lib/api"
 
-const API_BASE_URL = "https://synergazing.bahasakita.store";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3002'
 
 export default function LoginPage() {
   const router = useRouter();
