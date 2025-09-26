@@ -263,7 +263,7 @@ export default function RecruiterDashboardPage() {
       console.error('Failed to update application status:', error);
       addToast({
         title: "Failed to Update Application",
-        description: error.message || "Please try again later",
+        description: "Gagal memperbarui status aplikasi. Silakan coba lagi.",
         type: "error",
       });
     }

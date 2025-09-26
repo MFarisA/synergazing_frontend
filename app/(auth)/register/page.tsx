@@ -133,28 +133,16 @@ export default function RegisterPage() {
 
       const response = await api.registerInitiate(userData)
       
-      console.log("OTP sent successfully:", response.message)
-      
       // Show success message and move to OTP step
       setAlertMessage("Kode OTP telah dikirim ke email Anda. Silakan periksa inbox atau folder spam.")
       setAlertType("success")
       setCurrentStep(2)
     } catch (error: unknown) {
-      console.error("Registration initiate failed:", error)
       const errorObj = error as { response?: { data?: { message?: string } }; message?: string }
-      if (errorObj.response?.data?.message) {
-        setApiError(errorObj.response.data.message)
-        setAlertMessage("Gagal mengirim OTP. " + errorObj.response.data.message)
-        setAlertType("error")
-      } else if (typeof errorObj.message === 'string') {
-        setApiError(errorObj.message)
-        setAlertMessage("Gagal mengirim OTP. " + errorObj.message)
-        setAlertType("error")
-      } else {
-        setApiError("Failed to send OTP. Please try again.")
-        setAlertMessage("Gagal mengirim OTP. Silakan coba lagi.")
-        setAlertType("error")
-      }
+      // Don't expose backend error messages to users
+      setApiError("Gagal mengirim OTP")
+      setAlertMessage("Gagal mengirim OTP. Silakan periksa email Anda dan coba lagi.")
+      setAlertType("error")
     } finally {
       setIsLoading(false)
     }
@@ -187,8 +175,6 @@ export default function RegisterPage() {
 
       const response = await api.registerComplete(userData)
       
-      console.log("Registration completed successfully:", response.message)
-      
       // Show success message and redirect to login page
       setAlertMessage("Pendaftaran berhasil! Anda akan diarahkan ke halaman login.")
       setAlertType("success")
@@ -197,21 +183,25 @@ export default function RegisterPage() {
         router.push("/login")
       }, 2000)
     } catch (error: unknown) {
-      console.error("Registration complete failed:", error)
       const errorObj = error as { response?: { data?: { message?: string } }; message?: string }
-      if (errorObj.response?.data?.message) {
-        setApiError(errorObj.response.data.message)
-        setAlertMessage("Pendaftaran gagal. " + errorObj.response.data.message)
-        setAlertType("error")
-      } else if (typeof errorObj.message === 'string') {
-        setApiError(errorObj.message)
-        setAlertMessage("Pendaftaran gagal. " + errorObj.message)
-        setAlertType("error")
-      } else {
-        setApiError("Registration failed. Please try again or contact support.")
-        setAlertMessage("Pendaftaran gagal. Silakan coba lagi.")
-        setAlertType("error")
+      // Handle specific registration errors without exposing backend messages
+      let userMessage = "Pendaftaran gagal. Silakan coba lagi.";
+      let apiErrorMsg = "Pendaftaran gagal";
+      
+      // Check for common registration issues without exposing exact backend message
+      if (errorObj.response?.data?.message?.toLowerCase().includes("email") || 
+          errorObj.response?.data?.message?.toLowerCase().includes("already exists")) {
+        userMessage = "Email sudah terdaftar. Silakan gunakan email lain atau masuk dengan akun yang sudah ada.";
+        apiErrorMsg = "Email sudah terdaftar";
+      } else if (errorObj.response?.data?.message?.toLowerCase().includes("otp") ||
+                 errorObj.response?.data?.message?.toLowerCase().includes("invalid")) {
+        userMessage = "Kode OTP tidak valid atau sudah kadaluarsa. Silakan minta kode baru.";
+        apiErrorMsg = "Kode OTP tidak valid";
       }
+      
+      setApiError(apiErrorMsg)
+      setAlertMessage(userMessage)
+      setAlertType("error")
     } finally {
       setIsLoading(false)
     }
@@ -237,18 +227,15 @@ export default function RegisterPage() {
       setAlertType("")
 
       try {
-        console.log("Initiating Google registration...")
-        
         // Simply redirect to the backend Google login endpoint
         // The backend will handle the entire OAuth flow and should redirect back
         // to your frontend with the auth data (same endpoint for both login and register)
         window.location.href = `${API_BASE_URL}/api/auth/google/login`
         
       } catch (error: unknown) {
-        console.error("Google registration failed:", error)
         setAlertType("error")
-        setAlertMessage("Google registration gagal. " + (error as Error).message)
-        setApiError("Failed to initiate Google registration")
+        setAlertMessage("Google registration gagal. Silakan coba lagi.")
+        setApiError("Google registration gagal")
         setIsLoading(false)
       }
     } else {

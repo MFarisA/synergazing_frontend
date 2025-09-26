@@ -321,7 +321,7 @@ export default function CreateProjectPage() {
       console.error("Error in stage submission:", error)
       addToast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save project data",
+        description: "Gagal menyimpan data proyek. Silakan coba lagi.",
         type: "error",
       })
     } finally {
@@ -382,8 +382,8 @@ export default function CreateProjectPage() {
     } catch (error) {
       console.error("Error in final submission:", error)
       addToast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to finalize project",
+        title: "Error", 
+        description: "Gagal menyelesaikan proyek. Silakan coba lagi.",
         type: "error",
       })
     } finally {

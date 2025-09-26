@@ -245,7 +245,7 @@ export default function CollaboratorProfilePage() {
       }
     } catch (error: any) {
       console.error("Error starting chat:", error);
-      toast.error(error.message || "Failed to start chat. Please try again.");
+      toast.error("Gagal memulai chat. Silakan coba lagi.");
     } finally {
       setIsLoadingChat(false);
     }

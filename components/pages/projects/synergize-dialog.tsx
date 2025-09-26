@@ -180,8 +180,10 @@ export function SynergizeDialog({ project }: SynergizeDialogProps) {
         // Generic 400 error - could be own project
         errorTitle = "Tidak Dapat Mendaftar";
         errorMessage = "Anda tidak dapat mendaftar untuk proyek Anda sendiri.";
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else {
+        // Don't expose raw backend error messages
+        errorTitle = "Gagal Mengirim Aplikasi";
+        errorMessage = "Terjadi kesalahan saat mengirim aplikasi. Silakan coba lagi.";
       }
 
       addToast({

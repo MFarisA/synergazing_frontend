@@ -31,7 +31,6 @@ const safeJsonParse = async (response: Response) => {
   try {
     return JSON.parse(text);
   } catch (e) {
-    console.warn('Failed to parse response as JSON:', text);
     return {
       success: false,
       message: text || 'Unknown error occurred',
@@ -161,9 +160,6 @@ export const api = {
   // Register a new user
   register: async (userData: RegisterRequest): Promise<AuthResponse> => {
     try {
-      console.log('Sending registration request to:', `${API_BASE_URL}/api/auth/register`);
-      console.log('With data:', userData);
-      
       // Create FormData object since the backend expects form values, not JSON
       const formData = new FormData();
       formData.append('name', userData.name);
@@ -183,7 +179,6 @@ export const api = {
       const data = await safeJsonParse(response);
       
       if (response.status === 401) {
-        console.error('Authentication required for registration endpoint');
         throw { 
           status: 401, 
           response: { 
@@ -202,7 +197,6 @@ export const api = {
       
       return data;
     } catch (error: unknown) {
-      console.error('Registration error:', error);
       throw error;
     }
   },
@@ -210,8 +204,6 @@ export const api = {
   // Login a user
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
     try {
-      console.log('Sending login request to:', `${API_BASE_URL}/api/auth/login`);
-      
       // Create FormData object since the backend expects form values, not JSON
       const formData = new FormData();
       formData.append('email', credentials.email);
@@ -229,15 +221,31 @@ export const api = {
       const data = await safeJsonParse(response);
       
       if (!response.ok) {
-        throw { 
-          status: response.status, 
-          response: { data } 
+        const errorObj = { 
+          status: response.status,
+          statusText: response.statusText,
+          response: { data },
+          url: response.url
         };
+        throw errorObj;
       }
       
       return data;
     } catch (error: unknown) {
-      console.error('Login error:', error);
+      // If it's our thrown error object, just re-throw it
+      if (error && typeof error === 'object' && 'status' in error) {
+        throw error;
+      }
+      
+      // Re-throw with more context for network errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw {
+          message: 'Network error: Unable to connect to server. Please check your internet connection.',
+          type: 'NETWORK_ERROR',
+          originalError: error
+        };
+      }
+      
       throw error;
     }
   },
@@ -245,8 +253,6 @@ export const api = {
   // Google Authentication
   googleLogin: async (): Promise<{ url: string }> => {
     try {
-      console.log('Initiating Google login request to:', `${API_BASE_URL}/api/auth/google/login`);
-      
       const response = await fetch(`${API_BASE_URL}/api/auth/google/login`, {
         method: 'POST',
         headers: {
@@ -266,7 +272,6 @@ export const api = {
       
       return data;
     } catch (error: unknown) {
-      console.error('Google login initiation error:', error);
       throw error;
     }
   },
@@ -274,8 +279,6 @@ export const api = {
   // Handle Google callback (if needed for client-side processing)
   googleCallback: async (code: string, state?: string): Promise<AuthResponse> => {
     try {
-      console.log('Processing Google callback with code:', code.substring(0, 10) + '...');
-      
       const response = await fetch(`${API_BASE_URL}/api/auth/google/callback`, {
         method: 'POST',
         headers: {
@@ -296,7 +299,6 @@ export const api = {
       
       return data;
     } catch (error: unknown) {
-      console.error('Google callback error:', error);
       throw error;
     }
   },

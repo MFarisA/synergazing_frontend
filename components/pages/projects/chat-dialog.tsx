@@ -88,8 +88,7 @@ export function ChatDialog({ project, onChatStart }: ChatDialogProps) {
 
     } catch (error: unknown) {
       console.error('Error sending message:', error);
-      const err = error as { message?: string }
-      toast.error(err.message || "Gagal mengirim pesan");
+      toast.error("Gagal mengirim pesan. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
     }

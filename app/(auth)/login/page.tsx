@@ -99,32 +99,54 @@ export default function LoginPage() {
       // Redirect to profile page or dashboard
       router.push("/profile");
     } catch (error: unknown) {
-      console.error("Login failed:", error);
+      // Handle different types of errors
+      let errorType = "error";
+      let displayMessage = "";
 
-      const errorMessage =
-        (error as { response?: { data?: { message?: string } } }).response?.data
-          ?.message || "";
-
-      // Check for specific error messages from backend
-      if (errorMessage.includes("Invalid Credetial Email")) {
-        setAlertType("warning");
-        setAlertMessage(
-          "Email tidak terdaftar. Silakan daftar terlebih dahulu atau periksa kembali email Anda.",
-        );
-        setApiError("Email tidak terdaftar");
-      } else if (errorMessage.includes("Invalid Credential Password")) {
-        setAlertType("error");
-        setAlertMessage(
-          "Password yang Anda masukkan salah. Silakan periksa kembali password Anda.",
-        );
-        setApiError("Password salah");
+      if (error && typeof error === 'object') {
+        // Network or connection error
+        if ('type' in error && error.type === 'NETWORK_ERROR') {
+          displayMessage = "Gagal terhubung ke server. Periksa koneksi internet Anda.";
+          errorType = "error";
+        }
+        // API response error
+        else if ('response' in error && error.response && typeof error.response === 'object' && 'data' in error.response) {
+          const apiError = error.response.data as { message?: string; success?: boolean };
+          const errorMessage = apiError?.message || "";
+          
+          // Handle error types without exposing backend messages
+          if (errorMessage.includes("Invalid Credetial Email") || errorMessage.includes("Invalid Credential Email") || errorMessage.toLowerCase().includes("email")) {
+            errorType = "warning";
+            displayMessage = "Email tidak terdaftar. Silakan daftar terlebih dahulu atau periksa kembali email Anda.";
+            setApiError("Email tidak terdaftar");
+          } else if (errorMessage.includes("Invalid Credential Password") || errorMessage.toLowerCase().includes("password")) {
+            errorType = "error";
+            displayMessage = "Password yang Anda masukkan salah. Silakan periksa kembali password Anda.";
+            setApiError("Password salah");
+          } else {
+            errorType = "error";
+            displayMessage = "Login gagal. Silakan periksa kembali email dan password Anda.";
+            setApiError("Login gagal");
+          }
+        }
+        // Generic error with message
+        else if ('message' in error && typeof error.message === 'string') {
+          displayMessage = "Login gagal. Silakan coba lagi nanti.";
+          errorType = "error";
+        }
+        // Unknown object error
+        else {
+          displayMessage = "Terjadi kesalahan tidak dikenal. Silakan coba lagi.";
+          errorType = "error";
+        }
       } else {
-        setAlertType("error");
-        setAlertMessage(
-          "Login gagal. Silakan periksa kembali email dan password Anda.",
-        );
-        setApiError(errorMessage || "Invalid credentials. Please try again.");
+        // Primitive error or null/undefined
+        displayMessage = "Terjadi kesalahan tidak dikenal. Silakan coba lagi.";
+        errorType = "error";
       }
+
+      setAlertType(errorType as "error" | "warning");
+      setAlertMessage(displayMessage);
     } finally {
       setIsLoading(false);
     }
@@ -161,8 +183,8 @@ export default function LoginPage() {
       } catch (error: unknown) {
         console.error("Google login failed:", error);
         setAlertType("error");
-        setAlertMessage("Google login gagal. " + (error as Error).message);
-        setApiError("Failed to initiate Google login");
+        setAlertMessage("Google login gagal. Silakan coba lagi.");
+        setApiError("Google login gagal");
         setIsLoading(false);
       }
     } else {

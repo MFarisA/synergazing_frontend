@@ -60,19 +60,16 @@ export default function ForgotPasswordPage() {
       
       if (response.success) {
         setSuccess(true);
-        setMessage(response.message);
+        setMessage("Email reset password telah dikirim. Silakan periksa kotak masuk Anda.");
         setEmail(""); // Clear email field on success
       } else {
-        setError(response.message || "Terjadi kesalahan saat mengirim email reset password");
+        setError("Terjadi kesalahan saat mengirim email reset password. Silakan coba lagi.");
       }
     } catch (error: unknown) {
       console.error("Forgot password error:", error);
       
-      const errorMessage =
-        (error as { response?: { data?: { message?: string } } }).response?.data
-          ?.message || "Terjadi kesalahan saat mengirim email reset password";
-      
-      setError(errorMessage);
+      // Don't expose backend error messages to users
+      setError("Terjadi kesalahan saat mengirim email reset password. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
     }

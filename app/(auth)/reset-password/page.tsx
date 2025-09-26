@@ -96,22 +96,21 @@ function ResetPasswordForm() {
           router.push("/login");
         }, 3000);
       } else {
-        setError(response.message || "Terjadi kesalahan saat reset password");
+        setError("Terjadi kesalahan saat reset password. Silakan coba lagi.");
       }
     } catch (error: unknown) {
       console.error("Reset password error:", error);
 
-      const errorMessage =
-        (error as { response?: { data?: { message?: string } } }).response?.data
-          ?.message || "Terjadi kesalahan saat reset password";
+      const errorObj = error as { response?: { data?: { message?: string } } };
+      const backendMessage = errorObj?.response?.data?.message || "";
 
-      // Handle specific error messages
-      if (errorMessage.includes("Invalid or expired token")) {
+      // Handle specific error types without exposing exact backend messages
+      if (backendMessage.toLowerCase().includes("token") || backendMessage.toLowerCase().includes("expired")) {
         setError("Token reset password tidak valid atau telah expired. Silakan minta link reset password baru.");
-      } else if (errorMessage.includes("Password")) {
+      } else if (backendMessage.toLowerCase().includes("password")) {
         setError("Password tidak memenuhi syarat. Pastikan password minimal 6 karakter dan konfirmasi password sama.");
       } else {
-        setError(errorMessage);
+        setError("Terjadi kesalahan saat reset password. Silakan coba lagi.");
       }
     } finally {
       setIsLoading(false);
