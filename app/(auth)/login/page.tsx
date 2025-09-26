@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -43,6 +43,17 @@ export default function LoginPage() {
   const [apiError, setApiError] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState<"error" | "warning" | "">("");
+
+  // Check for login message from redirect
+  useEffect(() => {
+    const loginMessage = localStorage.getItem("loginMessage");
+    if (loginMessage) {
+      setAlertMessage(loginMessage);
+      setAlertType("warning");
+      // Clear the message after showing it
+      localStorage.removeItem("loginMessage");
+    }
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
