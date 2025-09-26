@@ -506,7 +506,7 @@ export default function RegisterPage() {
                         <span>Mengirim OTP...</span>
                       </div>
                     ) : (
-                      "Kirim OTP"
+                      "Sign Up"
                     )}
                   </Button>
                 </div>
