@@ -329,14 +329,24 @@ export default function RegisterPage() {
 
         {/* Progress Indicator (updated for 3 steps) */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <div className="flex items-center justify-between mb-2 px-8">
+          <div className="flex items-center justify-between mb-2 px-8 relative">
+            {/* Connecting Lines */}
+            <div className="absolute top-1/2 left-12 right-12 h-0.5 bg-gray-200 -translate-y-1/2">
+              <div 
+                className="h-full bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] transition-all duration-500 ease-in-out"
+                style={{ 
+                  width: currentStep >= 2 ? (currentStep >= 3 ? '100%' : '50%') : '0%' 
+                }}
+              />
+            </div>
+            
             {[1, 2, 3].map((step) => (
               <div
                 key={step}
-                className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
                   step <= currentStep
                     ? "bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white"
-                    : "bg-gray-200 text-gray-500"
+                    : "bg-white border-2 border-gray-200 text-gray-500"
                 }`}
               >
                 {step < currentStep ? <CheckCircle className="h-4 w-4" /> : step}
