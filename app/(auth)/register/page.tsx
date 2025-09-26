@@ -18,7 +18,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://synergazing.bah
 
 export default function RegisterPage() {
   const router = useRouter()
-  // The process is now simplified to 2 steps
+  // The process is now 3 steps: Basic Info -> OTP Verification -> Agreement
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
@@ -28,7 +28,10 @@ export default function RegisterPage() {
     password: "",
     confirmPassword: "",
 
-    // Step 2: Agreement
+    // Step 2: OTP Verification
+    otpCode: "",
+
+    // Step 3: Agreement
     agreeTerms: false,
     agreePrivacy: false,
     subscribeNewsletter: false,
@@ -39,7 +42,7 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState("")
   const [alertMessage, setAlertMessage] = useState("")
-  const [alertType, setAlertType] = useState<"error" | "warning" | "">("")
+  const [alertType, setAlertType] = useState<"error" | "warning" | "success" | "">("")
 
   // Validation for the first step (Basic Info)
   const validateStep1 = () => {
@@ -59,8 +62,8 @@ export default function RegisterPage() {
 
     if (!formData.phone) {
         newErrors.phone = "Nomor telepon wajib diisi";
-    } else if (!/^(08)\d{8,11}$/.test(formData.phone)) {
-        newErrors.phone = "Format nomor telepon tidak valid (contoh: 081234567890)";
+    } else if (!/^\+\d{8,15}$/.test(formData.phone)) {
+        newErrors.phone = "Format nomor telepon tidak valid (contoh: +628112444123)";
     }
 
     if (!formData.password) {
@@ -81,8 +84,22 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  // Validation for the second step (Agreement)
+  // Validation for the second step (OTP)
   const validateStep2 = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.otpCode) {
+      newErrors.otpCode = "Kode OTP wajib diisi"
+    } else if (!/^\d{6}$/.test(formData.otpCode)) {
+      newErrors.otpCode = "Kode OTP harus 6 digit angka"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  // Validation for the third step (Agreement)
+  const validateStep3 = () => {
     const newErrors: Record<string, string> = {}
 
     if (!formData.agreeTerms) {
@@ -97,24 +114,16 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  // Moves from Step 1 to Step 2
-  const handleNext = () => {
-    if (validateStep1()) {
-      setCurrentStep(2)
-    }
-  }
-
-  // Handles the final form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!validateStep2()) return
+  // Moves from Step 1 to Step 2 (initiate registration and send OTP)
+  const handleNext = async () => {
+    if (!validateStep1()) return
 
     setIsLoading(true)
     setApiError("")
+    setAlertMessage("")
+    setAlertType("")
 
     try {
-      // This object structure matches the backend requirements
       const userData = {
         name: formData.fullName,
         email: formData.email,
@@ -122,21 +131,86 @@ export default function RegisterPage() {
         phone: formData.phone 
       }
 
-      const response = await api.register(userData)
+      const response = await api.registerInitiate(userData)
       
-      console.log("Registration successful:", response.message)
+      console.log("OTP sent successfully:", response.message)
       
-      // Redirect to login page upon success
-      router.push("/login")
+      // Show success message and move to OTP step
+      setAlertMessage("Kode OTP telah dikirim ke email Anda. Silakan periksa inbox atau folder spam.")
+      setAlertType("success")
+      setCurrentStep(2)
     } catch (error: unknown) {
-      console.error("Registration failed:", error)
+      console.error("Registration initiate failed:", error)
       const errorObj = error as { response?: { data?: { message?: string } }; message?: string }
       if (errorObj.response?.data?.message) {
         setApiError(errorObj.response.data.message)
+        setAlertMessage("Gagal mengirim OTP. " + errorObj.response.data.message)
+        setAlertType("error")
       } else if (typeof errorObj.message === 'string') {
         setApiError(errorObj.message)
+        setAlertMessage("Gagal mengirim OTP. " + errorObj.message)
+        setAlertType("error")
+      } else {
+        setApiError("Failed to send OTP. Please try again.")
+        setAlertMessage("Gagal mengirim OTP. Silakan coba lagi.")
+        setAlertType("error")
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Moves from Step 2 to Step 3 (verify OTP)
+  const handleVerifyOTP = async () => {
+    if (!validateStep2()) return
+
+    setCurrentStep(3)
+  }
+
+  // Handles the final form submission (complete registration)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!validateStep3()) return
+
+    setIsLoading(true)
+    setApiError("")
+
+    try {
+      const userData = {
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        otp_code: formData.otpCode
+      }
+
+      const response = await api.registerComplete(userData)
+      
+      console.log("Registration completed successfully:", response.message)
+      
+      // Show success message and redirect to login page
+      setAlertMessage("Pendaftaran berhasil! Anda akan diarahkan ke halaman login.")
+      setAlertType("success")
+      
+      setTimeout(() => {
+        router.push("/login")
+      }, 2000)
+    } catch (error: unknown) {
+      console.error("Registration complete failed:", error)
+      const errorObj = error as { response?: { data?: { message?: string } }; message?: string }
+      if (errorObj.response?.data?.message) {
+        setApiError(errorObj.response.data.message)
+        setAlertMessage("Pendaftaran gagal. " + errorObj.response.data.message)
+        setAlertType("error")
+      } else if (typeof errorObj.message === 'string') {
+        setApiError(errorObj.message)
+        setAlertMessage("Pendaftaran gagal. " + errorObj.message)
+        setAlertType("error")
       } else {
         setApiError("Registration failed. Please try again or contact support.")
+        setAlertMessage("Pendaftaran gagal. Silakan coba lagi.")
+        setAlertType("error")
       }
     } finally {
       setIsLoading(false)
@@ -188,6 +262,8 @@ export default function RegisterPage() {
       case 1:
         return "Informasi Dasar"
       case 2:
+        return "Verifikasi OTP"
+      case 3:
         return "Selesaikan Pendaftaran"
       default:
         return "Daftar"
@@ -199,7 +275,9 @@ export default function RegisterPage() {
       case 1:
         return "Masukkan informasi dasar untuk akun Anda"
       case 2:
-        return "Setujui syarat dan ketentuan untuk menyelesaikan"
+        return "Masukkan kode OTP yang dikirim ke email Anda"
+      case 3:
+        return "Setujui syarat dan ketentuan untuk menyelesaikan pendaftaran"
       default:
         return ""
     }
@@ -222,25 +300,37 @@ export default function RegisterPage() {
             className={`mb-4 p-4 rounded-lg border ${
               alertType === "error"
                 ? "bg-red-50 border-red-200 text-red-800"
+                : alertType === "success"
+                ? "bg-green-50 border-green-200 text-green-800"
                 : "bg-amber-50 border-amber-200 text-amber-800"
             }`}
           >
             <div className="flex items-start gap-2">
               <AlertCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
-                alertType === "error" ? "text-red-500" : "text-amber-500"
+                alertType === "error" 
+                  ? "text-red-500" 
+                  : alertType === "success"
+                  ? "text-green-500"
+                  : "text-amber-500"
               }`} />
               <div>
-                <p className="font-medium">{alertType === "error" ? "Registration Gagal" : "Perhatian"}</p>
+                <p className="font-medium">
+                  {alertType === "error" 
+                    ? "Pendaftaran Gagal" 
+                    : alertType === "success"
+                    ? "Berhasil"
+                    : "Perhatian"}
+                </p>
                 <p className="text-sm mt-1">{alertMessage}</p>
               </div>
             </div>
           </motion.div>
         )}
 
-        {/* Progress Indicator (updated for 2 steps) */}
+        {/* Progress Indicator (updated for 3 steps) */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <div className="flex items-center justify-between mb-2 px-16">
-            {[1, 2].map((step) => (
+          <div className="flex items-center justify-between mb-2 px-8">
+            {[1, 2, 3].map((step) => (
               <div
                 key={step}
                 className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
@@ -253,8 +343,9 @@ export default function RegisterPage() {
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-500 px-16">
-            <span>Mulai</span>
+          <div className="flex justify-between text-xs text-gray-500 px-4">
+            <span>Info</span>
+            <span>OTP</span>
             <span>Selesai</span>
           </div>
         </motion.div>
@@ -328,7 +419,7 @@ export default function RegisterPage() {
                       <Input
                         id="phone"
                         type="tel"
-                        placeholder="Contoh: 081234567890"
+                        placeholder="Contoh: +628112444123"
                         value={formData.phone}
                         onChange={(e) => handleInputChange("phone", e.target.value)}
                         className={`pl-10 ${errors.phone ? "border-red-500" : ""}`}
@@ -404,14 +495,85 @@ export default function RegisterPage() {
                     )}
                   </div>
 
-                  <Button onClick={handleNext} className="w-full bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]">
-                    Lanjutkan
+                  <Button 
+                    onClick={handleNext} 
+                    className="w-full bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Mengirim OTP...</span>
+                      </div>
+                    ) : (
+                      "Kirim OTP"
+                    )}
                   </Button>
                 </div>
               )}
 
-              {/* Step 2: Terms and Completion */}
+              {/* Step 2: OTP Verification */}
               {currentStep === 2 && (
+                <div className="space-y-4">
+                  {/* OTP Code Input */}
+                  <div className="space-y-2">
+                    <label htmlFor="otpCode" className="text-sm font-medium text-gray-700">
+                      Kode OTP
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        id="otpCode"
+                        type="text"
+                        placeholder="Masukkan 6 digit kode OTP"
+                        value={formData.otpCode}
+                        onChange={(e) => handleInputChange("otpCode", e.target.value)}
+                        className={`pl-10 text-center text-lg tracking-widest ${errors.otpCode ? "border-red-500" : ""}`}
+                        maxLength={6}
+                      />
+                    </div>
+                    {errors.otpCode && (
+                      <div className="flex items-center gap-1 text-red-500 text-sm">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{errors.otpCode}</span>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 text-center">
+                      Kode OTP telah dikirim ke <strong>{formData.email}</strong>
+                    </p>
+                    <p className="text-xs text-gray-500 text-center">
+                      Tidak menerima kode? Periksa folder spam atau{" "}
+                      <button 
+                        type="button" 
+                        onClick={() => setCurrentStep(1)}
+                        className="text-blue-600 hover:underline"
+                      >
+                        ubah email
+                      </button>
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={() => setCurrentStep(1)}
+                      className="flex-1"
+                    >
+                      Kembali
+                    </Button>
+                    <Button 
+                      onClick={handleVerifyOTP} 
+                      className="flex-1 bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]"
+                    >
+                      Verifikasi OTP
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Terms and Completion */}
+              {currentStep === 3 && (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* API Error Message */}
                   {apiError && (
@@ -485,7 +647,7 @@ export default function RegisterPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setCurrentStep(1)}
+                      onClick={() => setCurrentStep(2)}
                       className="flex-1 bg-transparent"
                     >
                       Kembali

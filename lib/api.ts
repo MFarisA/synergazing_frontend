@@ -1234,6 +1234,79 @@ export const api = {
       throw error;
     }
   },
+
+  // Register with OTP - Step 1: Initiate registration and send OTP
+  registerInitiate: async (userData: { name: string; email: string; password: string; phone: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      console.log('Sending registration initiate request to:', `${API_BASE_URL}/api/auth/register/initiate`);
+      
+      // Create FormData object since the backend expects form values
+      const formData = new FormData();
+      formData.append('name', userData.name);
+      formData.append('email', userData.email);
+      formData.append('password', userData.password);
+      formData.append('phone', userData.phone);
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/register/initiate`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: formData,
+      });
+      
+      const data = await safeJsonParse(response);
+      
+      if (!response.ok) {
+        throw { 
+          status: response.status, 
+          response: { data } 
+        };
+      }
+      
+      return data;
+    } catch (error: unknown) {
+      console.error('Registration initiate error:', error);
+      throw error;
+    }
+  },
+
+  // Register with OTP - Step 2: Complete registration with OTP code
+  registerComplete: async (userData: { name: string; email: string; password: string; phone: string; otp_code: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      console.log('Sending registration complete request to:', `${API_BASE_URL}/api/auth/register/complete`);
+      
+      // Create FormData object since the backend expects form values
+      const formData = new FormData();
+      formData.append('name', userData.name);
+      formData.append('email', userData.email);
+      formData.append('password', userData.password);
+      formData.append('phone', userData.phone);
+      formData.append('otp_code', userData.otp_code);
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/register/complete`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: formData,
+      });
+      
+      const data = await safeJsonParse(response);
+      
+      if (!response.ok) {
+        throw { 
+          status: response.status, 
+          response: { data } 
+        };
+      }
+      
+      return data;
+    } catch (error: unknown) {
+      console.error('Registration complete error:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;
