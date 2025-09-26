@@ -13,6 +13,7 @@ import { AnimatedModal } from "@/components/ui/animated-modal"
 import { api } from "@/lib/api"
 import { useWebSocket } from "@/lib/socket"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 
 // Type definition for collaborator from API
 interface Collaborator {
@@ -59,6 +60,7 @@ interface Chat {
 }
 
 export default function CollaboratorsPage() {
+	const router = useRouter()
 	const [searchTerm, setSearchTerm] = useState("")
 	const [selectedSkills, setSelectedSkills] = useState<string[]>([])
 	const [isMessageModalOpen, setIsMessageModalOpen] = useState(false)
@@ -144,8 +146,9 @@ export default function CollaboratorsPage() {
 			try {
 				const token = localStorage.getItem("token");
 				if (!token) {
-					setError("Please log in to view collaborators");
-					setIsLoading(false);
+					// Store message in localStorage to show on login page
+					localStorage.setItem("loginMessage", "Silakan log in untuk melihat kolaborator");
+					router.push("/login");
 					return;
 				}
 
