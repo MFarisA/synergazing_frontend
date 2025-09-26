@@ -14,6 +14,8 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://synergazing.bahasakita.store'
+
 export default function RegisterPage() {
   const router = useRouter()
   // The process is now simplified to 2 steps
@@ -36,6 +38,8 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState("")
+  const [alertMessage, setAlertMessage] = useState("")
+  const [alertType, setAlertType] = useState<"error" | "warning" | "">("")
 
   // Validation for the first step (Basic Info)
   const validateStep1 = () => {
@@ -144,11 +148,39 @@ export default function RegisterPage() {
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
+    // Clear alert messages on any input change
+    if (alertMessage) {
+      setAlertMessage("")
+      setAlertType("")
+    }
   }
 
-  const handleSocialRegister = (provider: string) => {
-    console.log(`Register with ${provider}`)
-    // Handle social registration
+  const handleSocialRegister = async (provider: string) => {
+    if (provider === "google") {
+      setIsLoading(true)
+      setApiError("")
+      setAlertMessage("")
+      setAlertType("")
+
+      try {
+        console.log("Initiating Google registration...")
+        
+        // Simply redirect to the backend Google login endpoint
+        // The backend will handle the entire OAuth flow and should redirect back
+        // to your frontend with the auth data (same endpoint for both login and register)
+        window.location.href = `${API_BASE_URL}/api/auth/google/login`
+        
+      } catch (error: unknown) {
+        console.error("Google registration failed:", error)
+        setAlertType("error")
+        setAlertMessage("Google registration gagal. " + (error as Error).message)
+        setApiError("Failed to initiate Google registration")
+        setIsLoading(false)
+      }
+    } else {
+      console.log(`Register with ${provider}`)
+      // Handle other social registration providers
+    }
   }
 
   const getStepTitle = () => {
@@ -181,6 +213,29 @@ export default function RegisterPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Bergabung dengan Synergazing</h1>
           <p className="text-gray-600">Mulai kolaborasi dengan mahasiswa se-Indonesia</p>
         </motion.div>
+
+        {/* Alert Message */}
+        {alertMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`mb-4 p-4 rounded-lg border ${
+              alertType === "error"
+                ? "bg-red-50 border-red-200 text-red-800"
+                : "bg-amber-50 border-amber-200 text-amber-800"
+            }`}
+          >
+            <div className="flex items-start gap-2">
+              <AlertCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                alertType === "error" ? "text-red-500" : "text-amber-500"
+              }`} />
+              <div>
+                <p className="font-medium">{alertType === "error" ? "Registration Gagal" : "Perhatian"}</p>
+                <p className="text-sm mt-1">{alertMessage}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Progress Indicator (updated for 2 steps) */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
