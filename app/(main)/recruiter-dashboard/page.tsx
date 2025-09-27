@@ -14,126 +14,14 @@ import { getProjectById } from "@/lib/api/project-management"
 import { getProjectApplications } from "@/lib/api/project-application"
 import { reviewApplication } from "@/lib/api/project-application"
 
-// Mock data for collaborators (copied from app/collaborators/page.tsx for self-containment)
-const collaboratorsData = [
-  {
-    id: 1,
-    name: "Budi Santoso",
-    avatar: "/placeholder.svg?height=80&width=80&text=BS",
-    title: "Frontend Developer",
-    location: "Jakarta, Indonesia",
-    skills: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
-    isReadyForCollaboration: true,
-    bio: "Passionate about building beautiful and performant user interfaces. Always looking for exciting new projects.",
-    email: "budi.s@example.com",
-    phone: "+62 812 3456 7890",
-    experience: "5 years in web development, specializing in scalable single-page applications.",
-    portfolio: "https://budi.dev",
-  },
-  {
-    id: 2,
-    name: "Citra Dewi",
-    avatar: "/placeholder.svg?height=80&width=80&text=CD",
-    title: "UI/UX Designer",
-    location: "Surabaya, Indonesia",
-    skills: ["Figma", "Sketch", "User Research", "Prototyping"],
-    isReadyForCollaboration: true,
-    bio: "Creating intuitive and delightful user experiences is my passion. Let's build something amazing together!",
-    email: "citra.d@example.com",
-    phone: "+62 813 4567 8901",
-    experience: "4 years in UI/UX design, with a strong focus on user-centered design principles.",
-    portfolio: "https://citra.design",
-  },
-  {
-    id: 3,
-    name: "Dian Permata",
-    avatar: "/placeholder.svg?height=80&width=80&text=DP",
-    title: "Backend Engineer",
-    location: "Bandung, Indonesia",
-    skills: ["Node.js", "Python", "MongoDB", "AWS"],
-    isReadyForCollaboration: true,
-    bio: "Experienced in scalable backend systems and API development. Open to collaborating on challenging projects.",
-    email: "dian.p@example.com",
-    phone: "+62 814 5678 9012",
-    experience: "6 years building robust and efficient backend services for various industries.",
-    portfolio: "https://dian.tech",
-  },
-]
-
-// Mock data for projects (updated with recruiterId)
-const projectsData = [
-  {
-    id: "1",
-    title: "AI-Powered Content Generator",
-    description: "Develop a web application that uses AI to generate engaging content for various platforms.",
-    skills: ["Python", "TensorFlow", "React", "Next.js", "NLP"],
-    teamSize: 5,
-    duration: "3 months",
-    location: "Remote",
-    status: "Open",
-    recruiterId: 1, // Assuming user with id 1 (Adit Cukur) is the recruiter
-  },
-  {
-    id: "2",
-    title: "E-commerce Platform Redesign",
-    description: "Revamp an existing e-commerce website with a modern UI/UX and improved performance.",
-    skills: ["React", "Node.js", "MongoDB", "UI/UX", "Figma"],
-    teamSize: 4,
-    duration: "2 months",
-    location: "Hybrid (Jakarta)",
-    status: "Open",
-    recruiterId: 1, // Assuming user with id 1 (Adit Cukur) is the recruiter
-  },
-  {
-    id: "3",
-    title: "Mobile Fitness Tracker App",
-    description:
-      "Build a cross-platform mobile application to track fitness activities and provide personalized workout plans.",
-    skills: ["React Native", "Firebase", "TypeScript", "Health API"],
-    teamSize: 3,
-    duration: "4 months",
-    location: "Remote",
-    status: "Open",
-    recruiterId: 2, // Another recruiter
-  },
-]
-
-// Mock application data
-const initialApplications = [
-  {
-    id: "app1",
-    applicantId: 1, // Budi Santoso
-    projectId: "1", // AI-Powered Content Generator
-    status: "Pending",
-    message: "Saya sangat tertarik dengan proyek ini dan memiliki pengalaman kuat di React dan NLP.",
-    appliedAt: "2024-07-20",
-  },
-  {
-    id: "app2",
-    applicantId: 2, // Citra Dewi
-    projectId: "2", // E-commerce Platform Redesign
-    status: "Pending",
-    message: "Sebagai desainer UI/UX, saya yakin dapat memberikan kontribusi besar pada proyek redesign ini.",
-    appliedAt: "2024-07-22",
-  },
-  {
-    id: "app3",
-    applicantId: 3, // Dian Permata
-    projectId: "1", // AI-Powered Content Generator
-    status: "Pending",
-    message: "Saya seorang Backend Engineer dengan keahlian Python dan AWS, cocok untuk proyek AI ini.",
-    appliedAt: "2024-07-25",
-  },
-]
-
 export default function RecruiterDashboardPage() {
   const searchParams = useSearchParams()
   const projectId = searchParams.get("projectId")
   const { addToast } = useToast()
 
-  const [applications, setApplications] = useState(initialApplications)
+  const [applications, setApplications] = useState<any[]>([])
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-  const [selectedCollaborator, setSelectedCollaborator] = useState<(typeof collaboratorsData)[0] | null>(null)
+  const [selectedCollaborator, setSelectedCollaborator] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentProject, setCurrentProject] = useState<any>(null)
@@ -215,19 +103,18 @@ export default function RecruiterDashboardPage() {
   }, [projectId]);
 
   const getApplicant = (id: number) => {
-    const application = applications.find((app) => app.applicantId === id);
-    // Check if the application has applicant data (from API) or fallback to mock data
-    return (application as any)?.applicant || collaboratorsData.find((c) => c.id === id);
+    const application = applications.find((app: any) => app.applicantId === id);
+    // Return applicant data from API
+    return (application as any)?.applicant;
   }
-  const getProject = (id: string) => projectsData.find((p) => p.id === id)
 
-  const filteredApplications = projectId ? applications.filter((app) => app.projectId === projectId) : applications
+  const filteredApplications = projectId ? applications.filter((app: any) => app.projectId === projectId) : applications
 
-  // Use real project data or fallback to mock data
+  // Use real project data
   const currentProjectTitle = currentProject 
     ? currentProject.title 
     : projectId 
-      ? getProject(projectId)?.title || "Proyek Tidak Ditemukan"
+      ? "Loading..."
       : "Semua Proyek"
 
   const handleStatusChange = async (appId: string, newStatus: string) => {
@@ -248,8 +135,8 @@ export default function RecruiterDashboardPage() {
 
       // Update local state with proper status formatting
       const displayStatus = newStatus === "accepted" ? "Accepted" : "Rejected";
-      setApplications((prev) => 
-        prev.map((app) => (app.id === appId ? { ...app, status: displayStatus } : app))
+      setApplications((prev: any[]) => 
+        prev.map((app: any) => (app.id === appId ? { ...app, status: displayStatus } : app))
       );
 
       addToast({
@@ -306,10 +193,10 @@ export default function RecruiterDashboardPage() {
               Tidak ada aplikasi yang masuk untuk proyek ini.
             </div>
           ) : (
-            filteredApplications.map((app) => {
+            filteredApplications.map((app: any) => {
               const applicant = getApplicant(app.applicantId)
-              // Use the project data from the transformed application instead of mock data
-              const project = (app as any).project || getProject(app.projectId)
+              // Use the project data from the transformed application
+              const project = (app as any).project
 
               if (!applicant || !project) return null
 
@@ -345,7 +232,7 @@ export default function RecruiterDashboardPage() {
                     </div>
                     <p className="text-sm text-gray-700 line-clamp-2 mt-2">Pesan: &quot;{app.message}&quot;</p>
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {applicant.skills.map((skill: string) => (
+                      {applicant.skills?.map((skill: string) => (
                         <Badge key={skill} variant="secondary" className="text-xs">
                           {skill}
                         </Badge>
@@ -435,7 +322,7 @@ export default function RecruiterDashboardPage() {
               <div>
                 <h4 className="font-semibold text-gray-800">Skills:</h4>
                 <div className="flex flex-wrap gap-1">
-                  {selectedCollaborator.skills.map((skill) => (
+                  {selectedCollaborator.skills?.map((skill: string) => (
                     <Badge key={skill} variant="secondary">
                       {skill}
                     </Badge>
