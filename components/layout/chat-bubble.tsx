@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { useWebSocket } from '@/lib/socket'
 import { api } from '@/lib/api'
 import { Chat, ChatMessage, ConversationListItem } from '@/types'
+import { getChatMessages, markMessagesAsRead, getUnreadCount, getChatList } from '@/lib/api/chat-message'
 
 // Debounce hook
 const useDebounce = (value: string, delay: number) => {
@@ -193,11 +194,11 @@ export function ChatBubble() {
     if (!authData) return
 
     try {
-      const response = await api.getChatMessages(authData.token, chatId)
+      const response = await getChatMessages(authData.token, chatId)
       if (response.success && response.data?.messages) {
         const messages = response.data.messages.reverse()
         setActiveChatMessages(messages)
-        await api.markMessagesAsRead(authData.token, chatId)
+        await markMessagesAsRead(authData.token, chatId)
         sendMessage({ type: 'mark_read', chat_id: chatId })
       }
     } catch (error) {
@@ -270,8 +271,8 @@ export function ChatBubble() {
         setError(null)
 
         const [chatsResponse, unreadResponse] = await Promise.all([
-          api.getChatList(authData.token),
-          api.getUnreadCount(authData.token)
+          getChatList(authData.token),
+          getUnreadCount(authData.token)
         ])
 
         if (chatsResponse.success && chatsResponse.data) {

@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-// Import ArrowLeft ditambahkan
 import { CheckCircle, XCircle, Zap, MapPin, ArrowLeft } from "lucide-react"
 import { AnimatedModal } from "@/components/ui/animated-modal"
 import { api } from "@/lib/api"
 import { useToast } from "@/components/ui/toast"
+import { getProjectById } from "@/lib/api/project-management"
+import { getProjectApplications } from "@/lib/api/project-application"
+import { reviewApplication } from "@/lib/api/project-application"
 
 // Mock data for collaborators (copied from app/collaborators/page.tsx for self-containment)
 const collaboratorsData = [
@@ -156,7 +157,7 @@ export default function RecruiterDashboardPage() {
 
         // Fetch project details first
         try {
-          const projectResponse = await api.getProjectById(projectId, token);
+          const projectResponse = await getProjectById(projectId, token);
           const projectData = projectResponse.data || projectResponse;
           setCurrentProject(projectData);
         } catch (projectError) {
@@ -165,7 +166,7 @@ export default function RecruiterDashboardPage() {
         }
 
         // Fetch applications for the project
-        const response = await api.getProjectApplications(token, projectId);
+        const response = await getProjectApplications(token, projectId);
         const applicationsData = response.data || response || [];
         
         // Transform API data to match component expectations
@@ -244,7 +245,7 @@ export default function RecruiterDashboardPage() {
 
       // Convert status to API expected format
       const action = newStatus === "accepted" ? "accept" : "reject";
-      await api.reviewApplication(token, appId, action);
+      await reviewApplication(token, appId, action);
 
       // Update local state with proper status formatting
       const displayStatus = newStatus === "accepted" ? "Accepted" : "Rejected";
