@@ -9,6 +9,7 @@ import { MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import type { Project } from '@/types';
+import { getChatWithUser } from '@/lib/api/chat-message';
 
 interface ChatDialogProps {
   project: Project;
@@ -53,7 +54,7 @@ export function ChatDialog({ project, onChatStart }: ChatDialogProps) {
       }
 
       // Step 1: Get or create chat with the project creator
-      const chatResponse = await api.getChatWithUser(authData.token, project.creator.id);
+      const chatResponse = await getChatWithUser(authData.token, project.creator.id);
       
       if (!chatResponse.success || !chatResponse.data) {
         throw new Error('Gagal membuat chat');
