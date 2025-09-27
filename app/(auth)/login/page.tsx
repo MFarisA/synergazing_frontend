@@ -26,7 +26,8 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation"
-import { api } from "@/lib/api"
+import { login } from "@/lib/api/auth"
+import { googleLogin } from "@/lib/api/SocialAuth"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3002'
 
@@ -85,7 +86,7 @@ export default function LoginPage() {
     setAlertType("");
 
     try {
-      const response = await api.login({
+      const response = await login({
         email: formData.email,
         password: formData.password,
       });
@@ -172,18 +173,39 @@ export default function LoginPage() {
       setAlertType("");
 
       try {
-        console.log("Initiating Google login...");
-
-        // Simply redirect to the backend Google login endpoint
-        // This is the most reliable approach for OAuth
+        try {
+          // Try to use the SocialAuth module to get the Google OAuth URL
+          const response = await googleLogin();
+          
+          if (response && response.url) {
+            // Redirect to the Google OAuth URL returned from the API
+            window.location.href = response.url;
+            return;
+          }
+        } catch (apiError) {
+          // SocialAuth API failed, use fallback
+        }
+        
+        // Fallback: redirect directly to backend endpoint
         window.location.href = `${API_BASE_URL}/api/auth/google/login`;
 
         // The backend will handle the entire OAuth flow and should redirect back
         // to your frontend with the auth data
       } catch (error: unknown) {
-        console.error("Google login failed:", error);
+        let displayMessage = "Google login gagal. Silakan coba lagi.";
+        
+        // Handle structured errors from SocialAuth module
+        if (error && typeof error === 'object' && 'response' in error) {
+          const errorObj = error as { response?: { data?: { message?: string } } };
+          const errorMessage = errorObj.response?.data?.message;
+          
+          if (errorMessage) {
+            displayMessage = "Tidak dapat menghubungkan ke Google. Silakan coba lagi nanti.";
+          }
+        }
+        
         setAlertType("error");
-        setAlertMessage("Google login gagal. Silakan coba lagi.");
+        setAlertMessage(displayMessage);
         setApiError("Google login gagal");
         setIsLoading(false);
       }
