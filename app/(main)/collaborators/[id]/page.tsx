@@ -15,6 +15,8 @@ import { toast } from "sonner"
 import { useWebSocket } from "@/lib/socket"
 import { AnimatedModal } from "@/components/ui/animated-modal"
 import { cn } from "@/lib/utils"
+import { getCollaborators } from "@/lib/api/collaboration"
+import { getChatWithUser, getChatMessages } from "@/lib/api/chat-message"
 
 interface CollaboratorProfile {
   id: number;
@@ -102,7 +104,7 @@ export default function CollaboratorProfilePage() {
 
         // For now, we'll fetch from collaborators list and find the specific user
         // In a real app, you'd have a dedicated API endpoint for individual user profiles
-        const response = await api.getCollaborators(token);
+        const response = await getCollaborators(token);
         
         let collaboratorsData;
         if (response.data && response.data.users) {
@@ -213,7 +215,7 @@ export default function CollaboratorProfilePage() {
       }
 
       // Get or create chat with the collaborator
-      const chatResponse = await api.getChatWithUser(token, collaborator.id);
+      const chatResponse = await getChatWithUser(token, collaborator.id);
       console.log('Chat response:', chatResponse);
 
       if (chatResponse.success && chatResponse.data) {
@@ -221,7 +223,7 @@ export default function CollaboratorProfilePage() {
         setCurrentChat(chat);
 
         // Load messages for this chat
-        const messagesResponse = await api.getChatMessages(token, chat.id);
+        const messagesResponse = await getChatMessages(token, chat.id);
         console.log('Messages response:', messagesResponse);
 
         if (messagesResponse.success && messagesResponse.data) {
