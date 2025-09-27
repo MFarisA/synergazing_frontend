@@ -6,7 +6,6 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Zap } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { api } from "@/lib/api";
 import type { Project } from "@/types";
 import { getAllProjects } from "@/lib/api/project-management";
 

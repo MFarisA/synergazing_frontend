@@ -38,7 +38,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AnimatedModal } from "@/components/ui/animated-modal";
-import { api } from "@/lib/api";
 import { useWebSocket } from "@/lib/socket";
 import { cn } from "@/lib/utils";
 import { User, Project } from "@/types";

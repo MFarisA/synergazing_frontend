@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useWebSocket } from '@/lib/socket'
-import { api } from '@/lib/api'
 import { Chat, ChatMessage, ConversationListItem } from '@/types'
 import { getChatMessages, markMessagesAsRead, getUnreadCount, getChatList } from '@/lib/api/chat-message'
 

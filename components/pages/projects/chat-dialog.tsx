@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
 import type { Project } from '@/types';
 import { getChatWithUser } from '@/lib/api/chat-message';
 

@@ -9,7 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { Zap, AlertCircle, Loader2 } from "lucide-react";
-import { api } from "@/lib/api";
 import type { Project } from '@/types';
 import { applyToProject } from '@/lib/api/project-application';
 

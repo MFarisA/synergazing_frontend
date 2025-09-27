@@ -25,7 +25,6 @@ import {
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter, useParams } from "next/navigation"
-import { api } from "@/lib/api"
 import { TimelineStatusOption, Project } from "@/types"
 import { 
   updateProjectStage2, 
