@@ -9,8 +9,9 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
-import { api } from "@/lib/api"
 import { User } from "@/types"
+import { getProfile } from "@/lib/api/profile-management"
+import { updateProfile } from "@/lib/api/profile-management"
 
 export default function EditProfilePage() {
   const router = useRouter()
@@ -35,7 +36,7 @@ export default function EditProfilePage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      api.getProfile(token).then(response => {
+      getProfile(token).then(response => {
         const userData = response.data;
         const profileData = userData.profile || {};
         
@@ -76,7 +77,7 @@ export default function EditProfilePage() {
     }
     
     try {
-      await api.updateProfile(token, formData);
+      await updateProfile(token, formData);
       router.push('/profile');
     } catch (error) {
       console.error(error);
@@ -324,8 +325,14 @@ export default function EditProfilePage() {
                 <div className="rounded-lg border border-dashed border-gray-300">
                   <div className="flex flex-col items-center justify-center p-6 text-center">
                     <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">
-                      {cvFile ? cvFile.name : "Drag & drop CV Anda di sini, atau"}
+                    <p className="text-sm text-gray-600 mb-2 max-w-full">
+                      {cvFile ? (
+                        <span className="block truncate px-2" title={cvFile.name}>
+                          {cvFile.name}
+                        </span>
+                      ) : (
+                        "Drag & drop CV Anda di sini, atau"
+                      )}
                     </p>
                     <Button size="sm" onClick={() => document.getElementById('cv-upload')?.click()}>
                       <Upload className="h-3.5 w-3.5 mr-1.5" /> Pilih File

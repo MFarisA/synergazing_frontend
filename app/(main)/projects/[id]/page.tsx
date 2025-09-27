@@ -6,8 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Zap } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { api } from "@/lib/api";
 import type { Project } from "@/types";
+import { getAllProjects } from "@/lib/api/project-management";
 
 // Import komponen-komponen yang telah dipecah
 import { ProjectHeaderCard } from "@/components/pages/project-detail/project-header-card";
@@ -34,7 +34,7 @@ export default function ProjectDetailPage() {
         
         // For now, we'll get all projects and find the specific one
         // Ideally, there should be a getProjectById API endpoint
-        const response = await api.getAllProjects(token);
+        const response = await getAllProjects(token);
         const projectsData = response.data?.projects || response.projects || response.data || [];
         const foundProject = projectsData.find((p: Project) => p.id.toString() === projectId);
         

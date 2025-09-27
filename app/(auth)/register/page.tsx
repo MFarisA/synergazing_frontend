@@ -12,7 +12,7 @@ import { Mail, Lock, Eye, EyeOff, Chrome, ArrowLeft, AlertCircle, CheckCircle, U
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
-import { api } from "@/lib/api"
+import { registerInitiate, registerComplete } from "@/lib/api/auth"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://synergazing.bahasakita.store'
 
@@ -131,7 +131,7 @@ export default function RegisterPage() {
         phone: formData.phone 
       }
 
-      const response = await api.registerInitiate(userData)
+      const response = await registerInitiate(userData)
       
       // Show success message and move to OTP step
       setAlertMessage("Kode OTP telah dikirim ke email Anda. Silakan periksa inbox atau folder spam.")
@@ -173,7 +173,7 @@ export default function RegisterPage() {
         otp_code: formData.otpCode
       }
 
-      const response = await api.registerComplete(userData)
+      const response = await registerComplete(userData)
       
       // Show success message and redirect to login page
       setAlertMessage("Pendaftaran berhasil! Anda akan diarahkan ke halaman login.")

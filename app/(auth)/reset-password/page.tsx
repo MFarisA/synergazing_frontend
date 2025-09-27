@@ -23,7 +23,7 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { resetPassword } from "@/lib/api/forgot-password";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -83,7 +83,7 @@ function ResetPasswordForm() {
     setError("");
 
     try {
-      const response = await api.resetPassword(
+      const response = await resetPassword(
         token,
         formData.password,
         formData.passwordConfirm

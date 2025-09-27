@@ -25,8 +25,13 @@ import {
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter, useParams } from "next/navigation"
-import { api } from "@/lib/api"
 import { TimelineStatusOption, Project } from "@/types"
+import { 
+  updateProjectStage2, 
+  updateProjectStage3, 
+  updateProjectStage4, 
+  updateProjectStage5 
+} from "@/lib/api/project-stage"
 
 // Timeline status options - hardcoded based on backend constants
 const TIMELINE_STATUS_OPTIONS: TimelineStatusOption[] = [
@@ -371,7 +376,7 @@ export default function EditProjectPage() {
         registration_deadline: formatDateToRFC3339(formData.deadline),
       }
 
-      await api.updateProjectStage2(token, projectId, stage2Data)
+      await updateProjectStage2(token, projectId, stage2Data)
 
       // Stage 3: Update Project Requirements
       const stage3Data = {
@@ -380,7 +385,7 @@ export default function EditProjectPage() {
         conditions: formData.requirements.filter(req => req.trim()).map(req => ({ description: req })),
       }
 
-      await api.updateProjectStage3(token, projectId, stage3Data)
+      await updateProjectStage3(token, projectId, stage3Data)
 
       // Stage 4: Update Team & Roles
       const stage4Data = {
@@ -405,7 +410,7 @@ export default function EditProjectPage() {
           })),
       }
 
-      await api.updateProjectStage4(token, projectId, stage4Data)
+      await updateProjectStage4(token, projectId, stage4Data)
 
       // Stage 5: Update Final Project Details
       const stage5Data = {
@@ -417,7 +422,7 @@ export default function EditProjectPage() {
         tags: formData.tags.map(tag => ({ name: tag })),
       }
 
-      await api.updateProjectStage5(token, projectId, stage5Data)
+      await updateProjectStage5(token, projectId, stage5Data)
 
       addToast({
         title: "Proyek Berhasil Diperbarui!",

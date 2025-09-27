@@ -10,10 +10,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MapPin, MessageCircle, Search, Send, X } from "lucide-react"
 import Link from "next/link"
 import { AnimatedModal } from "@/components/ui/animated-modal"
-import { api } from "@/lib/api"
 import { useWebSocket } from "@/lib/socket"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
+import { getCollaborators } from "@/lib/api/collaboration"
+import { getChatWithUser, getChatMessages } from "@/lib/api/chat-message"
 
 // Type definition for collaborator from API
 interface Collaborator {
@@ -152,7 +153,7 @@ export default function CollaboratorsPage() {
 					return;
 				}
 
-				const response = await api.getCollaborators(token);
+				const response = await getCollaborators(token);
 				console.log('Collaborators API response:', response);
 				
 				 // The API returns: { data: {...}, message: "Ready users retrieved successfully", success: true }
@@ -211,7 +212,7 @@ export default function CollaboratorsPage() {
 			}
 
 			// Get or create chat with the collaborator
-			const chatResponse = await api.getChatWithUser(token, collaborator.id);
+			const chatResponse = await getChatWithUser(token, collaborator.id);
 			console.log('Chat response:', chatResponse);
 
 			if (chatResponse.success && chatResponse.data) {
@@ -219,7 +220,7 @@ export default function CollaboratorsPage() {
 				setCurrentChat(chat);
 
 				// Load messages for this chat
-				const messagesResponse = await api.getChatMessages(token, chat.id);
+				const messagesResponse = await getChatMessages(token, chat.id);
 				console.log('Messages response:', messagesResponse);
 
 				if (messagesResponse.success && messagesResponse.data) {

@@ -9,8 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { Zap, AlertCircle, Loader2 } from "lucide-react";
-import { api } from "@/lib/api";
 import type { Project } from '@/types';
+import { applyToProject } from '@/lib/api/project-application';
 
 interface SynergizeDialogProps {
   project: Project;
@@ -139,7 +139,7 @@ export function SynergizeDialog({ project }: SynergizeDialogProps) {
         return;
       }
 
-      await api.applyToProject(token, project.id.toString(), applicationData);
+      await applyToProject(token, project.id.toString(), applicationData);
       
       addToast({
         title: "Aplikasi Berhasil Dikirim!",

@@ -7,8 +7,8 @@ import { Grid3X3, List } from "lucide-react";
 
 import { SidebarFilters } from "@/components/pages/projects/sidebar-filters";
 import { ProjectList } from "@/components/pages/projects/project-list";
-import { api } from "@/lib/api";
 import type { Project } from "@/types";
+import { getAllProjectsPublic, getAllProjects} from "@/lib/api/project-management";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -32,15 +32,15 @@ export default function ProjectsPage() {
         if (token) {
           // Try authenticated endpoint first if user is logged in
           try {
-            response = await api.getAllProjects(token);
+            response = await getAllProjects(token);
           } catch (authError) {
             console.warn('Authenticated request failed, falling back to public endpoint:', authError);
             // Fall back to public endpoint if authenticated request fails
-            response = await api.getAllProjectsPublic();
+            response = await getAllProjectsPublic();
           }
         } else {
           // Use public endpoint for non-logged-in users
-          response = await api.getAllProjectsPublic();
+          response = await getAllProjectsPublic();
         }
         
         // Handle API response structure - data might be in response.data.projects or response.projects

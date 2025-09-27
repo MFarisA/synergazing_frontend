@@ -26,8 +26,14 @@ import {
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { api } from "@/lib/api"
 import { TimelineStatusOption } from "@/types"
+import { 
+  createProject, 
+  updateProjectStage2, 
+  updateProjectStage3, 
+  updateProjectStage4, 
+  updateProjectStage5 
+} from "@/lib/api/project-stage"
 
 // Timeline status options - hardcoded based on backend constants
 const TIMELINE_STATUS_OPTIONS: TimelineStatusOption[] = [
@@ -210,7 +216,7 @@ export default function CreateProjectPage() {
           stage1FormData.append("picture", formData.image)
         }
 
-        const response = await api.createProject(token, stage1FormData)
+        const response = await createProject(token, stage1FormData)
         console.log("Project created:", response)
         
         // Extract project ID from response
@@ -250,7 +256,7 @@ export default function CreateProjectPage() {
 
         console.log("Stage 2 data being sent:", stage2Data);
 
-        await api.updateProjectStage2(token, projectId, stage2Data)
+        await updateProjectStage2(token, projectId, stage2Data)
         console.log("Stage 2 updated:", stage2Data)
 
         addToast({
@@ -268,7 +274,7 @@ export default function CreateProjectPage() {
           conditions: formData.requirements.filter(req => req.trim()).map(req => ({ description: req })),
         }
 
-        await api.updateProjectStage3(token, projectId, stage3Data)
+        await updateProjectStage3(token, projectId, stage3Data)
         console.log("Stage 3 updated:", stage3Data)
 
         addToast({
@@ -306,7 +312,7 @@ export default function CreateProjectPage() {
 
         console.log('Stage 4 data being sent:', stage4Data);
 
-        await api.updateProjectStage4(token, projectId, stage4Data)
+        await updateProjectStage4(token, projectId, stage4Data)
         console.log("Stage 4 updated:", stage4Data)
 
         addToast({
@@ -364,7 +370,7 @@ export default function CreateProjectPage() {
         tags: formData.tags.map(tag => ({ name: tag })),
       }
 
-      await api.updateProjectStage5(token, projectId, stage5Data)
+      await updateProjectStage5(token, projectId, stage5Data)
       console.log("Stage 5 updated:", stage5Data)
 
       addToast({

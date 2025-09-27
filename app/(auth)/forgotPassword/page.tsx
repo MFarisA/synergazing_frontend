@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { api } from "@/lib/api";
+import { forgotPassword } from "@/lib/api/forgot-password";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.forgotPassword(email);
+      const response = await forgotPassword(email);
       
       if (response.success) {
         setSuccess(true);
