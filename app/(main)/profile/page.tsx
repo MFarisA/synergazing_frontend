@@ -43,9 +43,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { api } from "@/lib/api";
 import { User, Skill, UserSkill, Project } from "@/types";
 import Image from "next/image";
+import {getProfile, deleteCv} from "@/lib/api/profile-management"
+import { getAllSkills, getUserSkills, updateUserSkills, deleteUserSkill} from "@/lib/api/skill-management";
+import { updateCollaborationStatus } from "@/lib/api/collaboration";
+import { getCreatedProjects, deleteProject } from "@/lib/api/project-management";
 
 export default function ProfilePage() {
   const [userData, setUserData] = useState<User | null>(null);
@@ -72,20 +75,21 @@ export default function ProfilePage() {
     const token = localStorage.getItem("token");
     if (token) {
       Promise.all([
-        api.getProfile(token).catch((err) => {
+        // 1
+        getProfile(token).catch((err) => {
           console.error("Failed to fetch profile:", err);
           setApiError("Gagal memuat profil. Server mungkin tidak tersedia.");
           return null;
         }),
-        api.getAllSkills(token).catch((err) => {
+        getAllSkills(token).catch((err) => {
           console.error("Failed to fetch skills:", err);
           return { data: { skills: [] } };
         }),
-        api.getUserSkills(token).catch((err) => {
+        getUserSkills(token).catch((err) => {
           console.error("Failed to fetch user skills:", err);
           return { data: { skills: [] } };
         }),
-        api.getCreatedProjects(token).catch((err) => {
+        getCreatedProjects(token).catch((err) => {
           console.error("Failed to fetch created projects:", err);
           return { data: { projects: [] } };
         }),
@@ -154,7 +158,7 @@ export default function ProfilePage() {
         // Convert boolean to the specific string values expected by the API
         // Backend expects "ready" and "not ready" (with space, not underscore)
         const statusString = status ? "ready" : "not ready";
-        await api.updateCollaborationStatus(token, statusString);
+        await updateCollaborationStatus(token, statusString);
         setUserData({ ...userData, collaboration_status: status });
         setApiError(null);
       } catch (error) {
@@ -168,7 +172,8 @@ export default function ProfilePage() {
     const token = localStorage.getItem("token");
     if (token && userData) {
       try {
-        await api.deleteCv(token);
+        // 2
+        await deleteCv(token);
         setUserData({ ...userData, cv_file: "" });
         setApiError(null);
       } catch (error) {
@@ -208,12 +213,13 @@ export default function ProfilePage() {
     console.log("Skills to update:", skillsToUpdate);
 
     try {
-      await api.updateUserSkills(token, skillsToUpdate);
+      await updateUserSkills(token, skillsToUpdate);
 
       // Refresh both profile and user skills
       const [updatedProfile, updatedUserSkills] = await Promise.all([
-        api.getProfile(token),
-        api.getUserSkills(token),
+        // 3
+        getProfile(token),
+        getUserSkills(token),
       ]);
 
       // Handle the nested profile structure
@@ -258,12 +264,13 @@ export default function ProfilePage() {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      await api.deleteUserSkill(token, skillName);
+      await deleteUserSkill(token, skillName);
 
       // Refresh both profile and user skills
       const [updatedProfile, updatedUserSkills] = await Promise.all([
-        api.getProfile(token),
-        api.getUserSkills(token),
+        // 4
+        getProfile(token),
+        getUserSkills(token),
       ]);
 
       // Handle the nested profile structure
@@ -316,7 +323,7 @@ export default function ProfilePage() {
 
     setIsDeleting(true);
     try {
-      await api.deleteProject(token, projectToDelete.id.toString());
+      await deleteProject(token, projectToDelete.id.toString());
 
       // Remove the project from the local state
       setUserProjects((prev) =>
@@ -435,6 +442,7 @@ export default function ProfilePage() {
                     <Avatar className="h-24 w-24 border-4 border-background shadow-md">
                       <AvatarImage
                         src={userData.profile_picture || "/placeholder.svg"}
+                        className="object-cover w-full h-full"
                       />
                       <AvatarFallback className="text-2xl">
                         {userData.name
@@ -819,7 +827,8 @@ export default function ProfilePage() {
                       <FileText className="h-8 w-8 text-blue-600 mr-3" />
                       <div className="flex-1">
                         <p className="font-medium text-sm">
-                          {userData.cv_file.split("/").pop()}
+                          {/* wwww */}
+                          {userData.name}_CV.pdf
                         </p>
                       </div>
                     </div>
@@ -917,11 +926,13 @@ export default function ProfilePage() {
 
       {/* PDF Viewer Dialog */}
       <Dialog open={isPdfViewerOpen} onOpenChange={setIsPdfViewerOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh]">
+        <DialogContent className="max-w-6xl max-h-[90vh] items-center justify-center" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              <span>CV Preview: {userData.cv_file?.split("/").pop()}</span>
-              <div className="flex gap-2">
+              <span className="truncate pr-4" title={`CV Preview: ${userData.name}_CV.pdf`}>
+                CV Preview: {userData.name}_CV.pdf
+              </span>
+              <div className="flex gap-2 flex-shrink-0">
                 <Button
                   variant="outline"
                   size="sm"

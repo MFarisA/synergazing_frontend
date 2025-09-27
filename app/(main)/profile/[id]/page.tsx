@@ -42,6 +42,11 @@ import { api } from "@/lib/api";
 import { useWebSocket } from "@/lib/socket";
 import { cn } from "@/lib/utils";
 import { User, Project } from "@/types";
+import { getProfile } from "@/lib/api/profile-management";
+import { getUserProfile } from "@/lib/api/profile-management";
+import { getCreatedProjects } from "@/lib/api/project-management";
+import { getChatWithUser, getChatMessages } from "@/lib/api/chat-message";
+import { getCollaborators } from "@/lib/api/collaboration";
 
 // Chat message interface
 interface ChatMessage {
@@ -162,7 +167,7 @@ export default function UserProfilePage() {
       }
 
       // Get or create chat with the user
-      const chatResponse = await api.getChatWithUser(token, userData.id);
+      const chatResponse = await getChatWithUser(token, userData.id);
       console.log('Chat response:', chatResponse);
 
       if (chatResponse.success && chatResponse.data) {
@@ -170,7 +175,7 @@ export default function UserProfilePage() {
         setCurrentChat(chat);
 
         // Load messages for this chat
-        const messagesResponse = await api.getChatMessages(token, chat.id);
+        const messagesResponse = await getChatMessages(token, chat.id);
         console.log('Messages response:', messagesResponse);
 
         if (messagesResponse.success && messagesResponse.data) {
@@ -247,8 +252,8 @@ export default function UserProfilePage() {
         // If viewing own profile, use the regular profile endpoint
         if (currentUser && parseInt(userId) === currentUser.id) {
           const [profileData, projectsResponse] = await Promise.all([
-            api.getProfile(token),
-            api.getCreatedProjects(token),
+            getProfile(token),
+            getCreatedProjects(token),
           ]);
 
           if (profileData) {
@@ -276,7 +281,7 @@ export default function UserProfilePage() {
         } else {
           // For other users, use the direct profile endpoint
           try {
-            const userProfileResponse = await api.getUserProfile(token, userId);
+            const userProfileResponse = await getUserProfile(token, userId);
             console.log('User profile API response:', userProfileResponse);
             
             if (userProfileResponse.success && userProfileResponse.data) {
@@ -313,7 +318,7 @@ export default function UserProfilePage() {
             console.error('Failed to get direct profile, falling back to collaborators list:', directProfileError);
             
             // Fallback: try to get user info from collaborators list
-            const collaboratorsResponse = await api.getCollaborators(token);
+            const collaboratorsResponse = await getCollaborators(token);
             
             let collaboratorsData = [];
             if (collaboratorsResponse.data && collaboratorsResponse.data.users) {
