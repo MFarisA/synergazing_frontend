@@ -122,10 +122,19 @@ export function ChatBubble() {
   // WebSocket hook
   const { connectionStatus, lastMessage, connect, disconnect, sendMessage } = useWebSocket()
 
-  // Log connection status changes
+  // Log connection status changes with more detail for production debugging
   useEffect(() => {
-    console.log('WebSocket connection status:', connectionStatus)
-  }, [connectionStatus])
+    const isProduction = process.env.NODE_ENV === 'production'
+    console.log(`WebSocket connection status: ${connectionStatus}${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
+    
+    if (connectionStatus === 'disconnected' && isAuthenticated) {
+      console.warn('WebSocket disconnected while user is authenticated - this may cause message delivery issues')
+    }
+    
+    if (connectionStatus === 'error') {
+      console.error('WebSocket connection error - messages may not be delivered in real-time')
+    }
+  }, [connectionStatus, isAuthenticated])
 
   // Auth helper
   const getAuthData = () => {

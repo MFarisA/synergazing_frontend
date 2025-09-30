@@ -23,8 +23,57 @@ export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const reconnectAttempts = useRef(0)
-  const maxReconnectAttempts = 5
-  const reconnectDelay = 3000
+  const maxReconnectAttempts = 10 // Increased for production
+  const reconnectDelay = 2000 // Reduced delay for faster reconnection
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const lastPongRef = useRef<number>(Date.now())
+  const messageQueueRef = useRef<WebSocketMessage[]>([])
+
+  // Message queuing for offline/reconnection scenarios
+  const queueMessage = useCallback((message: WebSocketMessage) => {
+    messageQueueRef.current.push(message)
+    console.log('Message queued for sending when connection is restored')
+  }, [])
+
+  const processMessageQueue = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN && messageQueueRef.current.length > 0) {
+      console.log(`Processing ${messageQueueRef.current.length} queued messages`)
+      
+      messageQueueRef.current.forEach(message => {
+        wsRef.current?.send(JSON.stringify(message))
+      })
+      
+      messageQueueRef.current = []
+    }
+  }, [])
+
+  // Heartbeat to keep connection alive in production
+  const startHeartbeat = useCallback(() => {
+    // Clear existing heartbeat
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current)
+    }
+
+    heartbeatIntervalRef.current = setInterval(() => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        // Send ping
+        wsRef.current.send(JSON.stringify({ type: 'ping' }))
+        
+        // Check if connection is stale (no pong received in 30 seconds)
+        if (Date.now() - lastPongRef.current > 30000) {
+          console.log('Connection appears stale, forcing reconnection')
+          wsRef.current.close()
+        }
+      }
+    }, 15000) // Send ping every 15 seconds
+  }, [])
+
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current)
+      heartbeatIntervalRef.current = null
+    }
+  }, [])
 
   const connect = useCallback((userID: number, token?: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -45,21 +94,37 @@ export function useWebSocket() {
     }
     
     const wsUrl = `${WS_BASE_URL}/ws/chat?${params.toString()}`
+    const isProduction = process.env.NODE_ENV === 'production'
+    
+    console.log(`[WebSocket] Attempting connection to: ${wsUrl}${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
     
     try {
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
       ws.onopen = () => {
-        console.log('WebSocket connected')
+        console.log(`[WebSocket] Connected successfully to ${WS_BASE_URL}${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
         setConnectionStatus('connected')
         setError(null)
         reconnectAttempts.current = 0
+        
+        // Start heartbeat to keep connection alive
+        startHeartbeat()
+        
+        // Process any queued messages
+        processMessageQueue()
       }
 
       ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data) as WebSocketMessage
+          
+          // Handle pong messages for heartbeat
+          if (message.type === 'pong') {
+            lastPongRef.current = Date.now()
+            return
+          }
+          
           setLastMessage(message)
         } catch (err) {
           console.error('Failed to parse WebSocket message:', err)
@@ -67,28 +132,38 @@ export function useWebSocket() {
       }
 
       ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason)
+        const isProduction = process.env.NODE_ENV === 'production'
+        console.log(`[WebSocket] Disconnected (code: ${event.code}, reason: ${event.reason})${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
         setConnectionStatus('disconnected')
         wsRef.current = null
+        stopHeartbeat()
         
         // Attempt reconnection if it wasn't a manual close
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++
-          console.log(`Reconnecting... Attempt ${reconnectAttempts.current}/${maxReconnectAttempts}`)
+          const delay = reconnectDelay * reconnectAttempts.current
+          console.log(`[WebSocket] Attempting reconnection ${reconnectAttempts.current}/${maxReconnectAttempts} in ${delay}ms${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
           
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect(userID, token)
-          }, reconnectDelay)
+          setTimeout(() => {
+            if (wsRef.current === null) { // Only reconnect if still disconnected
+              connect(userID, token)
+            }
+          }, delay)
+        } else if (reconnectAttempts.current >= maxReconnectAttempts) {
+          console.error(`[WebSocket] Max reconnection attempts (${maxReconnectAttempts}) reached${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
+          setError('Connection lost. Please refresh the page.')
         }
       }
 
-      // ws.onerror = (event) => {
-      //   console.error('WebSocket error occurred:', event.type || 'Unknown error')
-      //   setConnectionStatus('error')
-      //   setError('WebSocket connection failed')
-      // }
+      ws.onerror = (event) => {
+        const isProduction = process.env.NODE_ENV === 'production'
+        console.error(`[WebSocket] Connection error:${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`, event.type || 'Unknown error')
+        setConnectionStatus('error')
+        setError('WebSocket connection failed')
+      }
     } catch (err) {
-      console.error('Failed to create WebSocket connection:', err)
+      const isProduction = process.env.NODE_ENV === 'production'
+      console.error(`[WebSocket] Failed to create connection:${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`, err)
       setConnectionStatus('error')
       setError('Failed to create WebSocket connection')
     }
@@ -100,6 +175,8 @@ export function useWebSocket() {
       reconnectTimeoutRef.current = null
     }
     
+    stopHeartbeat()
+    
     if (wsRef.current) {
       wsRef.current.close(1000, 'Manual disconnect')
       wsRef.current = null
@@ -107,24 +184,35 @@ export function useWebSocket() {
     
     setConnectionStatus('disconnected')
     reconnectAttempts.current = 0
-  }, [])
+  }, [stopHeartbeat])
 
   const sendMessage = useCallback((message: WebSocketMessage) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       try {
+        const isProduction = process.env.NODE_ENV === 'production'
         wsRef.current.send(JSON.stringify(message))
+        console.log(`[WebSocket] Message sent successfully: ${message.type}${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
         return true
       } catch (err) {
-        console.error('Failed to send WebSocket message:', err)
+        const isProduction = process.env.NODE_ENV === 'production'
+        console.error(`[WebSocket] Failed to send message:${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`, err)
         setError('Failed to send message')
+        
+        // Queue message for retry
+        queueMessage(message)
         return false
       }
     } else {
-      console.warn('WebSocket is not connected')
-      setError('WebSocket is not connected')
+      const isProduction = process.env.NODE_ENV === 'production'
+      const state = wsRef.current?.readyState ?? 'null'
+      console.warn(`[WebSocket] Cannot send message - connection not ready (state: ${state})${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
+      setError('Connection lost, message queued for retry')
+      
+      // Queue message for when connection is restored
+      queueMessage(message)
       return false
     }
-  }, [])
+  }, [queueMessage])
 
   // Cleanup on unmount
   useEffect(() => {
