@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useWebSocket } from '@/lib/socket'
 import { Chat, ChatMessage, ConversationListItem } from '@/types'
-import { getChatMessages, markMessagesAsRead, getUnreadCount, getChatList } from '@/lib/api/chat-message'
+import { getChatMessages, markMessagesAsRead, getUnreadCount, getChatList, sendChatMessage } from '@/lib/api/chat-message'
 
 // Debounce hook
 const useDebounce = (value: string, delay: number) => {
@@ -122,6 +122,11 @@ export function ChatBubble() {
   // WebSocket hook
   const { connectionStatus, lastMessage, connect, disconnect, sendMessage } = useWebSocket()
 
+  // Log connection status changes
+  useEffect(() => {
+    console.log('WebSocket connection status:', connectionStatus)
+  }, [connectionStatus])
+
   // Auth helper
   const getAuthData = () => {
     if (typeof window === 'undefined') return null
@@ -161,11 +166,15 @@ export function ChatBubble() {
   useEffect(() => {
     const checkAuth = () => {
       const authData = getAuthData()
+      console.log('ChatBubble auth check:', { authData: !!authData, user: authData?.user })
+      
       if (authData) {
         setCurrentUser({ id: authData.user.id, name: authData.user.name })
         setIsAuthenticated(true)
+        console.log('Connecting WebSocket for user:', authData.user.id)
         connect(authData.user.id, authData.token)
       } else {
+        console.log('No auth data found, disconnecting')
         setIsAuthenticated(false)
         setCurrentUser(null)
         disconnect()
@@ -176,6 +185,7 @@ export function ChatBubble() {
 
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'token' || e.key === 'user') {
+        console.log('Storage changed, rechecking auth')
         checkAuth()
       }
     }
@@ -398,14 +408,54 @@ export function ChatBubble() {
   }, [conversations])
 
   // Handle message send - stable callback
-  const handleMessageSend = (message: string) => {
+  const handleMessageSend = async (message: string) => {
     if (!activeChat || !currentUser) return
+    
+    const authData = getAuthData()
+    if (!authData) return
 
-    sendMessage({
-      type: 'send_message',
-      chat_id: activeChat.chatId,
-      content: message
-    })
+    try {
+      // Send message via HTTP API first
+      const response = await sendChatMessage(authData.token, activeChat.chatId, message)
+      
+      if (response.success) {
+        console.log('Message sent successfully via API')
+        
+        // Add message to local state immediately for better UX
+        const newMessage = {
+          id: Date.now(), // Temporary ID, will be replaced by WebSocket response
+          chat_id: activeChat.chatId,
+          sender_id: currentUser.id,
+          content: message,
+          is_read: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          sender: {
+            id: currentUser.id,
+            name: currentUser.name
+          }
+        }
+        
+        setActiveChatMessages(prev => [...prev, newMessage])
+        
+        // Update conversation list
+        setConversations(prev => prev.map(conv => 
+          conv.chatId === activeChat.chatId 
+            ? { ...conv, lastMessage: message, timestamp: formatTimestamp(new Date().toISOString()) }
+            : conv
+        ))
+        
+        // Also send via WebSocket for real-time updates to other users
+        sendMessage({
+          type: 'send_message',
+          chat_id: activeChat.chatId,
+          content: message
+        })
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      setError('Failed to send message')
+    }
   }
 
   // Handle chat selection
@@ -512,8 +562,12 @@ export function ChatBubble() {
                     <X className="h-4 w-4" />
                   </Button>
                   <div className="flex-1 text-center">
-                    <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                      Pesan {connectionStatus === 'connected' && <span className="text-green-500">●</span>}
+                    <p className="font-medium text-sm text-gray-900 dark:text-gray-100 flex items-center justify-center gap-2">
+                      Pesan 
+                      {connectionStatus === 'connected' && <span className="text-green-500 text-xs">● Terhubung</span>}
+                      {connectionStatus === 'connecting' && <span className="text-yellow-500 text-xs">● Menghubungkan...</span>}
+                      {connectionStatus === 'disconnected' && <span className="text-red-500 text-xs">● Terputus</span>}
+                      {connectionStatus === 'error' && <span className="text-red-500 text-xs">● Error</span>}
                     </p>
                   </div>
                   <div className="w-8"></div>

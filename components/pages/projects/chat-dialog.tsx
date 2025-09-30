@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import type { Project } from '@/types';
-import { getChatWithUser } from '@/lib/api/chat-message';
+import { getChatWithUser, sendChatMessage } from '@/lib/api/chat-message';
 
 interface ChatDialogProps {
   project: Project;
@@ -61,8 +61,14 @@ export function ChatDialog({ project, onChatStart }: ChatDialogProps) {
 
       const chat = chatResponse.data;
 
-      // Step 2: Send the initial message via WebSocket
-      // We'll dispatch a custom event that the chat bubble can listen to
+      // Step 2: Send the initial message via API first
+      const messageResponse = await sendChatMessage(authData.token, chat.id, chatMessage.trim());
+      
+      if (!messageResponse.success) {
+        throw new Error('Gagal mengirim pesan');
+      }
+
+      // Step 3: Dispatch event for chat bubble to open and load conversation
       const messageData = {
         type: 'send_initial_message',
         chatId: chat.id,
