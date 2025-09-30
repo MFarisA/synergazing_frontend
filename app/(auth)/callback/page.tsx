@@ -65,6 +65,9 @@ function AuthCallbackContent() {
           // Set a flag to indicate successful login
           localStorage.setItem("login_success", "true");
 
+          // Dispatch auth state change event
+          window.dispatchEvent(new CustomEvent('authStateChanged'));
+
           // Redirect to profile
           console.log("🚀 Redirecting to profile...");
           window.location.href = "/profile";

@@ -40,19 +40,33 @@ export default function Navbar({ className }: { className?: string }) {
 
   // Check if user is logged in
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    const user = localStorage.getItem("user")
+    const checkAuthState = () => {
+      const token = localStorage.getItem("token")
+      const user = localStorage.getItem("user")
 
-    if (token && user) {
-      setIsLoggedIn(true)
-      try {
-        setUserData(JSON.parse(user))
-      } catch (error) {
-        console.error("Failed to parse user data:", error)
+      if (token && user) {
+        setIsLoggedIn(true)
+        try {
+          setUserData(JSON.parse(user))
+        } catch (error) {
+          console.error("Failed to parse user data:", error)
+        }
+      } else {
+        setIsLoggedIn(false)
+        setUserData(null)
       }
-    } else {
-      setIsLoggedIn(false)
-      setUserData(null)
+    }
+
+    // Initial check
+    checkAuthState()
+
+    // Listen for auth state changes
+    const handleAuthStateChange = () => checkAuthState()
+    window.addEventListener('authStateChanged', handleAuthStateChange)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('authStateChanged', handleAuthStateChange)
     }
   }, [pathname]) // Re-check when pathname changes
 
@@ -204,6 +218,11 @@ export default function Navbar({ className }: { className?: string }) {
     setIsLoggedIn(false)
     setUserData(null)
     setMobileMenuOpen(false)
+
+    // Dispatch custom event to notify other components about logout
+    window.dispatchEvent(new CustomEvent('authStateChanged', { 
+      detail: { isAuthenticated: false } 
+    }))
 
     // Redirect to home page
     router.push("/")

@@ -98,6 +98,14 @@ export function useWebSocket() {
     
     console.log(`[WebSocket] Attempting connection to: ${wsUrl}${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
     
+    // Add additional debug info
+    console.log('[WebSocket] Connection details:', {
+      baseUrl: WS_BASE_URL,
+      userId: userID,
+      hasToken: !!token,
+      tokenPreview: token ? `${token.substring(0, 10)}...` : 'none'
+    })
+    
     try {
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
@@ -157,7 +165,20 @@ export function useWebSocket() {
 
       ws.onerror = (event) => {
         const isProduction = process.env.NODE_ENV === 'production'
-        console.error(`[WebSocket] Connection error:${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`, event.type || 'Unknown error')
+        console.error(`[WebSocket] Connection error:${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`, event)
+        
+        // Log the attempted URL for debugging
+        console.error('[WebSocket] Failed to connect to:', wsUrl)
+        console.error('[WebSocket] WebSocket base URL:', WS_BASE_URL)
+        console.error('[WebSocket] Environment:', process.env.NODE_ENV)
+        
+        // Common troubleshooting steps
+        console.error('[WebSocket] Troubleshooting checklist:')
+        console.error('1. Is the Go backend WebSocket server running?')
+        console.error('2. Check if /ws/chat endpoint exists in backend routes')
+        console.error('3. Verify WebSocket upgrade handling in Go server')
+        console.error('4. Check CORS settings for WebSocket connections')
+        
         setConnectionStatus('error')
         setError('WebSocket connection failed')
       }

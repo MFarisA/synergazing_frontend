@@ -192,6 +192,7 @@ export function ChatBubble() {
 
     checkAuth()
 
+    // Listen for storage changes from other tabs
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'token' || e.key === 'user') {
         console.log('Storage changed, rechecking auth')
@@ -199,9 +200,25 @@ export function ChatBubble() {
       }
     }
 
+    // Listen for custom auth state changes (same tab)
+    const handleAuthStateChange = (e: CustomEvent) => {
+      console.log('Auth state changed event received:', e.detail)
+      checkAuth()
+    }
+
+    // Listen for focus events to recheck auth state
+    const handleWindowFocus = () => {
+      checkAuth()
+    }
+
     window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('authStateChanged', handleAuthStateChange as EventListener)
+    window.addEventListener('focus', handleWindowFocus)
+    
     return () => {
       window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('authStateChanged', handleAuthStateChange as EventListener)
+      window.removeEventListener('focus', handleWindowFocus)
       disconnect()
     }
   }, [connect, disconnect])

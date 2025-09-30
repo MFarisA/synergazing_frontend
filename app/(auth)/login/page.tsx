@@ -97,6 +97,9 @@ export default function LoginPage() {
       localStorage.setItem("token", response.data?.token || "");
       localStorage.setItem("user", JSON.stringify(response.data?.user || {}));
 
+      // Dispatch auth state change event
+      window.dispatchEvent(new CustomEvent('authStateChanged'));
+
       // Redirect to profile page or dashboard
       router.push("/profile");
     } catch (error: unknown) {
