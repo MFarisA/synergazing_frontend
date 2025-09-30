@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useWebSocket } from '@/lib/socket'
 import { Chat, ChatMessage, ConversationListItem } from '@/types'
-import { getChatMessages, markMessagesAsRead, getUnreadCount, getChatList, sendChatMessage } from '@/lib/api/chat-message'
+import { getChatMessages, markMessagesAsRead, getUnreadCount, getChatList } from '@/lib/api/chat-message'
 
 // Debounce hook
 const useDebounce = (value: string, delay: number) => {
@@ -252,12 +252,21 @@ export function ChatBubble() {
       setActiveChat(newConversation)
       loadChatMessages(chatId)
 
+      // Join the chat room first, then send the message
       setTimeout(() => {
         sendMessage({
-          type: 'send_message',
-          chat_id: chatId,
-          content: message
+          type: 'join_chat',
+          chat_id: chatId
         })
+        
+        // Send the initial message after joining
+        setTimeout(() => {
+          sendMessage({
+            type: 'send_message',
+            chat_id: chatId,
+            content: message
+          })
+        }, 500)
       }, 1000)
     }
 
@@ -342,7 +351,22 @@ export function ChatBubble() {
       }
 
       if (activeChat && newMsg.chat_id === activeChat.chatId) {
-        setActiveChatMessages(prev => [...prev, newMsg])
+        // Check for duplicate messages to prevent double display
+        setActiveChatMessages(prev => {
+          const isDuplicate = prev.some(msg => 
+            msg.id === newMsg.id || 
+            (msg.content === newMsg.content && 
+             msg.sender_id === newMsg.sender_id && 
+             Math.abs(new Date(msg.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 1000)
+          )
+          
+          if (isDuplicate) {
+            console.log('Duplicate message detected, skipping:', newMsg)
+            return prev
+          }
+          
+          return [...prev, newMsg]
+        })
       }
 
       setConversations(prev => {
@@ -407,54 +431,32 @@ export function ChatBubble() {
     }
   }, [conversations])
 
-  // Handle message send - stable callback
+  // Handle message send - WebSocket only (backend doesn't support HTTP message sending)
   const handleMessageSend = async (message: string) => {
     if (!activeChat || !currentUser) return
     
-    const authData = getAuthData()
-    if (!authData) return
+    // Send message via WebSocket only
+    const success = sendMessage({
+      type: 'send_message',
+      chat_id: activeChat.chatId,
+      content: message
+    })
 
-    try {
-      // Send message via HTTP API first
-      const response = await sendChatMessage(authData.token, activeChat.chatId, message)
+    if (success) {
+      console.log('Message sent via WebSocket')
       
-      if (response.success) {
-        console.log('Message sent successfully via API')
-        
-        // Add message to local state immediately for better UX
-        const newMessage = {
-          id: Date.now(), // Temporary ID, will be replaced by WebSocket response
-          chat_id: activeChat.chatId,
-          sender_id: currentUser.id,
-          content: message,
-          is_read: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          sender: {
-            id: currentUser.id,
-            name: currentUser.name
-          }
-        }
-        
-        setActiveChatMessages(prev => [...prev, newMessage])
-        
-        // Update conversation list
-        setConversations(prev => prev.map(conv => 
-          conv.chatId === activeChat.chatId 
-            ? { ...conv, lastMessage: message, timestamp: formatTimestamp(new Date().toISOString()) }
-            : conv
-        ))
-        
-        // Also send via WebSocket for real-time updates to other users
-        sendMessage({
-          type: 'send_message',
-          chat_id: activeChat.chatId,
-          content: message
-        })
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error)
-      setError('Failed to send message')
+      // Don't add to local state - wait for WebSocket response to avoid duplicates
+      // The message will be added when we receive it back from the server
+      
+      // Only update conversation list timestamp
+      setConversations(prev => prev.map(conv => 
+        conv.chatId === activeChat.chatId 
+          ? { ...conv, lastMessage: message, timestamp: formatTimestamp(new Date().toISOString()) }
+          : conv
+      ))
+    } else {
+      console.error('Failed to send message via WebSocket')
+      setError('Failed to send message - WebSocket not connected')
     }
   }
 

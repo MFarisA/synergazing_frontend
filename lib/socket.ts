@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 // WebSocket connection URL
-const WS_BASE_URL = 'wss://synergazing.bahasakita.store'
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:3002'
 
 // Message types for WebSocket communication
 export interface WebSocketMessage {
