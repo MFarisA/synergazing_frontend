@@ -12,10 +12,8 @@ export default function ProjectDetailLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
-        {children}
-      </body>
-    </html>
+    <div className={`${inter.variable} font-sans antialiased`}>
+      {children}
+    </div>
   );
 }
