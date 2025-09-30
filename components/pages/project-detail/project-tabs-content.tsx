@@ -1,9 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CheckCircle, AlertCircle, Target, Clock, Play, Check } from "lucide-react";
-import type { Project } from '@/types';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/toast";
+import { CheckCircle, AlertCircle, Target, Clock, Play, Check, UserPlus, UserMinus, Mail } from "lucide-react";
+import { useState, useEffect } from "react";
+import type { Project, ProjectInvitation } from '@/types';
+import { inviteMemberToProject, removeMemberFromProject, getUserProjectInvitations, respondToProjectInvitation } from '@/lib/api/project-member-management';
 
 interface ProjectTabsContentProps {
   project: Project;
@@ -35,6 +43,155 @@ const TIMELINE_STATUS_CONFIG = {
 };
 
 export function ProjectTabsContent({ project }: ProjectTabsContentProps) {
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedRoleId, setSelectedRoleId] = useState("");
+  const [userInvitations, setUserInvitations] = useState<ProjectInvitation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { addToast } = useToast();
+
+  // Get token from localStorage
+  const getToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("token");
+    }
+    return null;
+  };
+
+  // Load user invitations on component mount
+  useEffect(() => {
+    const loadUserInvitations = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        
+        const invitations = await getUserProjectInvitations(token);
+        setUserInvitations(invitations.data || []);
+      } catch (error) {
+        console.error('Failed to load user invitations:', error);
+        // Set empty array on error to prevent UI issues
+        setUserInvitations([]);
+      }
+    };
+
+    loadUserInvitations();
+  }, []);
+
+  // Handle invite member
+  const handleInviteMember = async () => {
+    if (!selectedUserId || !selectedRoleId) {
+      addToast({
+        title: "Error",
+        description: "Please select both user and role",
+        type: "error",
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const token = getToken();
+      if (!token) {
+        addToast({
+          title: "Error",
+          description: "Please login to invite members",
+          type: "error",
+        });
+        return;
+      }
+
+      await inviteMemberToProject(token, project.id.toString(), {
+        user_id: selectedUserId,
+        project_role_id: selectedRoleId,
+      });
+
+      addToast({
+        title: "Success",
+        description: "Member invited successfully!",
+        type: "success",
+      });
+
+      // Reset form and close dialog
+      setSelectedUserId("");
+      setSelectedRoleId("");
+      setIsInviteDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to invite member:', error);
+      addToast({
+        title: "Error",
+        description: "Failed to invite member. Please try again.",
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle remove member
+  const handleRemoveMember = async (userId: string) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        addToast({
+          title: "Error",
+          description: "Please login to remove members",
+          type: "error",
+        });
+        return;
+      }
+
+      await removeMemberFromProject(token, project.id.toString(), userId);
+      
+      addToast({
+        title: "Success",
+        description: "Member removed successfully!",
+        type: "success",
+      });
+
+      // You might want to refresh the project data here
+    } catch (error) {
+      console.error('Failed to remove member:', error);
+      addToast({
+        title: "Error",
+        description: "Failed to remove member. Please try again.",
+        type: "error",
+      });
+    }
+  };
+
+  // Handle invitation response
+  const handleInvitationResponse = async (projectId: string, response: 'accept' | 'decline') => {
+    try {
+      const token = getToken();
+      if (!token) {
+        addToast({
+          title: "Error",
+          description: "Please login to respond to invitations",
+          type: "error",
+        });
+        return;
+      }
+
+      await respondToProjectInvitation(token, projectId, { response });
+      
+      addToast({
+        title: "Success",
+        description: `Invitation ${response}ed successfully!`,
+        type: "success",
+      });
+
+      // Refresh invitations after response
+      const invitations = await getUserProjectInvitations(token);
+      setUserInvitations(invitations.data || []);
+    } catch (error) {
+      console.error('Failed to respond to invitation:', error);
+      addToast({
+        title: "Error",
+        description: "Failed to respond to invitation. Please try again.",
+        type: "error",
+      });
+    }
+  };
   // Map API data to display format
   const skills = project.required_skills.map(skill => skill.skill.name);
   const benefits = project.benefits.map(benefit => benefit.benefit.name);
@@ -128,21 +285,128 @@ export function ProjectTabsContent({ project }: ProjectTabsContentProps) {
       </TabsContent>
 
       <TabsContent value="team" className="space-y-6 mt-4">
-        <Card>
-          <CardHeader><CardTitle>Tim Saat Ini ({project.members.length} orang)</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            {project.members.map((member, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarFallback>{member.name.split(" ").map(n=>n[0]).join("")}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{member.name}</p>
-                  <p className="text-sm text-gray-600">{member.role_name}</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {member.skill_names.map(skill => <Badge key={skill} variant="outline" className="text-xs">{skill}</Badge>)}
+        {/* User Invitations Section */}
+        {userInvitations.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                Undangan Proyek ({userInvitations.length})
+              </CardTitle>
+              <CardDescription>Undangan proyek yang menunggu respons Anda</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {userInvitations.map((invitation, i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg bg-blue-50">
+                  <div>
+                    <p className="font-medium">{invitation.project.title}</p>
+                    <p className="text-sm text-gray-600">Role: {invitation.project_role.name}</p>
+                    <p className="text-xs text-gray-500">{invitation.project_role.description}</p>
+                    <p className="text-xs text-gray-400">Status: {invitation.status}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleInvitationResponse(invitation.project_id.toString(), 'accept')}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Accept
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleInvitationResponse(invitation.project_id.toString(), 'decline')}
+                    >
+                      Decline
+                    </Button>
                   </div>
                 </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Current Team Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Tim Saat Ini ({project.members.length} orang)</CardTitle>
+              <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Invite Member
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Invite Member to Project</DialogTitle>
+                    <DialogDescription>
+                      Invite a new member to join this project
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="userId">User ID</Label>
+                      <Input
+                        id="userId"
+                        placeholder="Enter user ID"
+                        value={selectedUserId}
+                        onChange={(e) => setSelectedUserId(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="roleId">Project Role</Label>
+                      <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {project.roles.map((role) => (
+                            <SelectItem key={role.id} value={role.id.toString()}>
+                              {role.name} ({role.slots_available} slots available)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleInviteMember} disabled={isLoading}>
+                      {isLoading ? "Inviting..." : "Send Invitation"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {project.members.map((member, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback>{member.name.split(" ").map(n=>n[0]).join("")}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{member.name}</p>
+                    <p className="text-sm text-gray-600">{member.role_name}</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {member.skill_names.map(skill => <Badge key={skill} variant="outline" className="text-xs">{skill}</Badge>)}
+                    </div>
+                  </div>
+                </div>
+                {/* Only show remove button if user has permission (you might want to add role-based logic here) */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleRemoveMember(member.name)} // You might need member.id instead
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <UserMinus className="h-4 w-4" />
+                </Button>
               </div>
             ))}
           </CardContent>

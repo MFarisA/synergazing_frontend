@@ -208,6 +208,47 @@ export interface ChatAPIResponse {
   data?: any;
 }
 
+// ======================
+// PROJECT INVITATION TYPES
+// ======================
+
+export interface ProjectInvitation {
+  id: number;
+  project_id: number;
+  user_id: number;
+  project_role_id: number;
+  status: 'invited' | 'accepted' | 'declined';
+  role_description: string;
+  created_at: string;
+  updated_at: string;
+  project: {
+    id: number;
+    title: string;
+    description: string;
+    status: string;
+    creator_id: number;
+    registration_deadline: string;
+    project_start_date: string;
+    project_end_date: string;
+    created_at: string;
+    updated_at: string;
+  };
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  project_role: {
+    id: number;
+    project_id: number;
+    name: string;
+    slots_available: number;
+    description: string;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
 export interface UnreadNotification {
   chat_id: number;
   sender_name: string;

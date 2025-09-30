@@ -36,27 +36,14 @@ export const inviteMemberToProject = async (
   token: string, 
   projectId: string, 
   inviteData: {
-    user_id?: string;
-    email?: string;
-    role_id?: string;
-    message?: string;
+    user_id: string;
+    project_role_id: string;
   }
 ) => {
   try {
     const formData = new FormData();
-    
-    if (inviteData.user_id) {
-      formData.append('user_id', inviteData.user_id);
-    }
-    if (inviteData.email) {
-      formData.append('email', inviteData.email);
-    }
-    if (inviteData.role_id) {
-      formData.append('role_id', inviteData.role_id);
-    }
-    if (inviteData.message) {
-      formData.append('message', inviteData.message);
-    }
+    formData.append('user_id', inviteData.user_id);
+    formData.append('project_role_id', inviteData.project_role_id);
 
     const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/invite`, {
       method: 'POST',
@@ -158,7 +145,9 @@ export const removeMemberFromProject = async (
 
 /**
  * Get project invitations for current user
- * Useful for displaying pending invitations
+ * GET /api/user/project-invitations 🔒
+ * 
+ * Returns invitations with detailed project and role information
  */
 export const getUserProjectInvitations = async (token: string) => {
   try {
