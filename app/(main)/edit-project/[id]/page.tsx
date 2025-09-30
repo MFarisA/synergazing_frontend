@@ -32,6 +32,7 @@ import {
   updateProjectStage4, 
   updateProjectStage5 
 } from "@/lib/api/project-stage"
+import { getProjectById } from "@/lib/api/project-management"
 
 // Timeline status options - hardcoded based on backend constants
 const TIMELINE_STATUS_OPTIONS: TimelineStatusOption[] = [
@@ -174,19 +175,8 @@ export default function EditProjectPage() {
           return
         }
 
-        // Fetch project data using the existing API endpoint
-        const response = await fetch(`https://synergazing.bahasakita.store/api/projects/${projectId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch project data')
-        }
-
-        const data = await response.json()
+        // Fetch project data using the project management API
+        const data = await getProjectById(projectId, token)
         const project = data.data
 
         setProjectData(project)
