@@ -156,3 +156,47 @@ export const getChatWithUser = async (token: string, userId: number) => {
       throw error;
     }
   }
+
+  // Get count of users with unread messages
+  export const getUnreadUsersCount = async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat/unread-users-count`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to get unread users count:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get unread users count: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting unread users count:', error);
+      throw error;
+    }
+  }
+
+  // Get detailed unread messages count per user
+  export const getUnreadMessagesCount = async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat/unread-messages-count`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error('Failed to get unread messages count:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to get unread messages count: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Network error getting unread messages count:', error);
+      throw error;
+    }
+  }

@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useWebSocket } from '@/lib/socket'
 import { Chat, ChatMessage, ConversationListItem } from '@/types'
-import { getChatMessages, markMessagesAsRead, getUnreadCount, getChatList } from '@/lib/api/chat-message'
+import { getChatMessages, markMessagesAsRead, getUnreadCount, getChatList, getUnreadUsersCount, getUnreadMessagesCount } from '@/lib/api/chat-message'
+import { getUserProfile } from '@/lib/api/profile-management'
 
 // Debounce hook
 const useDebounce = (value: string, delay: number) => {
@@ -110,7 +111,7 @@ export function ChatBubble() {
   const [isOpen, setIsOpen] = useState(false)
   const [activeChat, setActiveChat] = useState<ConversationListItem | null>(null)
   const [activeChatMessages, setActiveChatMessages] = useState<ChatMessage[]>([])
-  const [totalUnread, setTotalUnread] = useState(0)
+  const [totalUnreadUsers, setTotalUnreadUsers] = useState(0) // Changed to count users, not messages
   const [currentUser, setCurrentUser] = useState<{ id: number; name: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -118,6 +119,7 @@ export function ChatBubble() {
   const [filteredConversations, setFilteredConversations] = useState<ConversationListItem[]>([])
   
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const processedMessageIds = useRef<Set<number>>(new Set())
   
   // WebSocket hook
   const { connectionStatus, lastMessage, connect, disconnect, sendMessage } = useWebSocket()
@@ -171,6 +173,79 @@ export function ChatBubble() {
     }
   }
 
+  // Helper function to refresh unread users count
+  const refreshUnreadUsersCount = async () => {
+    const authData = getAuthData()
+    if (!authData) return
+
+    try {
+      const unreadUsersResponse = await getUnreadUsersCount(authData.token)
+      if (unreadUsersResponse.success && unreadUsersResponse.data) {
+        setTotalUnreadUsers(unreadUsersResponse.data.unread_users_count || 0)
+      }
+    } catch (error) {
+      console.error('Failed to refresh unread users count:', error)
+    }
+  }
+
+  // Helper function to refresh unread message counts for conversations
+  const refreshUnreadMessageCounts = async () => {
+    const authData = getAuthData()
+    if (!authData) return
+
+    try {
+      const unreadMessagesResponse = await getUnreadMessagesCount(authData.token)
+      if (unreadMessagesResponse.success && unreadMessagesResponse.data?.unread_messages) {
+        const unreadCountsMap = new Map<number, number>()
+        unreadMessagesResponse.data.unread_messages.forEach((item: any) => {
+          unreadCountsMap.set(item.user_id, item.unread_count)
+        })
+        
+        // Update conversations with fresh unread counts
+        setConversations(prev => {
+          const updated = prev.map(conv => ({
+            ...conv,
+            unread: unreadCountsMap.get(conv.otherUserId) || 0
+          }))
+          setFilteredConversations(updated)
+          return updated
+        })
+      }
+    } catch (error) {
+      console.error('Failed to refresh unread message counts:', error)
+    }
+  }
+
+  // Helper function to fetch and update user profile for new conversations
+  const updateConversationWithUserProfile = async (chatId: number, userId: number) => {
+    const authData = getAuthData()
+    if (!authData) return
+
+    try {
+      const userProfileResponse = await getUserProfile(authData.token, userId.toString())
+      if (userProfileResponse.success && userProfileResponse.data) {
+        const userData = userProfileResponse.data
+        setConversations(prev => {
+          const updated = prev.map(conv => {
+            if (conv.chatId === chatId && conv.otherUserId === userId) {
+              return {
+                ...conv,
+                name: userData.name || conv.name,
+                avatar: userData.profile?.profile_picture || '/placeholder.svg'
+              }
+            }
+            return conv
+          })
+          setFilteredConversations(updated)
+          return updated
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile for conversation:', error)
+      // Don't break the conversation creation if profile fetch fails
+    }
+  }
+
   // Initialize auth - run once
   useEffect(() => {
     const checkAuth = () => {
@@ -219,6 +294,8 @@ export function ChatBubble() {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('authStateChanged', handleAuthStateChange as EventListener)
       window.removeEventListener('focus', handleWindowFocus)
+      // Clear processed message IDs when disconnecting
+      processedMessageIds.current.clear()
       disconnect()
     }
   }, [connect, disconnect])
@@ -233,8 +310,31 @@ export function ChatBubble() {
       if (response.success && response.data?.messages) {
         const messages = response.data.messages.reverse()
         setActiveChatMessages(messages)
+        
+        // Clear processed message IDs and add current messages to prevent duplicates
+        processedMessageIds.current.clear()
+        messages.forEach((msg: ChatMessage) => processedMessageIds.current.add(msg.id))
+        
+        // Check if this conversation had unread messages before marking as read
+        const currentConv = conversations.find(conv => conv.chatId === chatId)
+        const hadUnreadMessages = currentConv && currentConv.unread > 0
+        
         await markMessagesAsRead(authData.token, chatId)
         sendMessage({ type: 'mark_read', chat_id: chatId })
+        
+        // Update conversations to mark this chat as read
+        setConversations(prev => {
+          const updated = prev.map(conv => 
+            conv.chatId === chatId ? { ...conv, unread: 0 } : conv
+          )
+          setFilteredConversations(updated) // Also update filtered conversations
+          return updated
+        })
+        
+        // If this conversation had unread messages, decrement the unread users count
+        if (hadUnreadMessages) {
+          setTotalUnreadUsers(prev => Math.max(0, prev - 1))
+        }
       }
     } catch (error) {
       console.error('Failed to load chat messages:', error)
@@ -314,13 +414,23 @@ export function ChatBubble() {
         setLoading(true)
         setError(null)
 
-        const [chatsResponse, unreadResponse] = await Promise.all([
+        const [chatsResponse, unreadUsersResponse, unreadMessagesResponse] = await Promise.all([
           getChatList(authData.token),
-          getUnreadCount(authData.token)
+          getUnreadUsersCount(authData.token),
+          getUnreadMessagesCount(authData.token)
         ])
 
         if (chatsResponse.success && chatsResponse.data) {
           const chats: Chat[] = chatsResponse.data
+          
+          // Create a map of user IDs to their unread counts from the API
+          const unreadCountsMap = new Map<number, number>()
+          if (unreadMessagesResponse.success && unreadMessagesResponse.data?.unread_messages) {
+            unreadMessagesResponse.data.unread_messages.forEach((item: any) => {
+              unreadCountsMap.set(item.user_id, item.unread_count)
+            })
+          }
+          
           const conversationList = chats.map(chat => {
             const otherUser = chat.user1_id === authData.user.id ? chat.user2 : chat.user1
             const lastMessage = chat.messages && chat.messages.length > 0 ? chat.messages[0] : null
@@ -332,7 +442,7 @@ export function ChatBubble() {
               title: 'Collaborator',
               lastMessage: lastMessage?.content || 'No messages yet',
               timestamp: lastMessage ? formatTimestamp(lastMessage.created_at) : formatTimestamp(chat.created_at),
-              unread: 0,
+              unread: unreadCountsMap.get(otherUser.id) || 0, // Set actual unread count from API
               isOnline: false,
               chatId: chat.id,
               otherUserId: otherUser.id
@@ -342,8 +452,8 @@ export function ChatBubble() {
           setFilteredConversations(conversationList)
         }
 
-        if (unreadResponse.success && unreadResponse.data) {
-          setTotalUnread(unreadResponse.data.unread_count || 0)
+        if (unreadUsersResponse.success && unreadUsersResponse.data) {
+          setTotalUnreadUsers(unreadUsersResponse.data.unread_users_count || 0)
         }
       } catch (error) {
         console.error('Failed to load chat data:', error)
@@ -376,44 +486,78 @@ export function ChatBubble() {
         }
       }
 
-      if (activeChat && newMsg.chat_id === activeChat.chatId) {
-        // Check for duplicate messages to prevent double display
-        setActiveChatMessages(prev => {
-          const isDuplicate = prev.some(msg => 
-            msg.id === newMsg.id || 
-            (msg.content === newMsg.content && 
-             msg.sender_id === newMsg.sender_id && 
-             Math.abs(new Date(msg.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 1000)
-          )
-          
-          if (isDuplicate) {
-            console.log('Duplicate message detected, skipping:', newMsg)
-            return prev
-          }
-          
-          return [...prev, newMsg]
-        })
+      // Check for duplicate messages using processed message IDs
+      if (processedMessageIds.current.has(newMsg.id)) {
+        console.log('Duplicate message detected (already processed):', newMsg.id)
+        return
       }
 
+      // Mark this message as processed
+      processedMessageIds.current.add(newMsg.id)
+
+      if (activeChat && newMsg.chat_id === activeChat.chatId) {
+        // Add message to active chat display
+        setActiveChatMessages(prev => [...prev, newMsg])
+      }
+
+      // Update conversations and unread users count
       setConversations(prev => {
-        const updated = prev.map(conv => {
-          if (conv.chatId === newMsg.chat_id) {
-            return {
-              ...conv,
-              lastMessage: newMsg.content,
-              timestamp: formatTimestamp(newMsg.created_at),
-              unread: newMsg.sender_id !== currentUser?.id ? conv.unread + 1 : conv.unread
+        // Check if conversation already exists
+        const existingConvIndex = prev.findIndex(conv => conv.chatId === newMsg.chat_id)
+        
+        let updated: ConversationListItem[]
+        
+        if (existingConvIndex !== -1) {
+          // Update existing conversation
+          console.log('Updating existing conversation for chat:', newMsg.chat_id)
+          updated = prev.map(conv => {
+            if (conv.chatId === newMsg.chat_id) {
+              return {
+                ...conv,
+                lastMessage: newMsg.content,
+                timestamp: formatTimestamp(newMsg.created_at),
+                unread: newMsg.sender_id !== currentUser?.id ? conv.unread + 1 : conv.unread
+              }
             }
+            return conv
+          })
+        } else {
+          // Create new conversation for new user
+          console.log('Creating new conversation for chat:', newMsg.chat_id, 'from user:', newMsg.sender.name)
+          const newConversation: ConversationListItem = {
+            id: newMsg.chat_id,
+            name: newMsg.sender.name,
+            avatar: '/placeholder.svg', // Default avatar, will be updated when we get proper user data
+            title: 'Collaborator',
+            lastMessage: newMsg.content,
+            timestamp: formatTimestamp(newMsg.created_at),
+            unread: newMsg.sender_id !== currentUser?.id ? 1 : 0,
+            isOnline: false,
+            chatId: newMsg.chat_id,
+            otherUserId: newMsg.sender_id
           }
-          return conv
-        })
+          
+          // Add new conversation to the beginning of the list
+          updated = [newConversation, ...prev]
+          
+          // Fetch user profile data asynchronously to update avatar and other details
+          updateConversationWithUserProfile(newMsg.chat_id, newMsg.sender_id)
+        }
+        
         setFilteredConversations(updated) // Update filtered list too
+        
+        // Update unread users count when receiving a message from a different user
+        if (newMsg.sender_id !== currentUser?.id) {
+          // Check if this user already has unread messages in the current state
+          const existingConv = prev.find(conv => conv.chatId === newMsg.chat_id)
+          if (!existingConv || existingConv.unread === 0) {
+            // This user didn't have unread messages before (or is new), so increment unread users count
+            setTotalUnreadUsers(prevCount => prevCount + 1)
+          }
+        }
+        
         return updated
       })
-
-      if (newMsg.sender_id !== currentUser?.id) {
-        setTotalUnread(prev => prev + 1)
-      }
     }
   }, [lastMessage, isAuthenticated, activeChat, currentUser])
 
@@ -683,9 +827,9 @@ export function ChatBubble() {
             </motion.div>
           </AnimatePresence>
           
-          {!isOpen && totalUnread > 0 && (
+          {!isOpen && totalUnreadUsers > 0 && (
             <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center text-xs font-medium text-white">
-              {totalUnread > 9 ? '9+' : totalUnread}
+              {totalUnreadUsers > 9 ? '9+' : totalUnreadUsers}
             </div>
           )}
         </Button>
