@@ -23,11 +23,12 @@ export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const reconnectAttempts = useRef(0)
-  const maxReconnectAttempts = 10 // Increased for production
-  const reconnectDelay = 2000 // Reduced delay for faster reconnection
+  const maxReconnectAttempts = 5 // Reduced for less aggressive reconnection
+  const baseReconnectDelay = 1000 // Start with 1 second
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const lastPongRef = useRef<number>(Date.now())
   const messageQueueRef = useRef<WebSocketMessage[]>([])
+  const isManualDisconnectRef = useRef(false)
 
   // Message queuing for offline/reconnection scenarios
   const queueMessage = useCallback((message: WebSocketMessage) => {
@@ -59,13 +60,14 @@ export function useWebSocket() {
         // Send ping
         wsRef.current.send(JSON.stringify({ type: 'ping' }))
         
-        // Check if connection is stale (no pong received in 30 seconds)
-        if (Date.now() - lastPongRef.current > 30000) {
+        // Check if connection is stale (no pong received in 45 seconds)
+        if (Date.now() - lastPongRef.current > 45000) {
           console.log('Connection appears stale, forcing reconnection')
+          isManualDisconnectRef.current = false // Allow reconnection
           wsRef.current.close()
         }
       }
-    }, 15000) // Send ping every 15 seconds
+    }, 30000) // Send ping every 30 seconds (increased for stability)
   }, [])
 
   const stopHeartbeat = useCallback(() => {
@@ -81,6 +83,7 @@ export function useWebSocket() {
       return
     }
 
+    isManualDisconnectRef.current = false // Allow reconnections
     setConnectionStatus('connecting')
     setError(null)
     
@@ -147,13 +150,14 @@ export function useWebSocket() {
         stopHeartbeat()
         
         // Attempt reconnection if it wasn't a manual close
-        if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
+        if (event.code !== 1000 && !isManualDisconnectRef.current && reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++
-          const delay = reconnectDelay * reconnectAttempts.current
+          // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+          const delay = baseReconnectDelay * Math.pow(2, reconnectAttempts.current - 1)
           console.log(`[WebSocket] Attempting reconnection ${reconnectAttempts.current}/${maxReconnectAttempts} in ${delay}ms${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
           
           setTimeout(() => {
-            if (wsRef.current === null) { // Only reconnect if still disconnected
+            if (wsRef.current === null && !isManualDisconnectRef.current) { // Only reconnect if still disconnected
               connect(userID, token)
             }
           }, delay)
@@ -197,6 +201,7 @@ export function useWebSocket() {
     }
     
     stopHeartbeat()
+    isManualDisconnectRef.current = true // Prevent auto-reconnection
     
     if (wsRef.current) {
       wsRef.current.close(1000, 'Manual disconnect')
