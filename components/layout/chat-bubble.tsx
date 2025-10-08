@@ -482,7 +482,9 @@ export function ChatBubble() {
         updated_at: messageData.created_at as string,
         sender: {
           id: (messageData.sender as Record<string, unknown>).id as number,
-          name: (messageData.sender as Record<string, unknown>).name as string
+          name: (messageData.sender as Record<string, unknown>).name as string,
+          // optional avatar field from websocket payload
+          profile: (messageData.sender as any)?.avatar ? { profile_picture: (messageData.sender as any).avatar as string } : undefined
         }
       }
 
@@ -668,8 +670,8 @@ export function ChatBubble() {
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <div className="flex items-center flex-1 justify-center">
-                    <Avatar className="h-6 w-6 mr-2">
-                      <AvatarImage src={activeChat?.avatar || '/placeholder.svg'} />
+                    <Avatar className="h-6 w-6 mr-2 overflow-hidden">
+                      <AvatarImage className="h-full w-full object-cover" src={activeChat?.avatar || '/placeholder.svg'} />
                       <AvatarFallback className="text-xs">{activeChat?.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="text-center">
@@ -698,8 +700,8 @@ export function ChatBubble() {
                     {activeChatMessages.map((msg) => (
                       <div key={msg.id} className={cn('flex items-end gap-2', msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start')}>
                         {msg.sender_id !== currentUser?.id && (
-                          <Avatar className="h-5 w-5">
-                            <AvatarImage src={activeChat?.avatar || '/placeholder.svg'} />
+                          <Avatar className="h-5 w-5 overflow-hidden">
+                            <AvatarImage className="h-full w-full object-cover" src={(msg.sender?.profile?.profile_picture as string) || (msg.sender as any)?.avatar || activeChat?.avatar || '/placeholder.svg'} />
                             <AvatarFallback className="text-xs">
                               {msg.sender.name.charAt(0)}
                             </AvatarFallback>
@@ -773,8 +775,8 @@ export function ChatBubble() {
                         onClick={() => handleChatSelect(convo)}
                       >
                         <div className="relative">
-                          <Avatar className="h-10 w-10 mr-3">
-                            <AvatarImage src={convo.avatar || '/placeholder.svg'} />
+                          <Avatar className="h-10 w-10 mr-3 overflow-hidden">
+                            <AvatarImage className="h-full w-full object-cover" src={convo.avatar || '/placeholder.svg'} />
                             <AvatarFallback>{convo.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                           {convo.isOnline && (
