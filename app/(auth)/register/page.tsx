@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,9 +12,9 @@ import { Mail, Lock, Eye, EyeOff, Chrome, ArrowLeft, AlertCircle, CheckCircle, U
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
-import { registerInitiate, registerComplete } from "@/lib/api/auth"
+import { registerInitiate, registerComplete, verifyOTP, resendOTP } from "@/lib/api/auth"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://synergazing.bahasakita.store'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3002'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -43,6 +43,32 @@ export default function RegisterPage() {
   const [apiError, setApiError] = useState("")
   const [alertMessage, setAlertMessage] = useState("")
   const [alertType, setAlertType] = useState<"error" | "warning" | "success" | "">("")
+  const [resendTimer, setResendTimer] = useState(0)
+  const [canResendOTP, setCanResendOTP] = useState(false)
+
+  // Timer effect for OTP resend
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null
+    
+    if (resendTimer > 0) {
+      setCanResendOTP(false)
+      interval = setInterval(() => {
+        setResendTimer((prev) => {
+          if (prev <= 1) {
+            setCanResendOTP(true)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    } else {
+      setCanResendOTP(true)
+    }
+
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [resendTimer])
 
   // Validation for the first step (Basic Info)
   const validateStep1 = () => {
@@ -137,6 +163,8 @@ export default function RegisterPage() {
       setAlertMessage("Kode OTP telah dikirim ke email Anda. Silakan periksa inbox atau folder spam.")
       setAlertType("success")
       setCurrentStep(2)
+      setResendTimer(10) // Start 10-second timer
+      setCanResendOTP(false)
     } catch (error: unknown) {
       const errorObj = error as { response?: { data?: { message?: string } }; message?: string }
       // Don't expose backend error messages to users
@@ -148,11 +176,96 @@ export default function RegisterPage() {
     }
   }
 
-  // Moves from Step 2 to Step 3 (verify OTP)
+  // Moves from Step 2 to Step 3 (skip separate verification, go directly to step 3)
   const handleVerifyOTP = async () => {
     if (!validateStep2()) return
 
+    // Simply move to step 3 without separate verification
+    // The OTP will be verified during final registration completion
+    setAlertMessage("Kode OTP siap untuk verifikasi final!")
+    setAlertType("success")
     setCurrentStep(3)
+  }
+
+  // Resend OTP function
+  const handleResendOTP = async () => {
+    if (!canResendOTP || isLoading) return
+
+    setIsLoading(true)
+    setApiError("")
+    setAlertMessage("")
+    setAlertType("")
+
+    try {
+      const response = await resendOTP(formData.email)
+      
+      setAlertMessage("Kode OTP baru telah dikirim ke email Anda.")
+      setAlertType("success")
+      setResendTimer(10) // Restart 10-second timer
+      setCanResendOTP(false)
+      
+      // Clear the current OTP input
+      setFormData((prev) => ({ ...prev, otpCode: "" }))
+    } catch (error: unknown) {
+      console.error('Resend OTP frontend error:', error)
+      
+      let userMessage = "Gagal mengirim ulang kode OTP. Silakan coba lagi."
+      let apiErrorMsg = "Gagal mengirim ulang OTP"
+      
+      // Handle different types of errors
+      if (error && typeof error === 'object') {
+        const errorObj = error as { 
+          response?: { data?: { message?: string } }; 
+          message?: string; 
+          type?: string;
+          status?: number;
+          statusText?: string;
+        }
+        
+        // Network error
+        if (errorObj.type === 'NETWORK_ERROR') {
+          userMessage = "Tidak dapat terhubung ke server. Periksa koneksi internet Anda."
+          apiErrorMsg = "Koneksi bermasalah"
+        }
+        // Server error
+        else if (errorObj.status === 500) {
+          userMessage = "Terjadi kesalahan server. Silakan coba lagi dalam beberapa saat."
+          apiErrorMsg = "Error server"
+        }
+        // Not found error (endpoint doesn't exist)
+        else if (errorObj.status === 404) {
+          userMessage = "Layanan tidak tersedia saat ini. Silakan hubungi support."
+          apiErrorMsg = "Layanan tidak tersedia"
+        }
+        // Rate limiting or too many requests
+        else if (errorObj.status === 429) {
+          userMessage = "Terlalu banyak permintaan. Silakan tunggu sebelum mencoba lagi."
+          apiErrorMsg = "Terlalu banyak permintaan"
+        }
+        // Email not found or other client errors
+        else if (errorObj.status === 400 || errorObj.status === 422) {
+          userMessage = "Email tidak ditemukan atau tidak valid. Silakan periksa email Anda."
+          apiErrorMsg = "Email tidak valid"
+        }
+        // Check for specific backend error messages
+        else if (errorObj.response?.data?.message) {
+          const backendMessage = errorObj.response.data.message.toLowerCase()
+          if (backendMessage.includes('email')) {
+            userMessage = "Email tidak ditemukan. Silakan periksa email Anda."
+            apiErrorMsg = "Email tidak ditemukan"
+          } else if (backendMessage.includes('expired') || backendMessage.includes('kadaluarsa')) {
+            userMessage = "Sesi registrasi telah kadaluarsa. Silakan mulai ulang pendaftaran."
+            apiErrorMsg = "Sesi kadaluarsa"
+          }
+        }
+      }
+      
+      setApiError(apiErrorMsg)
+      setAlertMessage(userMessage)
+      setAlertType("error")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Handles the final form submission (complete registration)
@@ -160,6 +273,15 @@ export default function RegisterPage() {
     e.preventDefault()
 
     if (!validateStep3()) return
+
+    // Ensure we have an OTP code
+    if (!formData.otpCode) {
+      setApiError("Kode OTP tidak boleh kosong")
+      setAlertMessage("Silakan masukkan kode OTP terlebih dahulu.")
+      setAlertType("error")
+      setCurrentStep(2) // Go back to OTP step
+      return
+    }
 
     setIsLoading(true)
     setApiError("")
@@ -170,7 +292,7 @@ export default function RegisterPage() {
         email: formData.email,
         password: formData.password,
         phone: formData.phone,
-        otp_code: formData.otpCode
+        otp_code: formData.otpCode // Use the current OTP code from form
       }
 
       const response = await registerComplete(userData)
@@ -216,6 +338,11 @@ export default function RegisterPage() {
     if (alertMessage) {
       setAlertMessage("")
       setAlertType("")
+    }
+    // Reset timer when going back to step 1
+    if (field === "email" && currentStep === 1) {
+      setResendTimer(0)
+      setCanResendOTP(false)
     }
   }
 
@@ -264,7 +391,7 @@ export default function RegisterPage() {
       case 2:
         return "Masukkan kode OTP yang dikirim ke email Anda"
       case 3:
-        return "Setujui syarat dan ketentuan untuk menyelesaikan pendaftaran"
+        return "Verifikasi OTP dan setujui syarat ketentuan untuk menyelesaikan pendaftaran"
       default:
         return ""
     }
@@ -538,23 +665,46 @@ export default function RegisterPage() {
                     <p className="text-xs text-gray-500 text-center">
                       Kode OTP telah dikirim ke <strong>{formData.email}</strong>
                     </p>
-                    <p className="text-xs text-gray-500 text-center">
-                      Tidak menerima kode? Periksa folder spam atau{" "}
+                    <div className="text-xs text-gray-500 text-center">
+                      Tidak menerima kode?{" "}
+                      {canResendOTP ? (
+                        <button 
+                          type="button" 
+                          onClick={handleResendOTP}
+                          disabled={isLoading}
+                          className="text-blue-600 hover:underline disabled:text-gray-400 disabled:cursor-not-allowed"
+                        >
+                          Kirim ulang OTP
+                        </button>
+                      ) : (
+                        <span className="text-gray-400">
+                          Kirim ulang dalam {resendTimer} detik
+                        </span>
+                      )}
+                      {" atau "}
                       <button 
                         type="button" 
-                        onClick={() => setCurrentStep(1)}
+                        onClick={() => {
+                          setCurrentStep(1)
+                          setResendTimer(0)
+                          setCanResendOTP(false)
+                        }}
                         className="text-blue-600 hover:underline"
                       >
                         ubah email
                       </button>
-                    </p>
+                    </div>
                   </div>
 
                   <div className="flex gap-3">
                     <Button 
                       type="button"
                       variant="outline" 
-                      onClick={() => setCurrentStep(1)}
+                      onClick={() => {
+                        setCurrentStep(1)
+                        setResendTimer(0)
+                        setCanResendOTP(false)
+                      }}
                       className="flex-1"
                     >
                       Kembali
@@ -563,7 +713,7 @@ export default function RegisterPage() {
                       onClick={handleVerifyOTP} 
                       className="flex-1 bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6]"
                     >
-                      Verifikasi OTP
+                      Lanjutkan
                     </Button>
                   </div>
                 </div>

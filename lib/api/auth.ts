@@ -145,20 +145,17 @@ export const registerInitiate = async (userData: { name: string; email: string; 
   }
 };
 
-// Register with OTP - Step 2: Complete registration with OTP code
-export const registerComplete = async (userData: { name: string; email: string; password: string; phone: string; otp_code: string }): Promise<{ success: boolean; message: string }> => {
+// Verify OTP code
+export const verifyOTP = async (email: string, otpCode: string): Promise<{ success: boolean; message: string }> => {
   try {
-    console.log('Sending registration complete request to:', `${API_BASE_URL}/api/auth/register/complete`);
+    console.log('Sending OTP verification request to:', `${API_BASE_URL}/api/auth/otp/verify`);
     
-    // Create FormData object since the backend expects form values
     const formData = new FormData();
-    formData.append('name', userData.name);
-    formData.append('email', userData.email);
-    formData.append('password', userData.password);
-    formData.append('phone', userData.phone);
-    formData.append('otp_code', userData.otp_code);
+    formData.append('email', email);
+    formData.append('otp_code', otpCode);
+    formData.append('purpose', 'registration');
     
-    const response = await fetch(`${API_BASE_URL}/api/auth/register/complete`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/otp/verify`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -177,7 +174,110 @@ export const registerComplete = async (userData: { name: string; email: string; 
     
     return data;
   } catch (error: unknown) {
+    console.error('OTP verification error:', error);
+    throw error;
+  }
+};
+
+// Resend OTP code
+export const resendOTP = async (email: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    console.log('Sending resend OTP request to:', `${API_BASE_URL}/api/auth/otp/resend`);
+    
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('purpose', 'registration');
+    
+    const response = await fetch(`${API_BASE_URL}/api/auth/otp/resend`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+      },
+      body: formData,
+    });
+    
+    const data = await safeJsonParse(response);
+    console.log('Resend OTP response:', { status: response.status, data });
+    
+    if (!response.ok) {
+      throw { 
+        status: response.status, 
+        statusText: response.statusText,
+        response: { data },
+        url: response.url
+      };
+    }
+    
+    return data;
+  } catch (error: unknown) {
+    console.error('Resend OTP error:', error);
+    
+    // Re-throw with more context for network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw {
+        message: 'Network error: Unable to connect to server. Please check your internet connection.',
+        type: 'NETWORK_ERROR',
+        originalError: error
+      };
+    }
+    
+    throw error;
+  }
+};
+
+// Register with OTP - Step 2: Complete registration with OTP code
+export const registerComplete = async (userData: { name: string; email: string; password: string; phone: string; otp_code: string }): Promise<{ success: boolean; message: string }> => {
+  try {
+    console.log('Sending registration complete request to:', `${API_BASE_URL}/api/auth/register/complete`);
+    console.log('Registration data:', { 
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone,
+      otp_code: userData.otp_code,
+      // Don't log the password for security
+    });
+    
+    // Create FormData object since the backend expects form values
+    const formData = new FormData();
+    formData.append('name', userData.name);
+    formData.append('email', userData.email);
+    formData.append('password', userData.password);
+    formData.append('phone', userData.phone);
+    formData.append('otp_code', userData.otp_code);
+    
+    const response = await fetch(`${API_BASE_URL}/api/auth/register/complete`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+      },
+      body: formData,
+    });
+    
+    const data = await safeJsonParse(response);
+    console.log('Registration complete response:', { status: response.status, data });
+    
+    if (!response.ok) {
+      throw { 
+        status: response.status, 
+        statusText: response.statusText,
+        response: { data },
+        url: response.url
+      };
+    }
+    
+    return data;
+  } catch (error: unknown) {
     console.error('Registration complete error:', error);
+    
+    // Re-throw with more context for network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw {
+        message: 'Network error: Unable to connect to server. Please check your internet connection.',
+        type: 'NETWORK_ERROR',
+        originalError: error
+      };
+    }
+    
     throw error;
   }
 };
