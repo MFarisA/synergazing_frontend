@@ -322,11 +322,28 @@ export function ChatBubble() {
         await markMessagesAsRead(authData.token, chatId)
         sendMessage({ type: 'mark_read', chat_id: chatId })
         
-        // Update conversations to mark this chat as read
+        // Update conversations to mark this chat as read and update last message
         setConversations(prev => {
-          const updated = prev.map(conv => 
-            conv.chatId === chatId ? { ...conv, unread: 0 } : conv
-          )
+          const updated = prev.map(conv => {
+            if (conv.chatId === chatId) {
+              const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null
+              
+              // Format last message with "You: " prefix if current user sent it
+              let displayMessage = 'No messages yet'
+              if (lastMessage?.content) {
+                const isUserMessage = lastMessage.sender_id === authData.user.id
+                displayMessage = isUserMessage ? `You: ${lastMessage.content}` : lastMessage.content
+              }
+              
+              return { 
+                ...conv, 
+                unread: 0,
+                lastMessage: displayMessage,
+                timestamp: lastMessage ? formatTimestamp(lastMessage.created_at) : conv.timestamp
+              }
+            }
+            return conv
+          })
           setFilteredConversations(updated) // Also update filtered conversations
           return updated
         })
@@ -433,14 +450,21 @@ export function ChatBubble() {
           
           const conversationList = chats.map(chat => {
             const otherUser = chat.user1_id === authData.user.id ? chat.user2 : chat.user1
-            const lastMessage = chat.messages && chat.messages.length > 0 ? chat.messages[0] : null
+            const lastMessage = chat.messages && chat.messages.length > 0 ? chat.messages[chat.messages.length - 1] : null
+            
+            // Format last message with "You: " prefix if current user sent it
+            let displayMessage = 'No messages yet'
+            if (lastMessage?.content) {
+              const isUserMessage = lastMessage.sender_id === authData.user.id
+              displayMessage = isUserMessage ? `You: ${lastMessage.content}` : lastMessage.content
+            }
             
             return {
               id: chat.id,
               name: otherUser.name,
               avatar: otherUser.profile?.profile_picture || '/placeholder.svg',
               title: 'Collaborator',
-              lastMessage: lastMessage?.content || 'No messages yet',
+              lastMessage: displayMessage,
               timestamp: lastMessage ? formatTimestamp(lastMessage.created_at) : formatTimestamp(chat.created_at),
               unread: unreadCountsMap.get(otherUser.id) || 0, // Set actual unread count from API
               isOnline: false,
@@ -514,9 +538,12 @@ export function ChatBubble() {
           console.log('Updating existing conversation for chat:', newMsg.chat_id)
           updated = prev.map(conv => {
             if (conv.chatId === newMsg.chat_id) {
+              // Format message with "You: " prefix if current user sent it
+              const displayMessage = newMsg.sender_id === currentUser?.id ? `You: ${newMsg.content}` : newMsg.content
+              
               return {
                 ...conv,
-                lastMessage: newMsg.content,
+                lastMessage: displayMessage,
                 timestamp: formatTimestamp(newMsg.created_at),
                 unread: newMsg.sender_id !== currentUser?.id ? conv.unread + 1 : conv.unread
               }
@@ -526,12 +553,16 @@ export function ChatBubble() {
         } else {
           // Create new conversation for new user
           console.log('Creating new conversation for chat:', newMsg.chat_id, 'from user:', newMsg.sender.name)
+          
+          // Format message with "You: " prefix if current user sent it
+          const displayMessage = newMsg.sender_id === currentUser?.id ? `You: ${newMsg.content}` : newMsg.content
+          
           const newConversation: ConversationListItem = {
             id: newMsg.chat_id,
             name: newMsg.sender.name,
             avatar: '/placeholder.svg', // Default avatar, will be updated when we get proper user data
             title: 'Collaborator',
-            lastMessage: newMsg.content,
+            lastMessage: displayMessage,
             timestamp: formatTimestamp(newMsg.created_at),
             unread: newMsg.sender_id !== currentUser?.id ? 1 : 0,
             isOnline: false,
@@ -649,7 +680,7 @@ export function ChatBubble() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-4">
+    <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-50 flex flex-col items-end gap-4">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -657,7 +688,7 @@ export function ChatBubble() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="w-[380px] h-[520px] rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
+            className="w-full max-w-[380px] md:w-[550px] lg:w-[380px] h-[520px] md:h-[600px] lg:h-[520px] max-h-[80vh] rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
             style={{
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)'
             }}
@@ -665,38 +696,38 @@ export function ChatBubble() {
             {activeChat ? (
               // Inline ChatWindow
               <div className="flex flex-col h-full bg-white dark:bg-gray-900">
-                <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setActiveChat(null)}>
-                    <ChevronLeft className="h-4 w-4" />
+                <div className="flex items-center justify-between p-3 md:p-4 lg:p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10 lg:h-8 lg:w-8" onClick={() => setActiveChat(null)}>
+                    <ChevronLeft className="h-4 w-4 md:h-5 md:w-5 lg:h-4 lg:w-4" />
                   </Button>
                   <div className="flex items-center flex-1 justify-center">
-                    <Avatar className="h-6 w-6 mr-2 overflow-hidden">
+                    <Avatar className="h-6 w-6 md:h-8 md:w-8 lg:h-6 lg:w-6 mr-2 overflow-hidden">
                       <AvatarImage className="h-full w-full object-cover" src={activeChat?.avatar || '/placeholder.svg'} />
-                      <AvatarFallback className="text-xs">{activeChat?.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="text-xs md:text-xs lg:text-xs">{activeChat?.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="text-center">
-                      <p className="font-medium text-sm text-gray-900 dark:text-gray-100">{activeChat?.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="font-medium text-sm md:text-base lg:text-sm text-gray-900 dark:text-gray-100">{activeChat?.name}</p>
+                      <p className="text-xs md:text-sm lg:text-xs text-gray-500 dark:text-gray-400">
                         {connectionStatus === 'connected' ? 'Online' : 'Offline'}
                       </p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10 lg:h-8 lg:w-8">
+                    <MoreHorizontal className="h-4 w-4 md:h-5 md:w-5 lg:h-4 lg:w-4" />
                   </Button>
                 </div>
-                <div className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+                <div className="flex-1 p-4 md:p-5 lg:p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
                   {loading && (
                     <div className="text-center text-gray-500 dark:text-gray-400">
-                      <p className="text-sm">Loading messages...</p>
+                      <p className="text-sm md:text-base">Loading messages...</p>
                     </div>
                   )}
                   {error && (
                     <div className="text-center text-red-500 mb-4">
-                      <p className="text-sm">{error}</p>
+                      <p className="text-sm md:text-base">{error}</p>
                     </div>
                   )}
-                  <div className="space-y-3">
+                  <div className="space-y-3 md:space-y-4 lg:space-y-3">
                     {activeChatMessages.map((msg) => (
                       <div key={msg.id} className={cn('flex items-end gap-2', msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start')}>
                         {msg.sender_id !== currentUser?.id && (
@@ -731,22 +762,22 @@ export function ChatBubble() {
             ) : (
               // Inline ChatList
               <div className="flex flex-col h-full bg-white dark:bg-gray-900">
-                <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsOpen(false)}>
-                    <X className="h-4 w-4" />
+                <div className="flex items-center justify-between p-3 md:p-4 lg:p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10 lg:h-8 lg:w-8" onClick={() => setIsOpen(false)}>
+                    <X className="h-4 w-4 md:h-5 md:w-5 lg:h-4 lg:w-4" />
                   </Button>
                   <div className="flex-1 text-center">
-                    <p className="font-medium text-sm text-gray-900 dark:text-gray-100 flex items-center justify-center gap-2">
+                    <p className="font-medium text-sm md:text-base lg:text-sm text-gray-900 dark:text-gray-100 flex items-center justify-center gap-2">
                       Pesan 
-                      {connectionStatus === 'connected' && <span className="text-green-500 text-xs">● Terhubung</span>}
-                      {connectionStatus === 'connecting' && <span className="text-yellow-500 text-xs">● Menghubungkan...</span>}
-                      {connectionStatus === 'disconnected' && <span className="text-red-500 text-xs">● Terputus</span>}
-                      {connectionStatus === 'error' && <span className="text-red-500 text-xs">● Error</span>}
+                      {connectionStatus === 'connected' && <span className="text-green-500 text-xs md:text-sm lg:text-xs">● Terhubung</span>}
+                      {connectionStatus === 'connecting' && <span className="text-yellow-500 text-xs md:text-sm lg:text-xs">● Menghubungkan...</span>}
+                      {connectionStatus === 'disconnected' && <span className="text-red-500 text-xs md:text-sm lg:text-xs">● Terputus</span>}
+                      {connectionStatus === 'error' && <span className="text-red-500 text-xs md:text-sm lg:text-xs">● Error</span>}
                     </p>
                   </div>
-                  <div className="w-8"></div>
+                  <div className="w-8 md:w-10 lg:w-8"></div>
                 </div>
-                <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+                <div className="p-3 md:p-4 lg:p-3 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                   <SearchInput />
                 </div>
                 <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
@@ -771,27 +802,27 @@ export function ChatBubble() {
                     filteredConversations.map(convo => (
                       <div 
                         key={convo.id} 
-                        className="p-3 flex items-center hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0" 
+                        className="p-3 md:p-4 lg:p-3 flex items-center hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0" 
                         onClick={() => handleChatSelect(convo)}
                       >
                         <div className="relative">
-                          <Avatar className="h-10 w-10 mr-3 overflow-hidden">
+                          <Avatar className="h-10 w-10 md:h-12 md:w-12 lg:h-10 lg:w-10 mr-3 overflow-hidden">
                             <AvatarImage className="h-full w-full object-cover" src={convo.avatar || '/placeholder.svg'} />
-                            <AvatarFallback>{convo.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback className="md:text-base lg:text-sm">{convo.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                           {convo.isOnline && (
-                            <div className="absolute bottom-0 right-2 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
+                            <div className="absolute bottom-0 right-2 w-3 h-3 md:w-4 md:h-4 lg:w-3 lg:h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
                           )}
                         </div>
                         <div className="flex-1 overflow-hidden">
                           <div className="flex justify-between items-center">
-                            <p className="font-medium text-sm truncate text-gray-900 dark:text-gray-100">{convo.name}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{convo.timestamp}</p>
+                            <p className="font-medium text-sm md:text-base lg:text-sm truncate text-gray-900 dark:text-gray-100">{convo.name}</p>
+                            <p className="text-xs md:text-sm lg:text-xs text-gray-500 dark:text-gray-400">{convo.timestamp}</p>
                           </div>
                           <div className="flex justify-between items-center mt-1">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1 mr-2">{convo.lastMessage}</p>
+                            <p className="text-xs md:text-sm lg:text-xs text-gray-500 dark:text-gray-400 truncate flex-1 mr-2">{convo.lastMessage}</p>
                             {convo.unread > 0 && (
-                              <div className="h-5 w-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-medium">
+                              <div className="h-5 w-5 md:h-6 md:w-6 lg:h-5 lg:w-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs md:text-sm lg:text-xs font-medium">
                                 {convo.unread}
                               </div>
                             )}

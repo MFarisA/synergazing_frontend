@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, MessageCircle, Search, Send, X } from "lucide-react"
+import { MapPin, MessageCircle, Search, Send, X, Filter } from "lucide-react"
 import Link from "next/link"
 import { AnimatedModal } from "@/components/ui/animated-modal"
 import { useWebSocket } from "@/lib/socket"
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { getCollaborators } from "@/lib/api/collaboration"
 import { getChatWithUser, getChatMessages } from "@/lib/api/chat-message"
+import { motion, AnimatePresence } from "framer-motion"
 
 // Type definition for collaborator from API
 interface Collaborator {
@@ -69,6 +70,7 @@ export default function CollaboratorsPage() {
 	const [collaborators, setCollaborators] = useState<Collaborator[]>([])
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
+	const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
 
 	// Chat state
 	const [currentChat, setCurrentChat] = useState<Chat | null>(null)
@@ -351,12 +353,12 @@ export default function CollaboratorsPage() {
 	}
 
 	return (
-		<div className="min-h-screen ">
+		<div className="min-h-screen relative">
 			{/* Header */}
 
 			<div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
-				{/* Sidebar Filters */}
-				<aside className="lg:col-span-1 space-y-6 sticky top-6 self-start h-fit">
+				{/* Sidebar Filters - Hidden on mobile */}
+				<aside className="hidden lg:block lg:col-span-1 space-y-6 sticky top-6 self-start h-fit">
 					<Card>
 						<CardHeader>
 							<CardTitle className="text-lg">Cari Kolaborator</CardTitle>
@@ -406,14 +408,18 @@ export default function CollaboratorsPage() {
 				</aside>
 
 				{/* Main Content - Collaborator List */}
-				<main className="lg:col-span-3 space-y-6">
+				<main className="col-span-1 lg:col-span-3 space-y-6">
 					<h2 className="text-xl font-semibold">Kolaborator Siap ({filteredCollaborators.length})</h2>
 					<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 						{filteredCollaborators.map((collaborator) => (
 							<Card key={collaborator.id} className="hover:shadow-lg transition-shadow h-full">
 								<CardContent className="p-6 flex flex-col items-center text-center h-full">
 									<Avatar className="h-24 w-24 mb-4">
-										<AvatarImage src={collaborator.profile_picture || "/placeholder.svg"} alt={collaborator.name} />
+										<AvatarImage 
+											src={collaborator.profile_picture || "/placeholder.svg"} 
+											alt={collaborator.name}
+											className="object-cover w-full h-full"
+										/>
 										<AvatarFallback className="text-3xl">
 											{collaborator.name
 												.split(" ")
@@ -481,6 +487,132 @@ export default function CollaboratorsPage() {
 					</div>
 				</main>
 			</div>
+
+			{/* Floating Filter Button - Visible only on mobile */}
+			<div className="fixed bottom-6 left-6 z-[60] lg:hidden pointer-events-auto">
+				<motion.div
+					whileHover={{ scale: 1.1 }}
+					whileTap={{ scale: 0.95 }}
+					className="relative pointer-events-auto"
+				>
+					<Button
+						className="rounded-2xl w-14 h-14 shadow-lg flex items-center justify-center relative bg-primary text-primary-foreground hover:bg-primary/90 transition-colors pointer-events-auto"
+						onClick={() => {
+							console.log('Filter button clicked, current state:', isFilterModalOpen);
+							setIsFilterModalOpen(!isFilterModalOpen);
+						}}
+						type="button"
+					>
+						<AnimatePresence initial={false}>
+							<motion.div
+								key={isFilterModalOpen ? 'x' : 'filter'}
+								initial={{ rotate: -90, scale: 0 }}
+								animate={{ rotate: 0, scale: 1 }}
+								exit={{ rotate: 90, scale: 0 }}
+								transition={{ duration: 0.2 }}
+								className="absolute"
+							>
+								{isFilterModalOpen ? <X className="h-6 w-6" /> : <Filter className="h-6 w-6" />}
+							</motion.div>
+						</AnimatePresence>
+						
+						{/* Active filters indicator */}
+						{!isFilterModalOpen && (searchTerm || selectedSkills.length > 0) && (
+							<div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center text-xs font-medium text-white">
+								{(searchTerm ? 1 : 0) + selectedSkills.length > 9 ? '9+' : (searchTerm ? 1 : 0) + selectedSkills.length}
+							</div>
+						)}
+					</Button>
+				</motion.div>
+			</div>
+
+			{/* Mobile Filter Modal */}
+			<AnimatePresence>
+				{isFilterModalOpen && (
+					<>
+						{console.log('Rendering filter modal, isFilterModalOpen:', isFilterModalOpen)}
+						{/* Backdrop */}
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							className="fixed inset-0 bg-black/20 z-[55] lg:hidden"
+							onClick={() => setIsFilterModalOpen(false)}
+						/>
+						
+						{/* Modal */}
+						<motion.div
+							initial={{ opacity: 0, scale: 0.8, x: -50, y: 50 }}
+							animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+							exit={{ opacity: 0, scale: 0.8, x: -50, y: 50 }}
+							transition={{ duration: 0.2, ease: "easeOut" }}
+							className="fixed bottom-24 left-6 right-6 md:left-6 md:right-auto md:w-96 z-[56] lg:hidden"
+							style={{ transformOrigin: "bottom left" }}
+						>
+							<Card className="w-full md:w-96 max-h-[70vh] md:max-h-[60vh] shadow-xl border-0">
+							<CardHeader className="pb-3 md:pb-4">
+								<div className="flex items-center justify-between">
+									<CardTitle className="text-lg md:text-xl">Filter Kolaborator</CardTitle>
+									<Button 
+										variant="ghost" 
+										size="icon" 
+										className="h-6 w-6 md:h-8 md:w-8"
+										onClick={() => setIsFilterModalOpen(false)}
+									>
+										<X className="h-4 w-4 md:h-5 md:w-5" />
+									</Button>
+								</div>
+							</CardHeader>
+							<CardContent className="space-y-4 md:space-y-5">
+								{/* Search Input */}
+								<div className="relative">
+									<Input
+										placeholder="Cari nama, skill, atau peran..."
+										value={searchTerm}
+										onChange={(e) => setSearchTerm(e.target.value)}
+										className="pl-8 md:pl-10 h-10 md:h-12 text-sm md:text-base"
+									/>
+									<Search className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+								</div>
+
+								{/* Skills Filter */}
+								<div className="space-y-3 md:space-y-4">
+									<h4 className="font-medium text-sm md:text-base">Filter berdasarkan Skill</h4>
+									<div className="max-h-48 md:max-h-64 overflow-y-auto space-y-2 md:space-y-3 pr-2">
+										{allSkills.map((skill) => (
+											<div key={skill} className="flex items-center space-x-2 md:space-x-3">
+												<Checkbox
+													id={`mobile-${skill}`}
+													checked={selectedSkills.includes(skill)}
+													onCheckedChange={() => handleSkillToggle(skill)}
+													className="md:h-5 md:w-5"
+												/>
+												<label
+													htmlFor={`mobile-${skill}`}
+													className="text-sm md:text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+												>
+													{skill}
+												</label>
+											</div>
+										))}
+									</div>
+									{selectedSkills.length > 0 && (
+										<Button 
+											variant="outline" 
+											size="sm" 
+											onClick={() => setSelectedSkills([])} 
+											className="w-full mt-3 md:mt-4 h-9 md:h-10 text-sm md:text-base"
+										>
+											Clear All
+										</Button>
+									)}
+								</div>
+							</CardContent>
+						</Card>
+					</motion.div>
+				</>
+				)}
+			</AnimatePresence>
 
 			{/* Chat Modal */}
 			{selectedCollaborator && (
