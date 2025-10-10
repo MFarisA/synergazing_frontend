@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { BorderBeam } from '@/components/ui/border-beam'; // Impor komponen BorderBeam
@@ -20,9 +20,64 @@ const stepsData = [
   },
 ];
 
+// Hook to detect mobile and performance capability
+const useDeviceCapability = () => {
+  const [isLowEndDevice, setIsLowEndDevice] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if it's a mobile device
+    const checkMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobile(checkMobile);
+
+    // Performance check for low-end devices
+    const start = performance.now();
+    for (let i = 0; i < 50000; i++) {
+      Math.random() * Math.random();
+    }
+    const end = performance.now();
+    
+    const isSlowCPU = (end - start) > 8;
+    const hasLowCores = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2;
+    const hasLowMemory = (navigator as any).deviceMemory && (navigator as any).deviceMemory <= 2;
+    
+    setIsLowEndDevice(isSlowCPU || hasLowCores || hasLowMemory || checkMobile);
+  }, []);
+
+  return { isLowEndDevice, isMobile };
+};
+
 export function HowItWorks() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
+  const { isLowEndDevice, isMobile } = useDeviceCapability();
+
+  // Simplified animation variants for low-end devices
+  const getAnimationProps = (index: number) => {
+    if (isLowEndDevice) {
+      // Simpler animations for low-end devices
+      return {
+        initial: { opacity: 0 },
+        animate: inView ? { opacity: 1 } : {},
+        transition: {
+          duration: 0.3,
+          delay: index * 0.1,
+          ease: "easeOut" as const,
+        },
+      };
+    }
+    
+    // Full animations for high-end devices
+    return {
+      initial: { opacity: 0, y: 30 },
+      animate: inView ? { opacity: 1, y: 0 } : {},
+      transition: {
+        duration: 0.6,
+        delay: index * 0.15,
+        ease: "easeOut" as const,
+      },
+    };
+  };
 
   return (
     <section className="w-full py-12 md:py-24 lg:py-32">
@@ -40,24 +95,34 @@ export function HowItWorks() {
           {stepsData.map((step, index) => (
             <motion.div
               key={step.title}
-              initial={{ opacity: 0, y: 30 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{
-                duration: 0.6,
-                delay: index * 0.15,
-                ease: 'easeOut',
-              }}
-              className="group relative text-center overflow-hidden rounded-2xl border border-border/40 bg-background/50 p-8 shadow-lg"
+              {...getAnimationProps(index)}
+              className={cn(
+                "group relative text-center overflow-hidden rounded-2xl border border-border/40 p-8 shadow-lg",
+                // Conditional styling based on device capability
+                isLowEndDevice 
+                  ? "bg-background/80" // Simpler background for low-end devices
+                  : "bg-background/50", // Original background with backdrop effects
+                isMobile && "transform-gpu" // Enable GPU acceleration on mobile
+              )}
             >
-              <BorderBeam
-                size={350}
-                duration={10}
-                delay={9 + index * 2}
-                // DIUBAH: Opacity /40 dihapus agar warna lebih terang
-                className="via-blue-800 from-transparent to-transparent"
-              />
+              {/* Conditionally render BorderBeam only on high-end devices */}
+              {!isLowEndDevice && (
+                <BorderBeam
+                  size={350}
+                  duration={10}
+                  delay={9 + index * 2}
+                  className="via-blue-800 from-transparent to-transparent"
+                />
+              )}
 
-              <div className="mb-6 w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
+              <div 
+                className={cn(
+                  "mb-6 w-20 h-20 rounded-full flex items-center justify-center mx-auto",
+                  isLowEndDevice 
+                    ? "bg-blue-500 shadow-md" // Simplified gradient for low-end devices
+                    : "bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg" // Original gradient
+                )}
+              >
                 <span className="text-white font-bold text-3xl">{index + 1}</span>
               </div>
               <h3 className="text-xl font-bold mb-2 text-gray-900">{step.title}</h3>
