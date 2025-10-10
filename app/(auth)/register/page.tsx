@@ -163,7 +163,7 @@ export default function RegisterPage() {
       setAlertMessage("Kode OTP telah dikirim ke email Anda. Silakan periksa inbox atau folder spam.")
       setAlertType("success")
       setCurrentStep(2)
-      setResendTimer(10) // Start 10-second timer
+      setResendTimer(60) // Start 10-second timer
       setCanResendOTP(false)
     } catch (error: unknown) {
       const errorObj = error as { response?: { data?: { message?: string } }; message?: string }

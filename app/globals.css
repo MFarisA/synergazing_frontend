@@ -249,4 +249,29 @@
       background-position: 350% 50%, 350% 50%;
     }
   }
+
+  /* Mobile performance optimizations for aurora */
+  @media (max-width: 768px) {
+    .aurora-reduced-motion {
+      animation: none !important;
+      transform: none !important;
+      filter: none !important;
+      backdrop-filter: none !important;
+    }
+  }
+
+  /* Prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .aurora-animation {
+      animation: none !important;
+    }
+  }
+
+  /* GPU acceleration hints */
+  .aurora-optimized {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: transform;
+  }
 }
