@@ -431,15 +431,19 @@ export default function Navbar({ className }: { className?: string }) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2">
-                <Avatar className="h-6 w-6">
-                  <AvatarImage 
-                    src={userData?.profile_picture} 
-                    alt={userData?.name || "User"} 
-                  />
-                  <AvatarFallback>
-                    <User className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
+                {userData?.profile_picture ? (
+                  <div className="relative h-6 w-6 rounded-full overflow-hidden bg-gray-100">
+                    <img 
+                      src={userData.profile_picture} 
+                      alt={userData?.name || "User"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">
+                    <User className="h-3 w-3 text-gray-600" />
+                  </div>
+                )}
                 <span>{userData?.name || "Pengguna"}</span>
               </Button>
             </DropdownMenuTrigger>
@@ -619,15 +623,19 @@ export default function Navbar({ className }: { className?: string }) {
               {isLoggedIn ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage 
-                        src={userData?.profile_picture} 
-                        alt={userData?.name || "User"} 
-                      />
-                      <AvatarFallback>
-                        <User className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
+                    {userData?.profile_picture ? (
+                      <div className="relative h-8 w-8 rounded-full overflow-hidden bg-gray-100">
+                        <img 
+                          src={userData.profile_picture} 
+                          alt={userData?.name || "User"}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User className="h-4 w-4 text-gray-600" />
+                      </div>
+                    )}
                     <div className="text-sm font-medium text-gray-900">
                       {userData?.name || "Pengguna"}
                     </div>
