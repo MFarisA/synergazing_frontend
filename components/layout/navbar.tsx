@@ -10,6 +10,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Bell, LogOut, User, Menu, X, Check, Trash2, CheckCheck } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -43,6 +51,7 @@ export default function Navbar({ className }: { className?: string }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0)
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   // Function to refresh user profile data from API
   const refreshUserProfile = async () => {
@@ -252,11 +261,16 @@ export default function Navbar({ className }: { className?: string }) {
 
   // Handle logout
   const handleLogout = () => {
+    setShowLogoutConfirm(true)
+  }
+
+  const confirmLogout = () => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
     setIsLoggedIn(false)
     setUserData(null)
     setMobileMenuOpen(false)
+    setShowLogoutConfirm(false)
 
     // Dispatch custom event to notify other components about logout
     window.dispatchEvent(new CustomEvent('authStateChanged', { 
@@ -670,6 +684,32 @@ export default function Navbar({ className }: { className?: string }) {
           </nav>
         </div>
       )}
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Logout</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin keluar dari akun? Anda perlu login kembali untuk mengakses fitur-fitur aplikasi.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowLogoutConfirm(false)}
+            >
+              Batal
+            </Button>
+            <Button 
+              onClick={confirmLogout}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Ya, Keluar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   )
 }
