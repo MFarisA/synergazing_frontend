@@ -49,6 +49,7 @@ import {getProfile, deleteCv} from "@/lib/api/profile-management"
 import { getAllSkills, getUserSkills, updateUserSkills, deleteUserSkill} from "@/lib/api/skill-management";
 import { updateCollaborationStatus } from "@/lib/api/collaboration";
 import { getCreatedProjects, deleteProject } from "@/lib/api/project-management";
+import { ProfileCompletionBanner } from "@/components/profile-completion-banner";
 
 export default function ProfilePage() {
   const [userData, setUserData] = useState<User | null>(null);
@@ -430,6 +431,9 @@ export default function ProfilePage() {
       )}
 
       <div className="container mx-auto px-4 py-6">
+        {/* Profile Completion Banner */}
+        <ProfileCompletionBanner userData={userData} />
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">

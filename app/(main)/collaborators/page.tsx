@@ -15,7 +15,9 @@ import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { getCollaborators } from "@/lib/api/collaboration"
 import { getChatWithUser, getChatMessages } from "@/lib/api/chat-message"
+import { getProfile } from "@/lib/api/profile-management"
 import { motion, AnimatePresence } from "framer-motion"
+import { ProfileCompletionBanner } from "@/components/profile-completion-banner"
 
 // Type definition for collaborator from API
 interface Collaborator {
@@ -71,6 +73,7 @@ export default function CollaboratorsPage() {
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+	const [currentUserProfile, setCurrentUserProfile] = useState<any>(null)
 
 	// Chat state
 	const [currentChat, setCurrentChat] = useState<Chat | null>(null)
@@ -142,6 +145,48 @@ export default function CollaboratorsPage() {
 			disconnect();
 		};
 	}, [disconnect]);
+
+	// Fetch current user profile for completion banner
+	useEffect(() => {
+		const fetchCurrentUserProfile = async () => {
+			const token = localStorage.getItem("token");
+			if (!token) return;
+
+			try {
+				// Try to get full profile data from API
+				const profileResponse = await getProfile(token);
+				if (profileResponse && profileResponse.data) {
+					const profileInfo = profileResponse.data.profile || {};
+					const mergedData = {
+						...profileResponse.data,
+						...profileInfo
+					};
+					setCurrentUserProfile(mergedData);
+				} else {
+					// Fallback to localStorage
+					const user = localStorage.getItem("user");
+					if (user) {
+						const parsedUser = JSON.parse(user);
+						setCurrentUserProfile(parsedUser);
+					}
+				}
+			} catch (error) {
+				console.error("Failed to get current user profile:", error);
+				// Fallback to localStorage
+				try {
+					const user = localStorage.getItem("user");
+					if (user) {
+						const parsedUser = JSON.parse(user);
+						setCurrentUserProfile(parsedUser);
+					}
+				} catch (fallbackError) {
+					console.error("Failed to parse user from localStorage:", fallbackError);
+				}
+			}
+		};
+
+		fetchCurrentUserProfile();
+	}, []);
 
 	// Fetch collaborators on component mount
 	useEffect(() => {
@@ -354,6 +399,15 @@ export default function CollaboratorsPage() {
 
 	return (
 		<div className="min-h-screen relative">
+			{/* Profile Completion Banner */}
+			{currentUserProfile && (
+				<div className="bg-white border-b">
+					<div className="container mx-auto px-4 py-2">
+						<ProfileCompletionBanner userData={currentUserProfile} />
+					</div>
+				</div>
+			)}
+			
 			{/* Header */}
 
 			<div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
