@@ -77,7 +77,34 @@ export default function EditProfilePage() {
     }
     
     try {
-      await updateProfile(token, formData);
+      const response = await updateProfile(token, formData);
+      
+      // Update localStorage with the new user data
+      if (response && response.data) {
+        const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+        const updatedUser = {
+          ...currentUser,
+          // Update with all the returned data from the API
+          id: response.data.id,
+          name: response.data.name,
+          email: response.data.email,
+          phone: response.data.phone,
+          profile_picture: response.data.profile_picture, // This is the key field for navbar
+          cv_file: response.data.cv_file,
+          profile: response.data.profile,
+        };
+        
+        console.log('Updating localStorage with:', updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        
+        // Dispatch event to notify other components (like navbar) about the profile update
+        window.dispatchEvent(new CustomEvent('profileUpdated', { 
+          detail: { user: updatedUser } 
+        }));
+        
+        console.log('Profile update event dispatched');
+      }
+      
       router.push('/profile');
     } catch (error) {
       console.error(error);
@@ -109,17 +136,26 @@ export default function EditProfilePage() {
               <div className="p-6">
                 <div className="flex flex-col items-center gap-4">
                   <div className="relative">
-                    <Avatar className="h-24 w-24 border-4 border-background shadow-md">
-                      <AvatarImage src={profilePicture ? URL.createObjectURL(profilePicture) : userData.profile_picture || "/placeholder.svg"} />
-                      <AvatarFallback className="text-2xl">
-                        {editData.name
-                          ? editData.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                          : "U"}
-                      </AvatarFallback>
-                    </Avatar>
+                    {(profilePicture || userData.profile_picture) ? (
+                      <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-background shadow-md bg-gray-100">
+                        <img 
+                          src={profilePicture ? URL.createObjectURL(profilePicture) : userData.profile_picture} 
+                          alt={editData.name || "Profile Picture"}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-24 w-24 rounded-full border-4 border-background shadow-md bg-gray-100 flex items-center justify-center">
+                        <span className="text-2xl font-semibold text-gray-500">
+                          {editData.name
+                            ? editData.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                            : "U"}
+                        </span>
+                      </div>
+                    )}
                     <Button
                       size="icon"
                       variant="secondary"
@@ -128,7 +164,13 @@ export default function EditProfilePage() {
                     >
                       <Camera className="h-4 w-4" />
                     </Button>
-                    <input type="file" id="profile-picture-upload" className="hidden" onChange={(e) => setProfilePicture(e.target.files?.[0] || null)} />
+                    <input 
+                      type="file" 
+                      id="profile-picture-upload" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={(e) => setProfilePicture(e.target.files?.[0] || null)} 
+                    />
                   </div>
                   
                   <h2 className="text-xl font-bold">{editData.name}</h2>

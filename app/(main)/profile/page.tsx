@@ -484,7 +484,7 @@ export default function ProfilePage() {
                   <div className="w-full sm:w-auto">
                     <Link href="/profile/edit">
                       <Button className="w-full sm:w-auto">
-                        <Edit className="h-4 w-4 mr-2" /> Edit Profil
+                        <Edit className="h-4 w-4 mr-2" /> Edit Profile
                       </Button>
                     </Link>
                   </div>

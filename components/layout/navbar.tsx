@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Bell, LogOut, User, Menu, X, Check, Trash2, CheckCheck } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -25,6 +26,7 @@ import {
   getNotificationIcon,
   type Notification 
 } from "@/lib/api/notifications"
+import { getProfile } from "@/lib/api/profile-management"
 
 export default function Navbar({ className }: { className?: string }) {
   const [prevScrollPos, setPrevScrollPos] = useState(0)
@@ -33,10 +35,33 @@ export default function Navbar({ className }: { className?: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userData, setUserData] = useState<{ name?: string } | null>(null)
+  const [userData, setUserData] = useState<{ 
+    name?: string; 
+    profile_picture?: string;
+    [key: string]: any;
+  } | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0)
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false)
+
+  // Function to refresh user profile data from API
+  const refreshUserProfile = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    try {
+      const response = await getProfile(token)
+      if (response.success && response.data) {
+        const updatedUser = response.data
+        setUserData(updatedUser)
+        localStorage.setItem("user", JSON.stringify(updatedUser))
+        console.log('Profile refreshed from API:', updatedUser)
+        console.log('Updated profile picture URL:', updatedUser.profile_picture)
+      }
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error)
+    }
+  }
 
   // Check if user is logged in
   useEffect(() => {
@@ -47,7 +72,10 @@ export default function Navbar({ className }: { className?: string }) {
       if (token && user) {
         setIsLoggedIn(true)
         try {
-          setUserData(JSON.parse(user))
+          const parsedUser = JSON.parse(user)
+          setUserData(parsedUser)
+          console.log('Updated user data:', parsedUser) // Debug log
+          console.log('Profile picture URL:', parsedUser?.profile_picture) // Debug profile picture
         } catch (error) {
           console.error("Failed to parse user data:", error)
         }
@@ -63,10 +91,21 @@ export default function Navbar({ className }: { className?: string }) {
     // Listen for auth state changes
     const handleAuthStateChange = () => checkAuthState()
     window.addEventListener('authStateChanged', handleAuthStateChange)
+    
+    // Listen for profile updates
+    const handleProfileUpdate = async () => {
+      console.log('Profile update event received')
+      // Refresh from API to get the latest profile data
+      await refreshUserProfile()
+      // Also check localStorage in case API fails
+      checkAuthState()
+    }
+    window.addEventListener('profileUpdated', handleProfileUpdate)
 
     // Cleanup
     return () => {
       window.removeEventListener('authStateChanged', handleAuthStateChange)
+      window.removeEventListener('profileUpdated', handleProfileUpdate)
     }
   }, [pathname]) // Re-check when pathname changes
 
@@ -392,7 +431,15 @@ export default function Navbar({ className }: { className?: string }) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2">
-                <User className="h-4 w-4" />
+                <Avatar className="h-6 w-6">
+                  <AvatarImage 
+                    src={userData?.profile_picture} 
+                    alt={userData?.name || "User"} 
+                  />
+                  <AvatarFallback>
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
                 <span>{userData?.name || "Pengguna"}</span>
               </Button>
             </DropdownMenuTrigger>
@@ -571,8 +618,19 @@ export default function Navbar({ className }: { className?: string }) {
             <div className="border-t pt-4">
               {isLoggedIn ? (
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-900 mb-2">
-                    {userData?.name || "Pengguna"}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage 
+                        src={userData?.profile_picture} 
+                        alt={userData?.name || "User"} 
+                      />
+                      <AvatarFallback>
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-sm font-medium text-gray-900">
+                      {userData?.name || "Pengguna"}
+                    </div>
                   </div>
                   <Link
                     href="/profile"
