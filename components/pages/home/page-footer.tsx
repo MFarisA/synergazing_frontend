@@ -1,12 +1,18 @@
 import Link from "next/link";
-import { Zap } from "lucide-react";
+import Image from "next/image";
 
 export function PageFooter() {
   return (
     <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t bg-gray-50">
       <div className="flex items-center gap-2">
         <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center">
-          <Zap className="h-4 w-4 text-white" />
+          <Image 
+            src="/Vector.svg" 
+            alt="Synergazing Logo" 
+            width={16} 
+            height={16} 
+            className="text-white"
+          />
         </div>
         <span className="font-semibold">Synergazing</span>
       </div>
