@@ -62,6 +62,18 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     // Heartbeat to keep connection alive in production
+    // Check for production config issues
+    useEffect(() => {
+        if (process.env.NODE_ENV === 'production' &&
+            (WS_BASE_URL.includes('localhost') || WS_BASE_URL.includes('127.0.0.1'))) {
+            console.error(
+                'CRITICAL WARNING: You are running in PRODUCTION mode but connecting to localhost WebSocket.\n' +
+                'Real-time chat will fail for external users.\n' +
+                'Please set NEXT_PUBLIC_WS_URL environment variable to your real domain (e.g., wss://api.yourdomain.com)'
+            );
+        }
+    }, []);
+
     const startHeartbeat = useCallback(() => {
         if (heartbeatIntervalRef.current) {
             clearInterval(heartbeatIntervalRef.current)
