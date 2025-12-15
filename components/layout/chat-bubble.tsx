@@ -48,10 +48,10 @@ const SearchInput = memo(() => {
   return (
     <div className="relative">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-      <Input 
-        placeholder="Cari pesan..." 
-        className="pl-9 rounded-full bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700" 
-        value={localSearchQuery} 
+      <Input
+        placeholder="Cari pesan..."
+        className="pl-9 rounded-full bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+        value={localSearchQuery}
         onChange={handleInputChange}
         autoComplete="off"
       />
@@ -62,12 +62,12 @@ const SearchInput = memo(() => {
 SearchInput.displayName = 'SearchInput'
 
 // Isolated Message Input Component
-const MessageInput = memo(({ 
-  onSendMessage, 
-  connectionStatus 
-}: { 
+const MessageInput = memo(({
+  onSendMessage,
+  connectionStatus
+}: {
   onSendMessage: (message: string) => void
-  connectionStatus: string 
+  connectionStatus: string
 }) => {
   const [localMessage, setLocalMessage] = useState('')
 
@@ -82,18 +82,18 @@ const MessageInput = memo(({
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-2">
       <div className="flex-1 relative">
-        <Input 
-          value={localMessage} 
-          onChange={(e) => setLocalMessage(e.target.value)} 
-          placeholder="Ketik pesan..." 
-          className="pr-10 rounded-full border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800" 
+        <Input
+          value={localMessage}
+          onChange={(e) => setLocalMessage(e.target.value)}
+          placeholder="Ketik pesan..."
+          className="pr-10 rounded-full border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800"
           autoComplete="off"
           disabled={connectionStatus !== 'connected'}
         />
-        <Button 
-          type="submit" 
-          size="icon" 
-          disabled={!localMessage.trim() || connectionStatus !== 'connected'} 
+        <Button
+          type="submit"
+          size="icon"
+          disabled={!localMessage.trim() || connectionStatus !== 'connected'}
           className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full"
         >
           <Send className="h-3 w-3" />
@@ -117,10 +117,10 @@ export function ChatBubble() {
   const [error, setError] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [filteredConversations, setFilteredConversations] = useState<ConversationListItem[]>([])
-  
+
   const chatEndRef = useRef<HTMLDivElement>(null)
   const processedMessageIds = useRef<Set<number>>(new Set())
-  
+
   // WebSocket hook
   const { connectionStatus, lastMessage, connect, disconnect, sendMessage } = useWebSocket()
 
@@ -128,11 +128,11 @@ export function ChatBubble() {
   useEffect(() => {
     const isProduction = process.env.NODE_ENV === 'production'
     console.log(`WebSocket connection status: ${connectionStatus}${isProduction ? ' (PRODUCTION)' : ' (DEVELOPMENT)'}`)
-    
+
     if (connectionStatus === 'disconnected' && isAuthenticated) {
       console.warn('WebSocket disconnected while user is authenticated - this may cause message delivery issues')
     }
-    
+
     if (connectionStatus === 'error') {
       console.error('WebSocket connection error - messages may not be delivered in real-time')
     }
@@ -141,16 +141,16 @@ export function ChatBubble() {
   // Auth helper
   const getAuthData = () => {
     if (typeof window === 'undefined') return null
-    
+
     try {
       const token = localStorage.getItem('token')
       const userStr = localStorage.getItem('user')
       const user = userStr ? JSON.parse(userStr) : null
-      
+
       if (!token || !user) {
         return null
       }
-      
+
       return { token, user }
     } catch (error) {
       console.error('Error getting auth data:', error)
@@ -163,7 +163,7 @@ export function ChatBubble() {
     const date = new Date(timestamp)
     const now = new Date()
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-    
+
     if (diffInHours < 1) {
       return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     } else if (diffInHours < 24) {
@@ -200,7 +200,7 @@ export function ChatBubble() {
         unreadMessagesResponse.data.unread_messages.forEach((item: any) => {
           unreadCountsMap.set(item.user_id, item.unread_count)
         })
-        
+
         // Update conversations with fresh unread counts
         setConversations(prev => {
           const updated = prev.map(conv => ({
@@ -251,7 +251,7 @@ export function ChatBubble() {
     const checkAuth = () => {
       const authData = getAuthData()
       console.log('ChatBubble auth check:', { authData: !!authData, user: authData?.user })
-      
+
       if (authData) {
         setCurrentUser({ id: authData.user.id, name: authData.user.name })
         setIsAuthenticated(true)
@@ -289,16 +289,18 @@ export function ChatBubble() {
     window.addEventListener('storage', handleStorageChange)
     window.addEventListener('authStateChanged', handleAuthStateChange as EventListener)
     window.addEventListener('focus', handleWindowFocus)
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('authStateChanged', handleAuthStateChange as EventListener)
       window.removeEventListener('focus', handleWindowFocus)
-      // Clear processed message IDs when disconnecting
-      processedMessageIds.current.clear()
-      disconnect()
+      // We do NOT disconnect here anymore because the connection is global/shared via Provider
+      // and this effect might re-run harmlessly.
     }
-  }, [connect, disconnect])
+    // Remove dependencies to preventing loop. 
+    // We only want this to run on mount or when windows events fire (which call checkAuth internally)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Load chat messages
   const loadChatMessages = async (chatId: number) => {
@@ -310,33 +312,33 @@ export function ChatBubble() {
       if (response.success && response.data?.messages) {
         const messages = response.data.messages.reverse()
         setActiveChatMessages(messages)
-        
+
         // Clear processed message IDs and add current messages to prevent duplicates
         processedMessageIds.current.clear()
         messages.forEach((msg: ChatMessage) => processedMessageIds.current.add(msg.id))
-        
+
         // Check if this conversation had unread messages before marking as read
         const currentConv = conversations.find(conv => conv.chatId === chatId)
         const hadUnreadMessages = currentConv && currentConv.unread > 0
-        
+
         await markMessagesAsRead(authData.token, chatId)
         sendMessage({ type: 'mark_read', chat_id: chatId })
-        
+
         // Update conversations to mark this chat as read and update last message
         setConversations(prev => {
           const updated = prev.map(conv => {
             if (conv.chatId === chatId) {
               const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null
-              
+
               // Format last message with "You: " prefix if current user sent it
               let displayMessage = 'No messages yet'
               if (lastMessage?.content) {
                 const isUserMessage = lastMessage.sender_id === authData.user.id
                 displayMessage = isUserMessage ? `You: ${lastMessage.content}` : lastMessage.content
               }
-              
-              return { 
-                ...conv, 
+
+              return {
+                ...conv,
                 unread: 0,
                 lastMessage: displayMessage,
                 timestamp: lastMessage ? formatTimestamp(lastMessage.created_at) : conv.timestamp
@@ -347,7 +349,7 @@ export function ChatBubble() {
           setFilteredConversations(updated) // Also update filtered conversations
           return updated
         })
-        
+
         // If this conversation had unread messages, decrement the unread users count
         if (hadUnreadMessages) {
           setTotalUnreadUsers(prev => Math.max(0, prev - 1))
@@ -365,7 +367,7 @@ export function ChatBubble() {
 
     const handleStartChat = (event: CustomEvent) => {
       const { chatId, creatorId, creatorName, creatorAvatar, message } = event.detail
-      
+
       const newConversation: ConversationListItem = {
         id: chatId,
         name: creatorName,
@@ -382,8 +384,8 @@ export function ChatBubble() {
       setConversations(prev => {
         const exists = prev.find(conv => conv.chatId === chatId)
         if (exists) {
-          return prev.map(conv => 
-            conv.chatId === chatId 
+          return prev.map(conv =>
+            conv.chatId === chatId
               ? { ...conv, lastMessage: message, timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }
               : conv
           )
@@ -401,7 +403,7 @@ export function ChatBubble() {
           type: 'join_chat',
           chat_id: chatId
         })
-        
+
         // Send the initial message after joining
         setTimeout(() => {
           sendMessage({
@@ -439,7 +441,7 @@ export function ChatBubble() {
 
         if (chatsResponse.success && chatsResponse.data) {
           const chats: Chat[] = chatsResponse.data
-          
+
           // Create a map of user IDs to their unread counts from the API
           const unreadCountsMap = new Map<number, number>()
           if (unreadMessagesResponse.success && unreadMessagesResponse.data?.unread_messages) {
@@ -447,18 +449,18 @@ export function ChatBubble() {
               unreadCountsMap.set(item.user_id, item.unread_count)
             })
           }
-          
+
           const conversationList = chats.map(chat => {
             const otherUser = chat.user1_id === authData.user.id ? chat.user2 : chat.user1
             const lastMessage = chat.messages && chat.messages.length > 0 ? chat.messages[chat.messages.length - 1] : null
-            
+
             // Format last message with "You: " prefix if current user sent it
             let displayMessage = 'No messages yet'
             if (lastMessage?.content) {
               const isUserMessage = lastMessage.sender_id === authData.user.id
               displayMessage = isUserMessage ? `You: ${lastMessage.content}` : lastMessage.content
             }
-            
+
             return {
               id: chat.id,
               name: otherUser.name,
@@ -527,12 +529,27 @@ export function ChatBubble() {
       }
 
       // Update conversations and unread users count
+      // Calculate if we need to increment unread users count
+      // We do this OUTSIDE the setConversations updater to avoid double-counting in Strict Mode
+      const currentConvs = conversationsRef.current
+      const existingConv = currentConvs.find(conv => conv.chatId === newMsg.chat_id)
+      const isFromOtherUser = newMsg.sender_id !== currentUser?.id
+
+      // If message is from someone else, and we haven't read their messages yet (or they are new)
+      if (isFromOtherUser) {
+        // If it's a new conversation OR existing conversation has 0 unread
+        if (!existingConv || existingConv.unread === 0) {
+          setTotalUnreadUsers(prev => prev + 1)
+        }
+      }
+
+      // Update conversations
       setConversations(prev => {
         // Check if conversation already exists
         const existingConvIndex = prev.findIndex(conv => conv.chatId === newMsg.chat_id)
-        
+
         let updated: ConversationListItem[]
-        
+
         if (existingConvIndex !== -1) {
           // Update existing conversation
           console.log('Updating existing conversation for chat:', newMsg.chat_id)
@@ -540,7 +557,7 @@ export function ChatBubble() {
             if (conv.chatId === newMsg.chat_id) {
               // Format message with "You: " prefix if current user sent it
               const displayMessage = newMsg.sender_id === currentUser?.id ? `You: ${newMsg.content}` : newMsg.content
-              
+
               return {
                 ...conv,
                 lastMessage: displayMessage,
@@ -553,10 +570,10 @@ export function ChatBubble() {
         } else {
           // Create new conversation for new user
           console.log('Creating new conversation for chat:', newMsg.chat_id, 'from user:', newMsg.sender.name)
-          
+
           // Format message with "You: " prefix if current user sent it
           const displayMessage = newMsg.sender_id === currentUser?.id ? `You: ${newMsg.content}` : newMsg.content
-          
+
           const newConversation: ConversationListItem = {
             id: newMsg.chat_id,
             name: newMsg.sender.name,
@@ -569,26 +586,16 @@ export function ChatBubble() {
             chatId: newMsg.chat_id,
             otherUserId: newMsg.sender_id
           }
-          
+
           // Add new conversation to the beginning of the list
           updated = [newConversation, ...prev]
-          
+
           // Fetch user profile data asynchronously to update avatar and other details
           updateConversationWithUserProfile(newMsg.chat_id, newMsg.sender_id)
         }
-        
+
         setFilteredConversations(updated) // Update filtered list too
-        
-        // Update unread users count when receiving a message from a different user
-        if (newMsg.sender_id !== currentUser?.id) {
-          // Check if this user already has unread messages in the current state
-          const existingConv = prev.find(conv => conv.chatId === newMsg.chat_id)
-          if (!existingConv || existingConv.unread === 0) {
-            // This user didn't have unread messages before (or is new), so increment unread users count
-            setTotalUnreadUsers(prevCount => prevCount + 1)
-          }
-        }
-        
+
         return updated
       })
     }
@@ -606,18 +613,18 @@ export function ChatBubble() {
   // Handle search - completely stable callback using refs
   const currentSearchQuery = useRef('')
   const conversationsRef = useRef(conversations)
-  
+
   // Update conversations ref when it changes
   useEffect(() => {
     conversationsRef.current = conversations
   }, [conversations])
-  
+
   // Listen for search events from SearchInput component
   useEffect(() => {
     const handleSearchQueryChanged = (event: CustomEvent) => {
       const query = event.detail.query
       currentSearchQuery.current = query
-      
+
       if (!query) {
         setFilteredConversations(conversations)
       } else {
@@ -637,7 +644,7 @@ export function ChatBubble() {
   // Handle message send - WebSocket only (backend doesn't support HTTP message sending)
   const handleMessageSend = async (message: string) => {
     if (!activeChat || !currentUser) return
-    
+
     // Send message via WebSocket only
     const success = sendMessage({
       type: 'send_message',
@@ -647,13 +654,13 @@ export function ChatBubble() {
 
     if (success) {
       console.log('Message sent via WebSocket')
-      
+
       // Don't add to local state - wait for WebSocket response to avoid duplicates
       // The message will be added when we receive it back from the server
-      
+
       // Only update conversation list timestamp
-      setConversations(prev => prev.map(conv => 
-        conv.chatId === activeChat.chatId 
+      setConversations(prev => prev.map(conv =>
+        conv.chatId === activeChat.chatId
           ? { ...conv, lastMessage: message, timestamp: formatTimestamp(new Date().toISOString()) }
           : conv
       ))
@@ -753,8 +760,8 @@ export function ChatBubble() {
                   </div>
                 </div>
                 <div className="p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-                  <MessageInput 
-                    onSendMessage={handleMessageSend} 
+                  <MessageInput
+                    onSendMessage={handleMessageSend}
                     connectionStatus={connectionStatus}
                   />
                 </div>
@@ -768,7 +775,7 @@ export function ChatBubble() {
                   </Button>
                   <div className="flex-1 text-center">
                     <p className="font-medium text-sm md:text-base lg:text-sm text-gray-900 dark:text-gray-100 flex items-center justify-center gap-2">
-                      Pesan 
+                      Pesan
                       {connectionStatus === 'connected' && <span className="text-green-500 text-xs md:text-sm lg:text-xs">● Terhubung</span>}
                       {connectionStatus === 'connecting' && <span className="text-yellow-500 text-xs md:text-sm lg:text-xs">● Menghubungkan...</span>}
                       {connectionStatus === 'disconnected' && <span className="text-red-500 text-xs md:text-sm lg:text-xs">● Terputus</span>}
@@ -800,9 +807,9 @@ export function ChatBubble() {
                     </div>
                   ) : (
                     filteredConversations.map(convo => (
-                      <div 
-                        key={convo.id} 
-                        className="p-3 md:p-4 lg:p-3 flex items-center hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0" 
+                      <div
+                        key={convo.id}
+                        className="p-3 md:p-4 lg:p-3 flex items-center hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0"
                         onClick={() => handleChatSelect(convo)}
                       >
                         <div className="relative">
@@ -859,7 +866,7 @@ export function ChatBubble() {
               {isOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
             </motion.div>
           </AnimatePresence>
-          
+
           {!isOpen && totalUnreadUsers > 0 && (
             <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center text-xs font-medium text-white">
               {totalUnreadUsers > 9 ? '9+' : totalUnreadUsers}

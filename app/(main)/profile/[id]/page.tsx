@@ -105,14 +105,13 @@ export default function UserProfilePage() {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setCurrentUser({ id: payload.user_id, name: payload.name || 'You' });
-        
-        // Connect to WebSocket
-        connect(payload.user_id, token);
+
+        // Connected via global provider
       } catch (err) {
         console.error('Failed to decode token:', err);
       }
     }
-  }, [connect]);
+  }, []);
 
   // Handle WebSocket messages
   useEffect(() => {
@@ -125,7 +124,7 @@ export default function UserProfilePage() {
               const messageData = lastMessage.data as unknown as ChatMessage;
               const exists = prev.some(msg => msg.id === messageData.id);
               if (exists) return prev;
-              
+
               return [...prev, messageData];
             });
           }
@@ -147,17 +146,13 @@ export default function UserProfilePage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  // Cleanup WebSocket on unmount
-  useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, [disconnect]);
+  // Cleanup WebSocket on unmount - REMOVED
+  // The global WebSocketProvider handles the connection lifecycle
 
   // Initialize chat when user wants to contact
   const initializeChat = async () => {
     if (!userData) return;
-    
+
     try {
       setIsLoadingChat(true);
       const token = localStorage.getItem("token");
@@ -282,10 +277,10 @@ export default function UserProfilePage() {
           try {
             const userProfileResponse = await getUserProfile(token, userId);
             console.log('User profile API response:', userProfileResponse);
-            
+
             if (userProfileResponse.success && userProfileResponse.data) {
               const userData = userProfileResponse.data;
-              
+
               // Transform user data to match User interface, handling both field name variations
               const transformedUser = {
                 id: userData.id,
@@ -306,7 +301,7 @@ export default function UserProfilePage() {
                 collaboration_status: true, // User is ready since they're accessible via this endpoint
                 user_skills: userData.skills || [],
               };
-              
+
               console.log('Transformed user data:', transformedUser);
               setUserData(transformedUser);
               setUserProjects([]); // Don't load projects for other users for privacy
@@ -315,10 +310,10 @@ export default function UserProfilePage() {
             }
           } catch (directProfileError) {
             console.error('Failed to get direct profile, falling back to collaborators list:', directProfileError);
-            
+
             // Fallback: try to get user info from collaborators list
             const collaboratorsResponse = await getCollaborators(token);
-            
+
             let collaboratorsData = [];
             if (collaboratorsResponse.data && collaboratorsResponse.data.users) {
               collaboratorsData = collaboratorsResponse.data.users;
@@ -346,7 +341,7 @@ export default function UserProfilePage() {
               portofolio_url?: string; // Handle both spellings
               skills?: any[];
             }) => user.id === parseInt(userId));
-            
+
             if (targetUser) {
               // Transform collaborator data to match User interface
               const transformedUser = {
@@ -552,13 +547,13 @@ export default function UserProfilePage() {
                   <div className="flex items-center justify-between p-3 mt-4 bg-blue-50 border border-blue-100 rounded-lg">
                     <div>
                       <h4 className="font-medium text-sm">
-                        {isOwnProfile 
+                        {isOwnProfile
                           ? "Siap untuk Kolaborasi (#ReadyToSynergize)"
                           : "Siap untuk Kolaborasi (#ReadyToSynergize)"
                         }
                       </h4>
                       <p className="text-xs text-gray-500">
-                        {isOwnProfile 
+                        {isOwnProfile
                           ? "Tampilkan profil Anda apakah bersedia menjadi kolaborator."
                           : "Pengguna ini siap untuk berkolaborasi."
                         }
@@ -658,15 +653,14 @@ export default function UserProfilePage() {
                               className="w-full h-36 sm:h-40 md:h-44 lg:h-48 object-cover rounded-t-lg"
                             />
                             <Badge
-                              className={`absolute top-2 left-2 text-xs ${
-                                project.status === "published"
+                              className={`absolute top-2 left-2 text-xs ${project.status === "published"
                                   ? "bg-blue-500"
                                   : project.status === "draft"
-                                  ? "bg-yellow-500"
-                                  : project.status === "completed"
-                                  ? "bg-green-500"
-                                  : "bg-gray-500"
-                              }`}
+                                    ? "bg-yellow-500"
+                                    : project.status === "completed"
+                                      ? "bg-green-500"
+                                      : "bg-gray-500"
+                                }`}
                             >
                               {project.status}
                             </Badge>
@@ -718,7 +712,7 @@ export default function UserProfilePage() {
                                   variant="outline"
                                   className="w-full bg-transparent text-xs sm:text-sm h-8 sm:h-9"
                                 >
-                                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> 
+                                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                                   Detail
                                 </Button>
                               </Link>
@@ -727,7 +721,7 @@ export default function UserProfilePage() {
                                 className="flex-1"
                               >
                                 <Button size="sm" className="w-full text-xs sm:text-sm h-8 sm:h-9">
-                                  <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> 
+                                  <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                                   Pelamar
                                 </Button>
                               </Link>
@@ -846,12 +840,12 @@ export default function UserProfilePage() {
                     <LinkIcon className="h-4 w-4 ml-auto text-gray-400" />
                   </a>
                 )}
-                {!userData.website_url && !userData.github_url && !userData.linkedin_url && 
-                 !userData.instagram_url && !userData.portfolio_url && (
-                  <p className="text-sm text-gray-500">
-                    Tidak ada tautan media sosial yang tersedia.
-                  </p>
-                )}
+                {!userData.website_url && !userData.github_url && !userData.linkedin_url &&
+                  !userData.instagram_url && !userData.portfolio_url && (
+                    <p className="text-sm text-gray-500">
+                      Tidak ada tautan media sosial yang tersedia.
+                    </p>
+                  )}
               </CardContent>
             </Card>
 
@@ -1078,8 +1072,8 @@ export default function UserProfilePage() {
                   className="flex-1"
                   disabled={connectionStatus !== 'connected' || isSendingMessage}
                 />
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   size="icon"
                   disabled={!newMessage.trim() || connectionStatus !== 'connected' || isSendingMessage}
                 >

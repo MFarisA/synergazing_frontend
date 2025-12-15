@@ -70,7 +70,7 @@ export default function CollaboratorProfilePage() {
   const userId = params.id as string
   const fromRecruiter = searchParams.get('from') === 'recruiter'
   const projectId = searchParams.get('projectId')
-  
+
   const [collaborator, setCollaborator] = useState<CollaboratorProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -104,7 +104,7 @@ export default function CollaboratorProfilePage() {
         // For now, we'll fetch from collaborators list and find the specific user
         // In a real app, you'd have a dedicated API endpoint for individual user profiles
         const response = await getCollaborators(token);
-        
+
         let collaboratorsData;
         if (response.data && response.data.users) {
           collaboratorsData = response.data.users;
@@ -117,7 +117,7 @@ export default function CollaboratorProfilePage() {
         }
 
         const user = collaboratorsData.find((c: any) => c.id.toString() === userId);
-        
+
         if (user) {
           setCollaborator({
             id: user.id,
@@ -156,14 +156,13 @@ export default function CollaboratorProfilePage() {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setCurrentUser({ id: payload.user_id, name: payload.name || 'You' });
-        
-        // Connect to WebSocket
-        connect(payload.user_id, token);
+
+        // Connected via global provider
       } catch (err) {
         console.error('Failed to decode token:', err);
       }
     }
-  }, [connect]);
+  }, []);
 
   // Handle WebSocket messages
   useEffect(() => {
@@ -175,7 +174,7 @@ export default function CollaboratorProfilePage() {
               const messageData = lastMessage.data as unknown as ChatMessage;
               const exists = prev.some(msg => msg.id === messageData.id);
               if (exists) return prev;
-              
+
               return [...prev, messageData];
             });
           }
@@ -195,16 +194,12 @@ export default function CollaboratorProfilePage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  // Cleanup WebSocket on unmount
-  useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, [disconnect]);
+  // Cleanup WebSocket on unmount - REMOVED
+  // The global WebSocketProvider handles the connection lifecycle
 
   const handleChatWithUser = async () => {
     if (!collaborator) return;
-    
+
     try {
       setIsLoadingChat(true);
       const token = localStorage.getItem("token");
@@ -349,11 +344,11 @@ export default function CollaboratorProfilePage() {
                         {collaborator.name.split(" ").map((n) => n[0]).join("")}
                       </AvatarFallback>
                     </Avatar>
-                    
+
                     <div className="flex-1 text-center md:text-left">
                       <h1 className="text-3xl font-bold mb-2">{collaborator.name}</h1>
                       <p className="text-lg text-gray-600 mb-3">{collaborator.profile?.interests || "Gamer"}</p>
-                      
+
                       <div className="flex items-center justify-center md:justify-start gap-4 text-sm text-gray-500 mb-4">
                         <div className="flex items-center gap-1">
                           <Users className="h-4 w-4" />
@@ -368,7 +363,7 @@ export default function CollaboratorProfilePage() {
 
                     {/* Action Button */}
                     <div className="flex flex-col gap-3">
-                      <Button 
+                      <Button
                         className="bg-blue-600 hover:bg-blue-700"
                         onClick={handleChatWithUser}
                         disabled={isLoadingChat}
@@ -472,7 +467,7 @@ export default function CollaboratorProfilePage() {
                       <p className="text-sm text-gray-600">{collaborator.email}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-gray-400" />
                     <div>
@@ -496,7 +491,7 @@ export default function CollaboratorProfilePage() {
                       <Github className="h-5 w-5 text-gray-400" />
                       <div className="flex-1">
                         <p className="text-sm font-medium">Github</p>
-                        <a 
+                        <a
                           href={collaborator.profile.github}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -515,13 +510,13 @@ export default function CollaboratorProfilePage() {
                       </div>
                     </div>
                   )}
-                  
+
                   {collaborator.profile?.portfolio && (
                     <div className="flex items-center gap-3">
                       <ExternalLink className="h-5 w-5 text-gray-400" />
                       <div className="flex-1">
                         <p className="text-sm font-medium">Portfolio</p>
-                        <a 
+                        <a
                           href={collaborator.profile.portfolio}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -655,8 +650,8 @@ export default function CollaboratorProfilePage() {
                   className="flex-1"
                   disabled={connectionStatus !== 'connected' || isSendingMessage}
                 />
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   size="icon"
                   disabled={!newMessage.trim() || connectionStatus !== 'connected' || isSendingMessage}
                 >

@@ -90,6 +90,7 @@ export default function CollaboratorsPage() {
 	const chatEndRef = useRef<HTMLDivElement>(null)
 
 	// Get current user from localStorage
+	// Get current user from localStorage
 	useEffect(() => {
 		const token = localStorage.getItem("token");
 		if (token) {
@@ -97,14 +98,14 @@ export default function CollaboratorsPage() {
 			try {
 				const payload = JSON.parse(atob(token.split('.')[1]));
 				setCurrentUser({ id: payload.user_id, name: payload.name || 'You' });
-				
-				// Connect to WebSocket
-				connect(payload.user_id, token);
+
+				// WebSocket connection is now handled globally by ChatBubble/WebSocketProvider
+				// We don't need to connect here
 			} catch (err) {
 				console.error('Failed to decode token:', err);
 			}
 		}
-	}, [connect]);
+	}, []);
 
 	// Handle WebSocket messages
 	useEffect(() => {
@@ -117,7 +118,7 @@ export default function CollaboratorsPage() {
 							const messageData = lastMessage.data as unknown as ChatMessage;
 							const exists = prev.some(msg => msg.id === messageData.id);
 							if (exists) return prev;
-							
+
 							return [...prev, messageData];
 						});
 					}
@@ -139,12 +140,8 @@ export default function CollaboratorsPage() {
 		chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 	}, [chatMessages]);
 
-	// Cleanup WebSocket on unmount
-	useEffect(() => {
-		return () => {
-			disconnect();
-		};
-	}, [disconnect]);
+	// Cleanup WebSocket on unmount - REMOVED to prevent closing global connection
+	// The global WebSocketProvider handles the connection lifecycle
 
 	// Fetch current user profile for completion banner
 	useEffect(() => {
@@ -202,11 +199,11 @@ export default function CollaboratorsPage() {
 
 				const response = await getCollaborators(token);
 				console.log('Collaborators API response:', response);
-				
-				 // The API returns: { data: {...}, message: "Ready users retrieved successfully", success: true }
+
+				// The API returns: { data: {...}, message: "Ready users retrieved successfully", success: true }
 				// But the actual users array is inside response.data.users
 				let collaboratorsData;
-				
+
 				if (response.data && response.data.users) {
 					// Handle paginated response structure
 					collaboratorsData = response.data.users;
@@ -220,10 +217,10 @@ export default function CollaboratorsPage() {
 					// Fallback
 					collaboratorsData = [];
 				}
-				
+
 				console.log('Extracted collaborators data:', collaboratorsData);
 				console.log('Number of collaborators:', collaboratorsData.length);
-				
+
 				// Debug each collaborator's profile data
 				collaboratorsData.forEach((collaborator: Record<string, unknown>, index: number) => {
 					console.log(`Collaborator ${index + 1}:`, {
@@ -235,7 +232,7 @@ export default function CollaboratorsPage() {
 						about_me: (collaborator.profile as Record<string, unknown>)?.about_me
 					});
 				});
-				
+
 				setCollaborators(collaboratorsData);
 				setError(null);
 			} catch (err) {
@@ -334,13 +331,13 @@ export default function CollaboratorsPage() {
 	};
 
 	// Extract all skills from collaborators for filtering (excluding current user)
-	const collaboratorsExcludingCurrentUser = collaborators.filter(collaborator => 
+	const collaboratorsExcludingCurrentUser = collaborators.filter(collaborator =>
 		!currentUser || collaborator.id !== currentUser.id
 	);
 
 	const allSkills = Array.from(
 		new Set(
-			collaboratorsExcludingCurrentUser.flatMap(collaborator => 
+			collaboratorsExcludingCurrentUser.flatMap(collaborator =>
 				(collaborator.skills || []).map(userSkill => userSkill.skill.name)
 			)
 		)
@@ -357,7 +354,7 @@ export default function CollaboratorsPage() {
 		const matchesSearch = searchTerm === '' || searchableText.includes(searchTerm.toLowerCase());
 
 		const collaboratorSkills = (collaborator.skills || []).map(userSkill => userSkill.skill.name);
-		const matchesSkills = selectedSkills.length === 0 || 
+		const matchesSkills = selectedSkills.length === 0 ||
 			selectedSkills.every((skill) => collaboratorSkills.includes(skill));
 
 		return matchesSearch && matchesSkills;
@@ -407,7 +404,7 @@ export default function CollaboratorsPage() {
 					</div>
 				</div>
 			)}
-			
+
 			{/* Header */}
 
 			<div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -469,8 +466,8 @@ export default function CollaboratorsPage() {
 							<Card key={collaborator.id} className="hover:shadow-lg transition-shadow h-full">
 								<CardContent className="p-6 flex flex-col items-center text-center h-full">
 									<Avatar className="h-24 w-24 mb-4">
-										<AvatarImage 
-											src={collaborator.profile_picture || "/placeholder.svg"} 
+										<AvatarImage
+											src={collaborator.profile_picture || "/placeholder.svg"}
 											alt={collaborator.name}
 											className="object-cover w-full h-full"
 										/>
@@ -532,7 +529,7 @@ export default function CollaboratorsPage() {
 						))}
 						{filteredCollaborators.length === 0 && (
 							<div className="col-span-full text-center text-gray-500 py-10">
-								{searchTerm || selectedSkills.length > 0 
+								{searchTerm || selectedSkills.length > 0
 									? "Tidak ada kolaborator yang ditemukan dengan kriteria ini."
 									: "Belum ada kolaborator yang siap berkolaborasi."
 								}
@@ -569,7 +566,7 @@ export default function CollaboratorsPage() {
 								{isFilterModalOpen ? <X className="h-6 w-6" /> : <Filter className="h-6 w-6" />}
 							</motion.div>
 						</AnimatePresence>
-						
+
 						{/* Active filters indicator */}
 						{!isFilterModalOpen && (searchTerm || selectedSkills.length > 0) && (
 							<div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center text-xs font-medium text-white">
@@ -593,7 +590,7 @@ export default function CollaboratorsPage() {
 							className="fixed inset-0 bg-black/20 z-[55] lg:hidden"
 							onClick={() => setIsFilterModalOpen(false)}
 						/>
-						
+
 						{/* Modal */}
 						<motion.div
 							initial={{ opacity: 0, scale: 0.8, x: -50, y: 50 }}
@@ -604,67 +601,67 @@ export default function CollaboratorsPage() {
 							style={{ transformOrigin: "bottom left" }}
 						>
 							<Card className="w-full md:w-96 max-h-[70vh] md:max-h-[60vh] shadow-xl border-0">
-							<CardHeader className="pb-3 md:pb-4">
-								<div className="flex items-center justify-between">
-									<CardTitle className="text-lg md:text-xl">Filter Kolaborator</CardTitle>
-									<Button 
-										variant="ghost" 
-										size="icon" 
-										className="h-6 w-6 md:h-8 md:w-8"
-										onClick={() => setIsFilterModalOpen(false)}
-									>
-										<X className="h-4 w-4 md:h-5 md:w-5" />
-									</Button>
-								</div>
-							</CardHeader>
-							<CardContent className="space-y-4 md:space-y-5">
-								{/* Search Input */}
-								<div className="relative">
-									<Input
-										placeholder="Cari nama, skill, atau peran..."
-										value={searchTerm}
-										onChange={(e) => setSearchTerm(e.target.value)}
-										className="pl-8 md:pl-10 h-10 md:h-12 text-sm md:text-base"
-									/>
-									<Search className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
-								</div>
-
-								{/* Skills Filter */}
-								<div className="space-y-3 md:space-y-4">
-									<h4 className="font-medium text-sm md:text-base">Filter berdasarkan Skill</h4>
-									<div className="max-h-48 md:max-h-64 overflow-y-auto space-y-2 md:space-y-3 pr-2">
-										{allSkills.map((skill) => (
-											<div key={skill} className="flex items-center space-x-2 md:space-x-3">
-												<Checkbox
-													id={`mobile-${skill}`}
-													checked={selectedSkills.includes(skill)}
-													onCheckedChange={() => handleSkillToggle(skill)}
-													className="md:h-5 md:w-5"
-												/>
-												<label
-													htmlFor={`mobile-${skill}`}
-													className="text-sm md:text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-												>
-													{skill}
-												</label>
-											</div>
-										))}
-									</div>
-									{selectedSkills.length > 0 && (
-										<Button 
-											variant="outline" 
-											size="sm" 
-											onClick={() => setSelectedSkills([])} 
-											className="w-full mt-3 md:mt-4 h-9 md:h-10 text-sm md:text-base"
+								<CardHeader className="pb-3 md:pb-4">
+									<div className="flex items-center justify-between">
+										<CardTitle className="text-lg md:text-xl">Filter Kolaborator</CardTitle>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-6 w-6 md:h-8 md:w-8"
+											onClick={() => setIsFilterModalOpen(false)}
 										>
-											Clear All
+											<X className="h-4 w-4 md:h-5 md:w-5" />
 										</Button>
-									)}
-								</div>
-							</CardContent>
-						</Card>
-					</motion.div>
-				</>
+									</div>
+								</CardHeader>
+								<CardContent className="space-y-4 md:space-y-5">
+									{/* Search Input */}
+									<div className="relative">
+										<Input
+											placeholder="Cari nama, skill, atau peran..."
+											value={searchTerm}
+											onChange={(e) => setSearchTerm(e.target.value)}
+											className="pl-8 md:pl-10 h-10 md:h-12 text-sm md:text-base"
+										/>
+										<Search className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+									</div>
+
+									{/* Skills Filter */}
+									<div className="space-y-3 md:space-y-4">
+										<h4 className="font-medium text-sm md:text-base">Filter berdasarkan Skill</h4>
+										<div className="max-h-48 md:max-h-64 overflow-y-auto space-y-2 md:space-y-3 pr-2">
+											{allSkills.map((skill) => (
+												<div key={skill} className="flex items-center space-x-2 md:space-x-3">
+													<Checkbox
+														id={`mobile-${skill}`}
+														checked={selectedSkills.includes(skill)}
+														onCheckedChange={() => handleSkillToggle(skill)}
+														className="md:h-5 md:w-5"
+													/>
+													<label
+														htmlFor={`mobile-${skill}`}
+														className="text-sm md:text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+													>
+														{skill}
+													</label>
+												</div>
+											))}
+										</div>
+										{selectedSkills.length > 0 && (
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={() => setSelectedSkills([])}
+												className="w-full mt-3 md:mt-4 h-9 md:h-10 text-sm md:text-base"
+											>
+												Clear All
+											</Button>
+										)}
+									</div>
+								</CardContent>
+							</Card>
+						</motion.div>
+					</>
 				)}
 			</AnimatePresence>
 
@@ -775,8 +772,8 @@ export default function CollaboratorsPage() {
 									className="flex-1"
 									disabled={connectionStatus !== 'connected' || isSendingMessage}
 								/>
-								<Button 
-									type="submit" 
+								<Button
+									type="submit"
 									size="icon"
 									disabled={!newMessage.trim() || connectionStatus !== 'connected' || isSendingMessage}
 								>
