@@ -43,9 +43,9 @@ export function ProjectHeaderCard({ project }: ProjectHeaderCardProps) {
     <Card>
       <div className="relative">
         <img src={project.picture_url} alt={project.title} className="w-full h-64 object-cover" />
-        {/* <div className="absolute top-4 right-4 flex gap-2"> 
+        <div className="absolute top-4 right-4 flex gap-2">
           <Button size="icon" variant="secondary" className="h-9 w-9"><Share2 className="h-4 w-4" /></Button>
-        </div> */}
+        </div>
       </div>
       <CardHeader>
         <div className="flex items-center justify-between mb-2">
