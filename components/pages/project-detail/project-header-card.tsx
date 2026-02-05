@@ -17,7 +17,7 @@ const timeAgo = (dateString: string): string => {
   const now = new Date();
   const date = new Date(dateString);
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
+
   if (diffInSeconds < 60) return "Baru saja";
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit yang lalu`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam yang lalu`;
@@ -43,9 +43,9 @@ export function ProjectHeaderCard({ project }: ProjectHeaderCardProps) {
     <Card>
       <div className="relative">
         <img src={project.picture_url} alt={project.title} className="w-full h-64 object-cover" />
-        <div className="absolute top-4 right-4 flex gap-2"> 
+        {/* <div className="absolute top-4 right-4 flex gap-2"> 
           <Button size="icon" variant="secondary" className="h-9 w-9"><Share2 className="h-4 w-4" /></Button>
-        </div>
+        </div> */}
       </div>
       <CardHeader>
         <div className="flex items-center justify-between mb-2">
