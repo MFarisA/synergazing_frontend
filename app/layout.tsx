@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ToastProvider } from "@/components/ui/toast";
 import { WebSocketProvider } from "@/lib/socket-provider";
+import { NotificationWebSocketProvider } from "@/lib/notification-socket-provider";
 import { ChatBubble } from "@/components/layout/chat-bubble";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,9 +24,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <ToastProvider>
           <WebSocketProvider>
-            {children}
-            <ChatBubble />
-            <Toaster />
+            <NotificationWebSocketProvider>
+              {children}
+              <ChatBubble />
+              <Toaster />
+            </NotificationWebSocketProvider>
           </WebSocketProvider>
         </ToastProvider>
       </body>

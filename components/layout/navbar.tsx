@@ -24,16 +24,17 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { 
-  getAllNotifications, 
-  getUnreadNotificationCount, 
-  markNotificationAsRead, 
-  markAllNotificationsAsRead, 
+import {
+  getAllNotifications,
+  getUnreadNotificationCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
   deleteNotification,
   formatNotificationTime,
   getNotificationIcon,
-  type Notification 
+  type Notification
 } from "@/lib/api/notifications"
+import { useNotificationSocket } from "@/lib/notification-socket-provider"
 import { getProfile } from "@/lib/api/profile-management"
 
 export default function Navbar({ className }: { className?: string }) {
@@ -43,8 +44,8 @@ export default function Navbar({ className }: { className?: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userData, setUserData] = useState<{ 
-    name?: string; 
+  const [userData, setUserData] = useState<{
+    name?: string;
     profile_picture?: string;
     [key: string]: any;
   } | null>(null)
@@ -52,6 +53,9 @@ export default function Navbar({ className }: { className?: string }) {
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0)
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+
+  // Notification WebSocket
+  const { connectionStatus: notifWsStatus, lastNotification, connect: connectNotifWs, disconnect: disconnectNotifWs } = useNotificationSocket()
 
   // Function to refresh user profile data from API
   const refreshUserProfile = async () => {
@@ -100,7 +104,7 @@ export default function Navbar({ className }: { className?: string }) {
     // Listen for auth state changes
     const handleAuthStateChange = () => checkAuthState()
     window.addEventListener('authStateChanged', handleAuthStateChange)
-    
+
     // Listen for profile updates
     const handleProfileUpdate = async () => {
       console.log('Profile update event received')
@@ -155,8 +159,8 @@ export default function Navbar({ className }: { className?: string }) {
         } else {
           console.log('Count response failed, calculating from notifications array')
           // Fallback: calculate unread count from notifications array
-          const unreadCount = Array.isArray(notificationsResponse.data.notifications) 
-            ? notificationsResponse.data.notifications.filter(n => !n.is_read).length 
+          const unreadCount = Array.isArray(notificationsResponse.data.notifications)
+            ? notificationsResponse.data.notifications.filter(n => !n.is_read).length
             : 0
           console.log('Calculated unread count:', unreadCount)
           setUnreadNotificationsCount(unreadCount)
@@ -172,15 +176,64 @@ export default function Navbar({ className }: { className?: string }) {
     fetchNotifications()
   }, [isLoggedIn])
 
+  // Connect to notification WebSocket when logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      const token = localStorage.getItem("token")
+      const user = localStorage.getItem("user")
+      if (token && user) {
+        try {
+          const parsedUser = JSON.parse(user)
+          if (parsedUser?.id) {
+            connectNotifWs(parsedUser.id, token)
+          }
+        } catch (error) {
+          console.error("Failed to parse user for notification WS:", error)
+        }
+      }
+    } else {
+      disconnectNotifWs()
+    }
+  }, [isLoggedIn])
+
+  // Listen for new notifications from WebSocket
+  useEffect(() => {
+    if (lastNotification) {
+      console.log('[Navbar] New real-time notification:', lastNotification.title)
+      // Prepend new notification to the list
+      setNotifications(prev => {
+        const exists = Array.isArray(prev) && prev.some(n => n.id === lastNotification.id)
+        if (exists) return prev
+        const newNotif = {
+          id: lastNotification.id,
+          user_id: 0,
+          project_id: 0,
+          type: lastNotification.type || '',
+          title: lastNotification.title || '',
+          message: lastNotification.message || '',
+          is_read: lastNotification.is_read || false,
+          data: '',
+          created_at: lastNotification.created_at || new Date().toISOString(),
+          updated_at: lastNotification.created_at || new Date().toISOString(),
+        }
+        return [newNotif, ...(Array.isArray(prev) ? prev : [])]
+      })
+      // Increment unread count if the notification is unread
+      if (!lastNotification.is_read) {
+        setUnreadNotificationsCount(prev => prev + 1)
+      }
+    }
+  }, [lastNotification])
+
   // Notification handlers
   const handleMarkAsRead = async (notificationId: number) => {
     try {
       const response = await markNotificationAsRead(notificationId)
       if (response.success) {
         // Update local state
-        setNotifications(prev => 
-          Array.isArray(prev) ? prev.map(notification => 
-            notification.id === notificationId 
+        setNotifications(prev =>
+          Array.isArray(prev) ? prev.map(notification =>
+            notification.id === notificationId
               ? { ...notification, is_read: true }
               : notification
           ) : []
@@ -198,7 +251,7 @@ export default function Navbar({ className }: { className?: string }) {
       const response = await markAllNotificationsAsRead()
       if (response.success) {
         // Update local state
-        setNotifications(prev => 
+        setNotifications(prev =>
           Array.isArray(prev) ? prev.map(notification => ({ ...notification, is_read: true })) : []
         )
         setUnreadNotificationsCount(0)
@@ -215,7 +268,7 @@ export default function Navbar({ className }: { className?: string }) {
         // Update local state
         const deletedNotification = Array.isArray(notifications) ? notifications.find(n => n.id === notificationId) : null
         setNotifications(prev => Array.isArray(prev) ? prev.filter(notification => notification.id !== notificationId) : [])
-        
+
         // Update unread count if the deleted notification was unread
         if (deletedNotification && !deletedNotification.is_read) {
           setUnreadNotificationsCount(prev => Math.max(0, prev - 1))
@@ -273,8 +326,8 @@ export default function Navbar({ className }: { className?: string }) {
     setShowLogoutConfirm(false)
 
     // Dispatch custom event to notify other components about logout
-    window.dispatchEvent(new CustomEvent('authStateChanged', { 
-      detail: { isAuthenticated: false } 
+    window.dispatchEvent(new CustomEvent('authStateChanged', {
+      detail: { isAuthenticated: false }
     }))
 
     // Redirect to home page
@@ -294,12 +347,12 @@ export default function Navbar({ className }: { className?: string }) {
       <Link href="/" className="flex items-center justify-center">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 flex items-center justify-center">
-            <Image 
-              src="/synergazing.svg" 
-              alt="Synergazing Logo" 
-              width={20} 
-              height={20} 
-              className="text-white" 
+            <Image
+              src="/synergazing.svg"
+              alt="Synergazing Logo"
+              width={20}
+              height={20}
+              className="text-white"
             />
           </div>
           <span className="font-bold text-xl">Synergazing</span>
@@ -370,14 +423,14 @@ export default function Navbar({ className }: { className?: string }) {
                           <div className="flex-1">
                             {notification.title && (
                               <p className={cn(
-                                "text-sm font-medium leading-tight", 
+                                "text-sm font-medium leading-tight",
                                 notification.is_read ? "text-gray-700" : "text-gray-900"
                               )}>
                                 {notification.title}
                               </p>
                             )}
                             <p className={cn(
-                              "text-sm leading-tight", 
+                              "text-sm leading-tight",
                               notification.is_read ? "text-gray-500" : "text-gray-700"
                             )}>
                               {notification.message}
@@ -447,8 +500,8 @@ export default function Navbar({ className }: { className?: string }) {
               <Button variant="ghost" size="sm" className="gap-2">
                 {userData?.profile_picture ? (
                   <div className="relative h-6 w-6 rounded-full overflow-hidden bg-gray-100">
-                    <img 
-                      src={userData.profile_picture} 
+                    <img
+                      src={userData.profile_picture}
                       alt={userData?.name || "User"}
                       className="w-full h-full object-cover"
                     />
@@ -534,14 +587,14 @@ export default function Navbar({ className }: { className?: string }) {
                         <div className="flex-1">
                           {notification.title && (
                             <p className={cn(
-                              "text-sm font-medium leading-tight", 
+                              "text-sm font-medium leading-tight",
                               notification.is_read ? "text-gray-700" : "text-gray-900"
                             )}>
                               {notification.title}
                             </p>
                           )}
                           <p className={cn(
-                            "text-sm leading-tight", 
+                            "text-sm leading-tight",
                             notification.is_read ? "text-gray-500" : "text-gray-700"
                           )}>
                             {notification.message}
@@ -603,7 +656,7 @@ export default function Navbar({ className }: { className?: string }) {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        
+
         <Button
           variant="ghost"
           size="icon"
@@ -632,15 +685,15 @@ export default function Navbar({ className }: { className?: string }) {
                 {label}
               </Link>
             ))}
-            
+
             <div className="border-t pt-4">
               {isLoggedIn ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-2">
                     {userData?.profile_picture ? (
                       <div className="relative h-8 w-8 rounded-full overflow-hidden bg-gray-100">
-                        <img 
-                          src={userData.profile_picture} 
+                        <img
+                          src={userData.profile_picture}
                           alt={userData?.name || "User"}
                           className="w-full h-full object-cover"
                         />
@@ -695,13 +748,13 @@ export default function Navbar({ className }: { className?: string }) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowLogoutConfirm(false)}
             >
               Batal
             </Button>
-            <Button 
+            <Button
               onClick={confirmLogout}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
