@@ -26,7 +26,7 @@ export interface NotificationResponse {
 
 export interface NotificationCountResponse {
   data: {
-    count: number;
+    unread_count: number;
   };
   message: string;
   success: boolean;
@@ -65,11 +65,11 @@ const getAuthToken = (): string | null => {
 export const getAllNotifications = async (): Promise<NotificationResponse> => {
   try {
     const token = getAuthToken();
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/api/notifications`, {
       method: 'GET',
       headers: {
@@ -78,16 +78,16 @@ export const getAllNotifications = async (): Promise<NotificationResponse> => {
         'Authorization': `Bearer ${token}`,
       },
     });
-    
+
     const data = await safeJsonParse(response);
-    
+
     if (!response.ok) {
       console.error('API Error Response:', {
         status: response.status,
         statusText: response.statusText,
         data: data
       });
-      const errorObj = { 
+      const errorObj = {
         status: response.status,
         statusText: response.statusText,
         response: { data },
@@ -95,7 +95,7 @@ export const getAllNotifications = async (): Promise<NotificationResponse> => {
       };
       throw errorObj;
     }
-    
+
     return data;
   } catch (error: unknown) {
     console.error('Error fetching notifications:', error);
@@ -107,11 +107,11 @@ export const getAllNotifications = async (): Promise<NotificationResponse> => {
 export const getUnreadNotifications = async (): Promise<NotificationResponse> => {
   try {
     const token = getAuthToken();
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/api/notifications/unread`, {
       method: 'GET',
       headers: {
@@ -120,16 +120,16 @@ export const getUnreadNotifications = async (): Promise<NotificationResponse> =>
         'Authorization': `Bearer ${token}`,
       },
     });
-    
+
     const data = await safeJsonParse(response);
-    
+
     if (!response.ok) {
       console.error('API Error Response:', {
         status: response.status,
         statusText: response.statusText,
         data: data
       });
-      const errorObj = { 
+      const errorObj = {
         status: response.status,
         statusText: response.statusText,
         response: { data },
@@ -137,7 +137,7 @@ export const getUnreadNotifications = async (): Promise<NotificationResponse> =>
       };
       throw errorObj;
     }
-    
+
     return data;
   } catch (error: unknown) {
     console.error('Error fetching unread notifications:', error);
@@ -149,11 +149,11 @@ export const getUnreadNotifications = async (): Promise<NotificationResponse> =>
 export const getUnreadNotificationCount = async (): Promise<NotificationCountResponse> => {
   try {
     const token = getAuthToken();
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/api/notifications/count`, {
       method: 'GET',
       headers: {
@@ -162,16 +162,16 @@ export const getUnreadNotificationCount = async (): Promise<NotificationCountRes
         'Authorization': `Bearer ${token}`,
       },
     });
-    
+
     const data = await safeJsonParse(response);
-    
+
     if (!response.ok) {
       console.error('API Error Response:', {
         status: response.status,
         statusText: response.statusText,
         data: data
       });
-      const errorObj = { 
+      const errorObj = {
         status: response.status,
         statusText: response.statusText,
         response: { data },
@@ -179,7 +179,7 @@ export const getUnreadNotificationCount = async (): Promise<NotificationCountRes
       };
       throw errorObj;
     }
-    
+
     return data;
   } catch (error: unknown) {
     console.error('Error fetching notification count:', error);
@@ -191,7 +191,7 @@ export const getUnreadNotificationCount = async (): Promise<NotificationCountRes
 export const markNotificationAsRead = async (notificationId: number): Promise<NotificationActionResponse> => {
   try {
     const token = getAuthToken();
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -211,7 +211,7 @@ export const markNotificationAsRead = async (notificationId: number): Promise<No
     });
 
     console.log('Mark as read response:', response.status, response.statusText);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Failed to mark notification as read:', {
@@ -226,7 +226,7 @@ export const markNotificationAsRead = async (notificationId: number): Promise<No
     const data = await safeJsonParse(response);
     console.log('Successfully marked notification as read:', data);
     return data;
-    
+
   } catch (error: unknown) {
     console.error('Error marking notification as read:', error);
     throw error;
@@ -237,11 +237,11 @@ export const markNotificationAsRead = async (notificationId: number): Promise<No
 export const markAllNotificationsAsRead = async (): Promise<NotificationActionResponse> => {
   try {
     const token = getAuthToken();
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
       method: 'PUT',
       headers: {
@@ -249,7 +249,7 @@ export const markAllNotificationsAsRead = async (): Promise<NotificationActionRe
         'Authorization': `Bearer ${token}`,
       },
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Failed to mark all notifications as read:', {
@@ -273,11 +273,11 @@ export const markAllNotificationsAsRead = async (): Promise<NotificationActionRe
 export const deleteNotification = async (notificationId: number): Promise<NotificationActionResponse> => {
   try {
     const token = getAuthToken();
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}`, {
       method: 'DELETE',
       headers: {
@@ -286,16 +286,16 @@ export const deleteNotification = async (notificationId: number): Promise<Notifi
         'Authorization': `Bearer ${token}`,
       },
     });
-    
+
     const data = await safeJsonParse(response);
-    
+
     if (!response.ok) {
       console.error('API Error Response:', {
         status: response.status,
         statusText: response.statusText,
         data: data
       });
-      const errorObj = { 
+      const errorObj = {
         status: response.status,
         statusText: response.statusText,
         response: { data },
@@ -303,7 +303,7 @@ export const deleteNotification = async (notificationId: number): Promise<Notifi
       };
       throw errorObj;
     }
-    
+
     return data;
   } catch (error: unknown) {
     console.error('Error deleting notification:', error);

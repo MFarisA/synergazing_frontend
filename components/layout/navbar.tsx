@@ -154,8 +154,8 @@ export default function Navbar({ className }: { className?: string }) {
         }
 
         if (countResponse.success) {
-          console.log('Unread count from API:', countResponse.data.count)
-          setUnreadNotificationsCount(countResponse.data.count)
+          console.log('Unread count from API:', countResponse.data.unread_count)
+          setUnreadNotificationsCount(Number(countResponse.data.unread_count) || 0)
         } else {
           console.log('Count response failed, calculating from notifications array')
           // Fallback: calculate unread count from notifications array
@@ -220,7 +220,7 @@ export default function Navbar({ className }: { className?: string }) {
       })
       // Increment unread count if the notification is unread
       if (!lastNotification.is_read) {
-        setUnreadNotificationsCount(prev => prev + 1)
+        setUnreadNotificationsCount(prev => (Number(prev) || 0) + 1)
       }
     }
   }, [lastNotification])
