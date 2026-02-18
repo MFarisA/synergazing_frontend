@@ -55,6 +55,19 @@ export function NotificationWebSocketProvider({ children }: { children: React.Re
     const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
     const lastPongRef = useRef<number>(Date.now())
     const isManualDisconnectRef = useRef(false)
+    const connectionStatusRef = useRef<NotificationConnectionStatus>('disconnected')
+    const currentUserRef = useRef<{ id: number; token?: string } | null>(null)
+
+    // Keep refs in sync with state
+    const updateConnectionStatus = useCallback((status: NotificationConnectionStatus) => {
+        connectionStatusRef.current = status
+        setConnectionStatus(status)
+    }, [])
+
+    const updateCurrentUser = useCallback((user: { id: number; token?: string } | null) => {
+        currentUserRef.current = user
+        setCurrentUser(user)
+    }, [])
 
     // Heartbeat to keep connection alive
     const startHeartbeat = useCallback(() => {
@@ -83,13 +96,13 @@ export function NotificationWebSocketProvider({ children }: { children: React.Re
     }, [])
 
     const connect = useCallback((userID: number, token?: string) => {
-        // If same user and already connected/connecting, do nothing
-        if (currentUser?.id === userID && (connectionStatus === 'connected' || connectionStatus === 'connecting')) {
+        // Use refs for stable checks (avoids stale closure issues)
+        if (currentUserRef.current?.id === userID && (connectionStatusRef.current === 'connected' || connectionStatusRef.current === 'connecting')) {
             return
         }
 
         if (wsRef.current?.readyState === WebSocket.OPEN) {
-            if (currentUser?.id !== userID) {
+            if (currentUserRef.current?.id !== userID) {
                 console.log('[NotificationWS] Switching user, closing old connection')
                 wsRef.current.close()
             } else {
@@ -98,9 +111,9 @@ export function NotificationWebSocketProvider({ children }: { children: React.Re
             }
         }
 
-        setCurrentUser({ id: userID, token })
+        updateCurrentUser({ id: userID, token })
         isManualDisconnectRef.current = false
-        setConnectionStatus('connecting')
+        updateConnectionStatus('connecting')
         setError(null)
 
         const params = new URLSearchParams({
@@ -120,7 +133,7 @@ export function NotificationWebSocketProvider({ children }: { children: React.Re
 
             ws.onopen = () => {
                 console.log('[NotificationWS] Connected successfully')
-                setConnectionStatus('connected')
+                updateConnectionStatus('connected')
                 setError(null)
                 reconnectAttempts.current = 0
                 startHeartbeat()
@@ -172,7 +185,7 @@ export function NotificationWebSocketProvider({ children }: { children: React.Re
 
             ws.onclose = (event) => {
                 console.log(`[NotificationWS] Disconnected (code: ${event.code})`)
-                setConnectionStatus('disconnected')
+                updateConnectionStatus('disconnected')
                 wsRef.current = null
                 stopHeartbeat()
 
@@ -193,15 +206,15 @@ export function NotificationWebSocketProvider({ children }: { children: React.Re
 
             ws.onerror = (event) => {
                 console.error('[NotificationWS] Connection error', event)
-                setConnectionStatus('error')
+                updateConnectionStatus('error')
                 setError('Notification WebSocket connection failed')
             }
         } catch (err) {
             console.error('[NotificationWS] Failed to create connection', err)
-            setConnectionStatus('error')
+            updateConnectionStatus('error')
             setError('Failed to create notification WebSocket connection')
         }
-    }, [currentUser, connectionStatus, startHeartbeat, stopHeartbeat])
+    }, [startHeartbeat, stopHeartbeat, updateConnectionStatus, updateCurrentUser])
 
     const disconnect = useCallback(() => {
         if (reconnectTimeoutRef.current) {
@@ -211,23 +224,34 @@ export function NotificationWebSocketProvider({ children }: { children: React.Re
 
         stopHeartbeat()
         isManualDisconnectRef.current = true
-        setCurrentUser(null)
+        updateCurrentUser(null)
 
         if (wsRef.current) {
             wsRef.current.close(1000, 'Manual disconnect')
             wsRef.current = null
         }
 
-        setConnectionStatus('disconnected')
+        updateConnectionStatus('disconnected')
         reconnectAttempts.current = 0
-    }, [stopHeartbeat])
+    }, [stopHeartbeat, updateConnectionStatus, updateCurrentUser])
 
-    // Cleanup on unmount
+    // Cleanup on unmount only — empty deps to avoid disconnecting on re-renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         return () => {
-            disconnect()
+            // Use refs directly for cleanup to avoid stale closure
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current)
+            }
+            if (heartbeatIntervalRef.current) {
+                clearInterval(heartbeatIntervalRef.current)
+            }
+            if (wsRef.current) {
+                wsRef.current.close(1000, 'Component unmount')
+                wsRef.current = null
+            }
         }
-    }, [disconnect])
+    }, [])
 
     return (
         <NotificationWebSocketContext.Provider value={{
